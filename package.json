@@ -1,0 +1,22 @@
+{
+  "license": "ISC",
+  "type": "module",
+  "scripts": {
+    "gen:clients": "bun scripts/generate_clients.ts"
+  },
+  "dependencies": {
+  },
+  "devDependencies": {
+    "@codama/nodes-from-anchor": "^1.1.6",
+    "@codama/renderers-js": "^1.2.5",
+    "@solana/web3.js": "^2.0.0",
+    "@types/bun": "^1.2.2",
+    "@types/mocha": "^10.0.10",
+    "codama": "^1.2.6",
+    "commander": "^13.1.0",
+    "mocha": "^11.1.0",
+    "prettier": "^2.8.8",
+    "ts-mocha": "^10.0.0",
+    "typescript": "^5.7.3"
+  }
+}

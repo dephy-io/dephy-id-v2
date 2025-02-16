@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "types": ["bun", "mocha"],
+    "typeRoots": ["./node_modules/@types"],
+    "lib": ["ESNext", "DOM"],
+    "module": "NodeNext",
+    "target": "ESNext",
+    "esModuleInterop": true
+  }
+}

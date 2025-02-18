@@ -2,10 +2,9 @@
   "license": "ISC",
   "type": "module",
   "scripts": {
-    "gen:clients": "bun scripts/generate_clients.ts"
+    "cli": "bun scripts/cli.ts"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@codama/nodes-from-anchor": "^1.1.6",
     "@codama/renderers-js": "^1.2.5",

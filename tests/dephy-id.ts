@@ -10,7 +10,7 @@ describe("dephy-id", () => {
   const airdrop = solana.airdropFactory({ rpc, rpcSubscriptions })
   const sendAndConfirm = solana.sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions })
 
-  const sendAndConfirmTransaction = async ({ ixs, signers = [] }: { ixs: solana.IInstruction[], signers?: CryptoKeyPair[] }) => {
+  const sendAndConfirmIxs = async (ixs: solana.IInstruction[]) => {
     const recentBlockhash = (await rpc.getLatestBlockhash().send()).value
 
     const signedTx = await solana.pipe(
@@ -21,8 +21,6 @@ describe("dephy-id", () => {
       tx => solana.signTransactionMessageWithSigners(tx)
     );
 
-    const signature = solana.getSignatureFromTransaction(signedTx)
-
     try {
       await sendAndConfirm(signedTx, { commitment: 'confirmed' })
     } catch (error) {
@@ -32,7 +30,7 @@ describe("dephy-id", () => {
 
       throw error
     }
-    return signature
+    return solana.getSignatureFromTransaction(signedTx)
   }
 
   before('prepare payer', async () => {
@@ -49,15 +47,12 @@ describe("dephy-id", () => {
   it("initialize", async () => {
     authority = await solana.generateKeyPairSigner()
 
-    await sendAndConfirmTransaction({
-      ixs: [
-        await dephyId.getInitializeInstructionAsync({
-          authority,
-          payer,
-        }),
-      ],
-      signers: [authority.keyPair],
-    });
+    await sendAndConfirmIxs([
+      await dephyId.getInitializeInstructionAsync({
+        authority,
+        payer,
+      }),
+    ]);
 
     const dephyPda = await dephyId.findDephyAccountPda()
     const dephyAccount = await dephyId.fetchDephyAccount(rpc, dephyPda[0])
@@ -72,18 +67,15 @@ describe("dephy-id", () => {
     const productName = "Demo Product 1"
     productAssetPda = await dephyId.findProductAssetPda({ vendor: vendor.address, productName })
 
-    await sendAndConfirmTransaction({
-      ixs: [
-        dephyId.getCreateProductInstruction({
-          vendor,
-          payer,
-          productAsset: productAssetPda[0],
-          name: productName,
-          uri: "https://example.com/product-1"
-        }),
-      ],
-      signers: [vendor.keyPair],
-    })
+    await sendAndConfirmIxs([
+      dephyId.getCreateProductInstruction({
+        vendor,
+        payer,
+        productAsset: productAssetPda[0],
+        name: productName,
+        uri: "https://example.com/product-1"
+      }),
+    ])
 
     const productAsset = await rpc.getAccountInfo(productAssetPda[0]).send()
     assert.equal(productAsset.value.owner, 'CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d')
@@ -98,23 +90,20 @@ describe("dephy-id", () => {
 
     const deviceAssetPda = await dephyId.findDeviceAssetPda({
       productAsset: productAssetPda[0],
-      devicePubkey
+      deviceSeed
     })
 
-    await sendAndConfirmTransaction({
-      ixs: [
-        dephyId.getCreateDeviceInstruction({
-          vendor,
-          productAsset: productAssetPda[0],
-          deviceAsset: deviceAssetPda[0],
-          owner: vendor.address,
-          payer,
-          seed: deviceSeed,
-          name: "Test Device 1",
-          uri: "https://example.com/product-1/device-1",
-        }),
-      ],
-    })
+    await sendAndConfirmIxs([
+      await dephyId.getCreateDeviceInstructionAsync({
+        vendor,
+        productAsset: productAssetPda[0],
+        owner: vendor.address,
+        payer,
+        seed: deviceSeed,
+        name: "Test Device 1",
+        uri: "https://example.com/product-1/device-1",
+      }),
+    ])
 
     const deviceAsset = await rpc.getAccountInfo(deviceAssetPda[0], { encoding: 'jsonParsed' }).send()
     assert.equal(deviceAsset.value.owner, 'CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d')

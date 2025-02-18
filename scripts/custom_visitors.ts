@@ -4,6 +4,10 @@ import {
   variablePdaSeedNode,
   publicKeyTypeNode,
   stringTypeNode,
+  bytesTypeNode,
+  accountValueNode,
+  argumentValueNode,
+  pdaSeedValueNode,
 } from 'codama';
 
 export const program = updateProgramsVisitor({
@@ -26,7 +30,7 @@ export const pdas = addPdasVisitor({
     seeds: [
       constantPdaSeedNodeFromString('utf8', "DePHY_ID-DEVICE"),
       variablePdaSeedNode('product_asset', publicKeyTypeNode()),
-      variablePdaSeedNode('device_pubkey', publicKeyTypeNode()),
+      variablePdaSeedNode('device_seed', bytesTypeNode()),
     ]
   }]
 })
@@ -42,5 +46,14 @@ export const instructions = updateInstructionsVisitor({
     accounts: {
       payer: { defaultValue: payerValueNode() },
     },
-  }
+  },
+  createDevice: {
+    accounts: {
+      deviceAsset: { defaultValue: pdaValueNode('deviceAsset', [
+        pdaSeedValueNode('product_asset', accountValueNode('product_asset')),
+        pdaSeedValueNode('device_seed', argumentValueNode('seed')),
+      ]) },
+      payer: { defaultValue: payerValueNode() },
+    },
+  },
 })

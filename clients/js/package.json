@@ -1,0 +1,8 @@
+{
+  "name": "dephy-id-client",
+  "version": "0.1.0",
+  "module": "./src/index.ts",
+  "dependencies": {
+    "@solana/web3.js": "^2.0.0"
+  }
+}

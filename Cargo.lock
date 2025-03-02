@@ -913,6 +913,8 @@ dependencies = [
  "base64 0.22.1",
  "borsh 1.5.5",
  "modular-bitfield",
+ "num-derive",
+ "num-traits",
  "rmp-serde",
  "serde",
  "serde_json",

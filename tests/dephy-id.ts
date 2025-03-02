@@ -1,5 +1,8 @@
 import * as dephyId from '../clients/js/src/index.js'
-import * as solana from '@solana/web3.js'
+import * as mplCore from '../deps/mpl-core/js/src/index.js'
+import * as solana from '@solana/kit'
+// TODO: wait @solana-program/system update
+import * as system from '@solana-program/system/clients/js/src'
 import assert from "assert";
 
 const payer = await solana.generateKeyPairSigner()
@@ -61,51 +64,109 @@ describe("dephy-id", () => {
 
 
   let vendor: solana.KeyPairSigner
-  let productAssetPda: solana.ProgramDerivedAddress
+  let productAsset: solana.Address
   it("create product", async () => {
     vendor = await solana.generateKeyPairSigner()
     const productName = "Demo Product 1"
-    productAssetPda = await dephyId.findProductAssetPda({ vendor: vendor.address, productName })
+    const productAssetPda = await dephyId.findProductAssetPda({ vendor: vendor.address, productName })
+    productAsset = productAssetPda[0]
 
     await sendAndConfirmIxs([
       dephyId.getCreateProductInstruction({
         vendor,
         payer,
-        productAsset: productAssetPda[0],
+        productAsset,
         name: productName,
         uri: "https://example.com/product-1"
       }),
     ])
 
-    const productAsset = await rpc.getAccountInfo(productAssetPda[0]).send()
-    assert.equal(productAsset.value.owner, 'CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d')
+    const maybeProduct = await mplCore.fetchMaybeCollectionV1(rpc, productAsset)
+    assert.ok(maybeProduct.exists)
+    assert.equal(maybeProduct.programAddress, mplCore.MPL_CORE_PROGRAM_ADDRESS)
+
+    const product = maybeProduct.data
+    assert.equal(product.name, productName)
+    assert.equal(product.uri, "https://example.com/product-1")
   });
 
 
   let deviceKey: CryptoKeyPair
+  let deviceSeed: solana.Address
+  // the asset address
+  let deviceAsset: solana.Address
+  let user: solana.KeyPairSigner
   it("create device", async () => {
     deviceKey = await solana.generateKeyPair()
-    const devicePubkey = await solana.getAddressFromPublicKey(deviceKey.publicKey)
-    const deviceSeed = solana.getAddressEncoder().encode(devicePubkey)
+    deviceSeed = await solana.getAddressFromPublicKey(deviceKey.publicKey)
+    const encodedSeed = solana.getAddressEncoder().encode(deviceSeed)
+    user = await solana.generateKeyPairSigner()
 
     const deviceAssetPda = await dephyId.findDeviceAssetPda({
-      productAsset: productAssetPda[0],
-      deviceSeed
+      productAsset,
+      deviceSeed: encodedSeed
     })
+    deviceAsset = deviceAssetPda[0]
 
     await sendAndConfirmIxs([
       await dephyId.getCreateDeviceInstructionAsync({
         vendor,
-        productAsset: productAssetPda[0],
-        owner: vendor.address,
+        productAsset,
+        owner: user.address,
         payer,
-        seed: deviceSeed,
+        seed: encodedSeed,
         name: "Test Device 1",
         uri: "https://example.com/product-1/device-1",
       }),
     ])
 
-    const deviceAsset = await rpc.getAccountInfo(deviceAssetPda[0], { encoding: 'jsonParsed' }).send()
-    assert.equal(deviceAsset.value.owner, 'CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d')
+    const maybeAsset = await mplCore.fetchMaybeAssetV1(rpc, deviceAssetPda[0])
+    assert.ok(maybeAsset.exists)
+    assert.equal(maybeAsset.programAddress, mplCore.MPL_CORE_PROGRAM_ADDRESS)
+
+    const asset = maybeAsset.data
+    assert.equal(asset.owner, user.address)
+    assert.equal(asset.name, "Test Device 1")
+    assert.equal(asset.uri, "https://example.com/product-1/device-1")
+
+    const encodedAccount = await solana.fetchEncodedAccount(rpc, deviceAsset)
+    assert.ok(encodedAccount.exists)
+
+    const decodedAsset = mplCore.getAssetAccountDecoder().decode(encodedAccount.data)
+    const attr0 = decodedAsset.plugins.attributes.attributeList[0]
+    assert.equal(attr0.key, "Seed")
+    assert.equal(attr0.value, solana.getAddressDecoder().decode(encodedSeed))
+    assert.deepEqual(decodedAsset.plugins.dataSections[0].data, encodedSeed)
   });
+
+
+  it("act as wallet", async () => {
+    const assetSigner = (await mplCore.findAssetSignerPda({ asset: deviceAsset }))[0]
+
+    await airdrop({
+      commitment: "confirmed",
+      lamports: solana.lamports(1_000_000_000n),
+      recipientAddress: assetSigner,
+    })
+
+    assert.equal((await rpc.getBalance(assetSigner).send()).value, 1_000_000_000n)
+    assert.equal((await rpc.getBalance(user.address).send()).value, 0n)
+
+    await sendAndConfirmIxs([
+      await mplCore.createExecuteIx({
+        collection: productAsset,
+        asset: deviceAsset,
+        payer: payer,
+        authority: user,
+        instruction: system.getTransferSolInstruction({
+          source: solana.createNoopSigner(assetSigner),
+          destination: user.address,
+          amount: solana.lamports(200_000_000n),
+        }),
+      }),
+    ])
+
+    assert.equal((await rpc.getBalance(assetSigner).send()).value, 800_000_000n)
+    assert.equal((await rpc.getBalance(user.address).send()).value, 200_000_000n)
+  })
 });

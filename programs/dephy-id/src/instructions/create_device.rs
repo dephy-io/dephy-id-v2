@@ -31,7 +31,6 @@ pub struct CreateDevice<'info> {
 
 pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) -> Result<()> {
     let product = mpl_core::Collection::deserialize(&ctx.accounts.product_asset.data.borrow())?;
-    // let product = &ctx.accounts.product_asset;
 
     let (_product_pubkey, product_bump) = Pubkey::find_program_address(
         &[
@@ -80,6 +79,33 @@ pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) 
             args.seed.as_ref(),
             &[ctx.bumps.device_asset],
         ],
+        &[
+            PRODUCT_SEED_PREFIX,
+            ctx.accounts.vendor.key().as_ref(),
+            product.base.name.as_ref(),
+            &[product_bump],
+        ],
+    ])?;
+
+    mpl_core::instructions::WriteExternalPluginAdapterDataV1Cpi::new(
+        &ctx.accounts.mpl_core,
+        mpl_core::instructions::WriteExternalPluginAdapterDataV1CpiAccounts {
+            asset: &ctx.accounts.device_asset,
+            collection: Some(&ctx.accounts.product_asset),
+            payer: &ctx.accounts.payer,
+            authority: Some(&ctx.accounts.product_asset),
+            buffer: None,
+            system_program: &ctx.accounts.system_program,
+            log_wrapper: None,
+        },
+        mpl_core::instructions::WriteExternalPluginAdapterDataV1InstructionArgs {
+            key: mpl_core::types::ExternalPluginAdapterKey::LinkedAppData(
+                mpl_core::types::PluginAuthority::UpdateAuthority
+            ),
+            data: Some(args.seed.to_vec()),
+        },
+    )
+    .invoke_signed(&[
         &[
             PRODUCT_SEED_PREFIX,
             ctx.accounts.vendor.key().as_ref(),

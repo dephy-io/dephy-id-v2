@@ -1,5 +1,5 @@
 import * as dephyId from '../clients/js/src/index.js';
-import * as solana from '@solana/web3.js';
+import * as solana from '@solana/kit';
 import { Command, Option } from 'commander';
 import * as fs from 'fs';
 
@@ -28,7 +28,10 @@ const loadKeyPair = async (path: string) => {
   return await solana.createKeyPairSignerFromBytes(keypair);
 }
 
-const cli = new Command();
+const cli = new Command()
+  .name('dephy-id')
+  .version('0.1.0')
+  .description('CLI for dephy-id');
 
 cli
   .requiredOption('-k, --keypair <path>', 'Path to payer keypair')

@@ -33,7 +33,7 @@ import {
   type MaybeAccount,
   type MaybeEncodedAccount,
   type ReadonlyUint8Array,
-} from '@solana/web3.js';
+} from '@solana/kit';
 
 export const DEPHY_ACCOUNT_DISCRIMINATOR = new Uint8Array([
   138, 216, 55, 116, 51, 4, 249, 98,

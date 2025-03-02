@@ -11,7 +11,7 @@ import {
   getUtf8Encoder,
   type Address,
   type ProgramDerivedAddress,
-} from '@solana/web3.js';
+} from '@solana/kit';
 
 export async function findDephyAccountPda(
   config: { programAddress?: Address | undefined } = {}

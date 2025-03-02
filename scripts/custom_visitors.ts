@@ -49,10 +49,12 @@ export const instructions = updateInstructionsVisitor({
   },
   createDevice: {
     accounts: {
-      deviceAsset: { defaultValue: pdaValueNode('deviceAsset', [
-        pdaSeedValueNode('product_asset', accountValueNode('product_asset')),
-        pdaSeedValueNode('device_seed', argumentValueNode('seed')),
-      ]) },
+      deviceAsset: {
+        defaultValue: pdaValueNode('deviceAsset', [
+          pdaSeedValueNode('product_asset', accountValueNode('product_asset')),
+          pdaSeedValueNode('device_seed', argumentValueNode('seed')),
+        ])
+      },
       payer: { defaultValue: payerValueNode() },
     },
   },

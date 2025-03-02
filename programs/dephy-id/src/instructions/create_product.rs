@@ -36,7 +36,15 @@ pub fn handle_create_product(ctx: Context<CreateProduct>, args: CreateProductArg
             name: args.name.clone(),
             uri: args.uri,
             plugins: None, // TODO: add plugins
-            external_plugin_adapters: None,
+            external_plugin_adapters: Some(vec![
+                mpl_core::types::ExternalPluginAdapterInitInfo::LinkedAppData(
+                    mpl_core::types::LinkedAppDataInitInfo {
+                        data_authority: mpl_core::types::PluginAuthority::UpdateAuthority,
+                        init_plugin_authority: None,
+                        schema: Some(mpl_core::types::ExternalPluginAdapterSchema::Binary),
+                    },
+                ),
+            ]),
         },
     )
     .invoke_signed(&[&[

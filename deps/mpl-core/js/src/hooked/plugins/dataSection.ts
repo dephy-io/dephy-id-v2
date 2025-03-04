@@ -2,21 +2,21 @@ import {
   BaseDataSection,
   ExternalRegistryRecord,
 } from '../../generated';
+import { PluginAuthority, pluginAuthorityFromBase } from '.';
 import { BaseExternalPluginAdapter } from './externalPluginAdapters';
 import { parseExternalPluginAdapterData } from './lib';
 import {
   LinkedDataKey,
   linkedDataKeyFromBase,
 } from './linkedDataKey';
-import { PluginAuthority, pluginAuthorityFromBase } from '.';
 
 export type DataSection = Omit<
   BaseDataSection,
   'dataAuthority' | 'parentKey'
 > & {
+  data?: any;
   dataAuthority?: PluginAuthority;
   parentKey: LinkedDataKey;
-  data?: any;
 };
 
 export type DataSectionPlugin = BaseExternalPluginAdapter &
@@ -31,11 +31,11 @@ export function dataSectionFromBase(
 ): DataSection {
   return {
     ...s,
-    parentKey: linkedDataKeyFromBase(s.parentKey),
+    data: parseExternalPluginAdapterData(s, r, account),
     dataAuthority:
       s.parentKey.__kind !== 'LinkedLifecycleHook'
         ? pluginAuthorityFromBase(s.parentKey.fields[0])
         : undefined,
-    data: parseExternalPluginAdapterData(s, r, account),
+    parentKey: linkedDataKeyFromBase(s.parentKey),
   };
 }

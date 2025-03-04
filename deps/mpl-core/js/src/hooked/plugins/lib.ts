@@ -1,6 +1,7 @@
 import type { Option } from '@solana/kit';
 import { isSome } from '@solana/kit';
-import { BasePluginAuthority, getPluginDecoder, RegistryRecord, Plugin as BasePlugin, ExternalPluginAdapterSchema } from '../../generated';
+
+import { BasePluginAuthority, ExternalPluginAdapterSchema,getPluginDecoder, Plugin as BasePlugin, RegistryRecord } from '../../generated';
 import { masterEditionFromBase } from './masterEdition';
 import { PluginAuthority, PluginsList } from './types';
 
@@ -8,8 +9,8 @@ export function pluginAuthorityFromBase(
   authority: BasePluginAuthority
 ): PluginAuthority {
   return {
-    type: authority.__kind,
     address: (authority as any).address,
+    type: authority.__kind,
   };
 }
 
@@ -22,9 +23,9 @@ export function mapPlugin({
   authority,
   offset,
 }: {
-  plugin: Exclude<BasePlugin, { __kind: 'Reserved' }>;
   authority: PluginAuthority;
   offset: bigint;
+  plugin: Exclude<BasePlugin, { __kind: 'Reserved' }>;
 }): PluginsList {
   const pluginKey = plug.__kind.replace(/^./, c => c.toLowerCase())
 
@@ -58,9 +59,9 @@ export function registryRecordsToPluginsList(
     acc = {
       ...acc,
       ...mapPlugin({
-        plugin: deserializedPlugin,
         authority: mappedAuthority,
         offset: record.offset,
+        plugin: deserializedPlugin,
       }),
     };
 
@@ -78,7 +79,7 @@ export function parseExternalPluginAdapterData(
   },
   account: Uint8Array
 ): any {
-  let data;
+  let data: any;
   if (isSome(record.dataOffset) && isSome(record.dataLen)) {
     const dataSlice = account.slice(
       Number(record.dataOffset.value),
@@ -93,7 +94,9 @@ export function parseExternalPluginAdapterData(
         try {
           data = JSON.parse(new TextDecoder().decode(dataSlice));
         } catch (e) {
-          console.warn('Invalid JSON in external plugin data', e.message);
+          if (e instanceof Error) {
+            console.warn('Invalid JSON in external plugin data', e.message);
+          }
         }
       }
     } else if (plugin.schema === ExternalPluginAdapterSchema.MsgPack) {

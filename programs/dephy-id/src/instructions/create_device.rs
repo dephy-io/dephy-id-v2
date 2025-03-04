@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{DEVICE_SEED_PREFIX, PRODUCT_SEED_PREFIX};
+use crate::{DEVICE_SEED_PREFIX, PRODUCT_SEED_PREFIX, error::ErrorCode};
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct CreateDeviceArgs {
@@ -12,27 +12,28 @@ pub struct CreateDeviceArgs {
 #[derive(Accounts)]
 #[instruction(args: CreateDeviceArgs)]
 pub struct CreateDevice<'info> {
+    /// The authority of the product
     pub vendor: Signer<'info>,
-    /// CHECK:
-    #[account(mut, owner = mpl_core::ID)]
+    /// CHECK: the address is checked in the instruction handler
+    #[account(mut, owner = mpl_core::ID @ ErrorCode::InvalidMplCoreProgram)]
     pub product_asset: UncheckedAccount<'info>,
-    /// CHECK:
+    /// CHECK: This will be created by mpl-core as an asset of the product
     #[account(mut, seeds = [DEVICE_SEED_PREFIX, product_asset.key().as_ref(), &args.seed], bump)]
     pub device_asset: UncheckedAccount<'info>,
-    /// CHECK:
+    /// CHECK: The owner of the device asset don't need to sign
     pub owner: UncheckedAccount<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
-    /// CHECK:
+    /// CHECK: The mpl-core program address
     #[account(address = mpl_core::ID)]
     pub mpl_core: UncheckedAccount<'info>,
 }
 
 pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) -> Result<()> {
-    let product = mpl_core::Collection::deserialize(&ctx.accounts.product_asset.data.borrow())?;
+    let product = mpl_core::Collection::deserialize(&ctx.accounts.product_asset.data.borrow()).map_err(|_| ErrorCode::InvalidProductAccount)?;
 
-    let (_product_pubkey, product_bump) = Pubkey::find_program_address(
+    let (expected_product_pubkey, product_bump) = Pubkey::find_program_address(
         &[
             PRODUCT_SEED_PREFIX,
             ctx.accounts.vendor.key().as_ref(),
@@ -41,10 +42,14 @@ pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) 
         ctx.program_id,
     );
 
-    let seed = Pubkey::new_from_array(args.seed);
+    if expected_product_pubkey != ctx.accounts.product_asset.key() {
+        return Err(ErrorCode::ProductAddressMismatch.into());
+    }
+
+    let device_seed = Pubkey::new_from_array(args.seed);
     let attributes = vec![mpl_core::types::Attribute {
         key: "Seed".to_string(),
-        value: seed.to_string(),
+        value: device_seed.to_string(),
     }];
 
     mpl_core::instructions::CreateV2Cpi::new(

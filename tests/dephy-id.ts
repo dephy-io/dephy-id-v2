@@ -1,59 +1,65 @@
+import assert from 'assert';
+import {
+  Address, airdropFactory, createNoopSigner, createSolanaClient, createTransaction, devnet,
+  fetchEncodedAccount, generateKeyPair, generateKeyPairSigner, getAddressDecoder, getAddressEncoder, getAddressFromPublicKey,
+  getSignatureFromTransaction, IInstruction, isSolanaError, KeyPairSigner, lamports, signTransactionMessageWithSigners
+} from 'gill'
+import * as solanaPrograms from 'gill/programs'
+
 import * as dephyId from '../clients/js/src/index.js'
 import * as mplCore from '../deps/mpl-core/js/src/index.js'
-import * as solana from '@solana/kit'
-// TODO: wait @solana-program/system update
-import * as system from '@solana-program/system/clients/js/src'
-import assert from "assert";
 
-const payer = await solana.generateKeyPairSigner()
+const feePayer = await generateKeyPairSigner()
 
 describe("dephy-id", () => {
-  const rpc = solana.createSolanaRpc(solana.devnet('http://127.0.0.1:8899'))
-  const rpcSubscriptions = solana.createSolanaRpcSubscriptions('ws://127.0.0.1:8900')
-  const airdrop = solana.airdropFactory({ rpc, rpcSubscriptions })
-  const sendAndConfirm = solana.sendAndConfirmTransactionFactory({ rpc, rpcSubscriptions })
+  const { rpc, rpcSubscriptions, sendAndConfirmTransaction } = createSolanaClient({
+    urlOrMoniker: devnet('localnet')
+  })
 
-  const sendAndConfirmIxs = async (ixs: solana.IInstruction[]) => {
-    const recentBlockhash = (await rpc.getLatestBlockhash().send()).value
+  const airdrop = airdropFactory({ rpc, rpcSubscriptions })
 
-    const signedTx = await solana.pipe(
-      solana.createTransactionMessage({ version: 0 }),
-      tx => solana.appendTransactionMessageInstructions(ixs, tx),
-      tx => solana.setTransactionMessageFeePayerSigner(payer, tx),
-      tx => solana.setTransactionMessageLifetimeUsingBlockhash(recentBlockhash, tx),
-      tx => solana.signTransactionMessageWithSigners(tx)
-    );
+  const sendAndConfirmIxs = async (instructions: IInstruction[]) => {
+    const latestBlockhash = (await rpc.getLatestBlockhash().send()).value
+
+    const transaction = createTransaction({
+      feePayer,
+      instructions,
+      latestBlockhash,
+      version: 0
+    })
 
     try {
-      await sendAndConfirm(signedTx, { commitment: 'confirmed' })
+      const signedTx = await signTransactionMessageWithSigners(transaction)
+      await sendAndConfirmTransaction(signedTx, { commitment: 'confirmed' })
+
+      return getSignatureFromTransaction(signedTx)
     } catch (error) {
-      if (solana.isSolanaError(error)) {
+      if (isSolanaError(error)) {
         console.error(error.context)
       }
 
       throw error
     }
-    return solana.getSignatureFromTransaction(signedTx)
   }
 
   before('prepare payer', async () => {
     await airdrop({
       commitment: "confirmed",
-      lamports: solana.lamports(1_000_000_000n),
-      recipientAddress: payer.address,
+      lamports: lamports(1_000_000_000n),
+      recipientAddress: feePayer.address,
     })
 
     console.info('NOTE: The first tx may take >10s to confirm')
   })
 
-  let authority: solana.KeyPairSigner
+  let authority: KeyPairSigner
   it("initialize", async () => {
-    authority = await solana.generateKeyPairSigner()
+    authority = await generateKeyPairSigner()
 
     await sendAndConfirmIxs([
       await dephyId.getInitializeInstructionAsync({
         authority,
-        payer,
+        payer: feePayer,
       }),
     ]);
 
@@ -63,79 +69,81 @@ describe("dephy-id", () => {
   });
 
 
-  let vendor: solana.KeyPairSigner
-  let productAsset: solana.Address
+  let vendor: KeyPairSigner
+  let productAsset: Address
   it("create product", async () => {
-    vendor = await solana.generateKeyPairSigner()
+    vendor = await generateKeyPairSigner()
     const productName = "Demo Product 1"
-    const productAssetPda = await dephyId.findProductAssetPda({ vendor: vendor.address, productName })
+    const productAssetPda = await dephyId.findProductAssetPda({ productName, vendor: vendor.address })
     productAsset = productAssetPda[0]
 
     await sendAndConfirmIxs([
       dephyId.getCreateProductInstruction({
-        vendor,
-        payer,
-        productAsset,
         name: productName,
-        uri: "https://example.com/product-1"
+        payer: feePayer,
+        productAsset,
+        uri: "https://example.com/product-1",
+        vendor
       }),
     ])
 
-    const maybeProduct = await mplCore.fetchMaybeCollectionV1(rpc, productAsset)
-    assert.ok(maybeProduct.exists)
-    assert.equal(maybeProduct.programAddress, mplCore.MPL_CORE_PROGRAM_ADDRESS)
+    const encodedProduct = await fetchEncodedAccount(rpc, productAsset)
+    assert.ok(encodedProduct.exists)
+    assert.equal(encodedProduct.programAddress, mplCore.MPL_CORE_PROGRAM_ADDRESS)
 
-    const product = maybeProduct.data
+    const decodedProduct = mplCore.getCollectionAccountDecoder().decode(encodedProduct.data)
+
+    const product = decodedProduct.base
     assert.equal(product.name, productName)
     assert.equal(product.uri, "https://example.com/product-1")
+
+    assert.deepEqual(getAddressEncoder().encode(vendor.address), decodedProduct.plugins.appDatas[0].data)
   });
 
 
   let deviceKey: CryptoKeyPair
-  let deviceSeed: solana.Address
+  let deviceSeed: Address
   // the asset address
-  let deviceAsset: solana.Address
-  let user: solana.KeyPairSigner
+  let deviceAsset: Address
+  let user: KeyPairSigner
   it("create device", async () => {
-    deviceKey = await solana.generateKeyPair()
-    deviceSeed = await solana.getAddressFromPublicKey(deviceKey.publicKey)
-    const encodedSeed = solana.getAddressEncoder().encode(deviceSeed)
-    user = await solana.generateKeyPairSigner()
+    deviceKey = await generateKeyPair()
+    deviceSeed = await getAddressFromPublicKey(deviceKey.publicKey)
+    const encodedSeed = getAddressEncoder().encode(deviceSeed)
+    user = await generateKeyPairSigner()
 
     const deviceAssetPda = await dephyId.findDeviceAssetPda({
-      productAsset,
-      deviceSeed: encodedSeed
+      deviceSeed: encodedSeed,
+      productAsset
     })
     deviceAsset = deviceAssetPda[0]
 
     await sendAndConfirmIxs([
       await dephyId.getCreateDeviceInstructionAsync({
-        vendor,
-        productAsset,
-        owner: user.address,
-        payer,
-        seed: encodedSeed,
         name: "Test Device 1",
+        owner: user.address,
+        payer: feePayer,
+        productAsset,
+        seed: encodedSeed,
         uri: "https://example.com/product-1/device-1",
+        vendor,
       }),
     ])
 
-    const maybeAsset = await mplCore.fetchMaybeAssetV1(rpc, deviceAssetPda[0])
-    assert.ok(maybeAsset.exists)
-    assert.equal(maybeAsset.programAddress, mplCore.MPL_CORE_PROGRAM_ADDRESS)
+    const encodedAsset = await fetchEncodedAccount(rpc, deviceAsset)
+    assert.ok(encodedAsset.exists)
+    assert.equal(encodedAsset.programAddress, mplCore.MPL_CORE_PROGRAM_ADDRESS)
 
-    const asset = maybeAsset.data
-    assert.equal(asset.owner, user.address)
-    assert.equal(asset.name, "Test Device 1")
-    assert.equal(asset.uri, "https://example.com/product-1/device-1")
+    const decodedAsset = mplCore.getAssetAccountDecoder().decode(encodedAsset.data)
 
-    const encodedAccount = await solana.fetchEncodedAccount(rpc, deviceAsset)
-    assert.ok(encodedAccount.exists)
+    const baseAsset = decodedAsset.base
+    assert.equal(baseAsset.owner, user.address)
+    assert.equal(baseAsset.name, "Test Device 1")
+    assert.equal(baseAsset.uri, "https://example.com/product-1/device-1")
 
-    const decodedAsset = mplCore.getAssetAccountDecoder().decode(encodedAccount.data)
     const attr0 = decodedAsset.plugins.attributes.attributeList[0]
     assert.equal(attr0.key, "Seed")
-    assert.equal(attr0.value, solana.getAddressDecoder().decode(encodedSeed))
+    assert.equal(attr0.value, getAddressDecoder().decode(encodedSeed))
     assert.deepEqual(decodedAsset.plugins.dataSections[0].data, encodedSeed)
   });
 
@@ -145,7 +153,7 @@ describe("dephy-id", () => {
 
     await airdrop({
       commitment: "confirmed",
-      lamports: solana.lamports(1_000_000_000n),
+      lamports: lamports(1_000_000_000n),
       recipientAddress: assetSigner,
     })
 
@@ -154,15 +162,15 @@ describe("dephy-id", () => {
 
     await sendAndConfirmIxs([
       await mplCore.createExecuteIx({
-        collection: productAsset,
         asset: deviceAsset,
-        payer: payer,
         authority: user,
-        instruction: system.getTransferSolInstruction({
-          source: solana.createNoopSigner(assetSigner),
+        collection: productAsset,
+        instruction: solanaPrograms.getTransferSolInstruction({
+          amount: lamports(200_000_000n),
           destination: user.address,
-          amount: solana.lamports(200_000_000n),
+          source: createNoopSigner(assetSigner),
         }),
+        payer: feePayer,
       }),
     ])
 

@@ -1,5 +1,6 @@
-import { IInstruction, Address, TransactionSigner, IAccountMeta, downgradeRoleToNonSigner, IInstructionWithAccounts } from '@solana/kit'
-import { getExecuteV1InstructionAsync } from '../generated'
+import { Address, downgradeRoleToNonSigner, IAccountMeta, IInstruction, IInstructionWithAccounts, TransactionSigner } from '@solana/kit';
+
+import { getExecuteV1InstructionAsync } from '../generated';
 
 export async function createExecuteIx({
   asset,
@@ -10,21 +11,21 @@ export async function createExecuteIx({
 }: {
   /** The address of the asset */
   asset: Address;
-  /** The collection to which the asset belongs */
-  collection?: Address;
-  /** The account paying for the storage fees */
-  payer: TransactionSigner;
   /** The owner or delegate of the asset */
   authority?: TransactionSigner;
+  /** The collection to which the asset belongs */
+  collection?: Address;
   /** The instruction to execute as the asset signer */
   instruction: IInstruction;
+  /** The account paying for the storage fees */
+  payer: TransactionSigner;
 }) {
   const executeIx = await getExecuteV1InstructionAsync({
-    collection,
     asset,
-    payer,
     authority,
+    collection,
     instructionData: instruction.data,
+    payer,
     programId: instruction.programAddress,
   })
 

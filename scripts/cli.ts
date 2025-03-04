@@ -1,31 +1,39 @@
+import { Command, Option } from '@commander-js/extra-typings';
+import {
+  address, createSolanaClient, createTransaction,
+  getAddressEncoder, getSignatureFromTransaction, IInstruction, isSolanaError, KeyPairSigner,
+  ReadonlyUint8Array, signTransactionMessageWithSigners,
+} from "gill";
+import { loadKeypairSignerFromFile } from "gill/node";
+
 import * as dephyId from '../clients/js/src/index.js';
-import * as solana from '@solana/kit';
-import { Command, Option } from 'commander';
-import * as fs from 'fs';
 
-let rpc: ReturnType<typeof solana.createSolanaRpc>;
-let rpcSubscriptions: ReturnType<typeof solana.createSolanaRpcSubscriptions>;
-let sendAndConfirm: ReturnType<typeof solana.sendAndConfirmTransactionFactory>;
-let payer: solana.KeyPairSigner;
+let feePayer: KeyPairSigner;
+let rpc: ReturnType<typeof createSolanaClient>['rpc'];
+let sendAndConfirmTransaction: ReturnType<typeof createSolanaClient>['sendAndConfirmTransaction'];
 
-async function sendAndConfirmIxs(ixs: solana.IInstruction[]) {
-  const recentBlockhash = (await rpc.getLatestBlockhash().send()).value;
+const sendAndConfirmIxs = async (instructions: IInstruction[]) => {
+  const latestBlockhash = (await rpc.getLatestBlockhash().send()).value
 
-  const tx = await solana.pipe(
-    solana.createTransactionMessage({ version: 0 }),
-    tx => solana.appendTransactionMessageInstructions(ixs, tx),
-    tx => solana.setTransactionMessageFeePayerSigner(payer, tx),
-    tx => solana.setTransactionMessageLifetimeUsingBlockhash(recentBlockhash, tx),
-    tx => solana.signTransactionMessageWithSigners(tx)
-  );
+  const transaction = createTransaction({
+    feePayer,
+    instructions,
+    latestBlockhash,
+    version: 0
+  })
 
-  await sendAndConfirm(tx, { commitment: 'confirmed' });
-  return solana.getSignatureFromTransaction(tx);
-}
+  try {
+    const signedTx = await signTransactionMessageWithSigners(transaction)
+    await sendAndConfirmTransaction(signedTx, { commitment: 'confirmed' })
 
-const loadKeyPair = async (path: string) => {
-  const keypair = Uint8Array.from(JSON.parse(fs.readFileSync(path, {encoding: 'utf-8'})))
-  return await solana.createKeyPairSignerFromBytes(keypair);
+    return getSignatureFromTransaction(signedTx)
+  } catch (error) {
+    if (isSolanaError(error)) {
+      console.error(error.context)
+    }
+
+    throw error
+  }
 }
 
 const cli = new Command()
@@ -34,33 +42,31 @@ const cli = new Command()
   .description('CLI for dephy-id');
 
 cli
-  .requiredOption('-k, --keypair <path>', 'Path to payer keypair')
-  .addOption(new Option('--network <network>', 'Network').choices(['devnet', 'mainnet', 'testnet']).default('devnet'))
-  .option('--rpc <url>', 'RPC endpoint', 'http://127.0.0.1:8899')
-  .option('--ws <url>', 'WebSocket endpoint', 'ws://127.0.0.1:8900')
+  .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair')
+  .option('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
   .hook('preAction', async (cmd) => {
-    const { keypair: keypairPath, rpc: rpcUrl, ws: wsUrl } = cmd.opts();
-    
-    rpc = solana.createSolanaRpc(solana.devnet(rpcUrl));
-    rpcSubscriptions = solana.createSolanaRpcSubscriptions(solana.devnet(wsUrl));
-    
-    sendAndConfirm = solana.sendAndConfirmTransactionFactory({
-      rpc,
-      rpcSubscriptions,
+    const { keypair, url: urlOrMoniker } = cmd.opts();
+
+    const client = createSolanaClient({
+      urlOrMoniker,
     });
 
-    payer = await loadKeyPair(keypairPath);
+    rpc = client.rpc;
+    sendAndConfirmTransaction = client.sendAndConfirmTransaction;
+
+    feePayer = await loadKeypairSignerFromFile(keypair);
   });
 
 
 cli
   .command('initialize')
   .description('Initialize DePHY program')
-  .action(async () => {
-    const authority = await solana.generateKeyPairSigner();
+  .option('-a, --authority <path>', 'Path to authority keypair file')
+  .action(async (options) => {
+    const authority = await loadKeypairSignerFromFile(options.authority);
 
     const signature = await sendAndConfirmIxs([
-      await dephyId.getInitializeInstructionAsync({ authority, payer })
+      await dephyId.getInitializeInstructionAsync({ authority, payer: feePayer })
     ]);
 
     console.log(`Program initialized with authority ${authority.address}`);
@@ -72,19 +78,19 @@ cli
   .description('Create a new product asset')
   .requiredOption('-v, --vendor <path>', 'Path to vendor keypair file')
   .action(async (name, uri, options) => {
-    const vendor = await loadKeyPair(options.vendor);
+    const vendor = await loadKeypairSignerFromFile(options.vendor);
     const productAssetPda = await dephyId.findProductAssetPda({
-      vendor: vendor.address,
-      productName: name
+      productName: name,
+      vendor: vendor.address
     });
 
     const signature = await sendAndConfirmIxs([
       dephyId.getCreateProductInstruction({
-        vendor,
-        payer,
-        productAsset: productAssetPda[0],
         name,
-        uri
+        payer: feePayer,
+        productAsset: productAssetPda[0],
+        uri,
+        vendor
       })
     ]);
 
@@ -95,39 +101,38 @@ cli
 cli
   .command('create-device <name> <uri>')
   .description('Register a device under a product')
-  .requiredOption('-v, --vendor <path>', 'Path to vendor keypair file')
+  .requiredOption('-v, --vendor <vendor>', 'Path to vendor keypair file')
   .requiredOption('-p, --product <product>', 'Product asset address')
   .requiredOption('-s, --seed <seed>', 'Device seed')
   .addOption(new Option('-t, --seed-type <seedType>', 'Device seed type').choices(['base58']).default('base58'))
   .action(async (name, uri, options) => {
-    const vendor = await loadKeyPair(options.vendor);
-    const productAsset = solana.address(options.product);
-    
-    let deviceSeed: solana.ReadonlyUint8Array
+    const vendor = await loadKeypairSignerFromFile(options.vendor);
+    const productAsset = address(options.product);
+
+    let deviceSeed: ReadonlyUint8Array
     switch (options.seedType) {
       case 'base58':
-        const devicePubkey = solana.address(options.seed);
-        deviceSeed = solana.getAddressEncoder().encode(devicePubkey);
+        deviceSeed = getAddressEncoder().encode(address(options.seed));
         break;
-    
+
       default:
         throw new Error('Invalid seed type');
     }
 
     const deviceAssetPda = await dephyId.findDeviceAssetPda({
-      productAsset,
-      deviceSeed
+      deviceSeed,
+      productAsset
     });
 
     const signature = await sendAndConfirmIxs([
       await dephyId.getCreateDeviceInstructionAsync({
-        vendor,
-        productAsset,
-        owner: vendor.address,
-        payer,
-        seed: deviceSeed,
         name,
-        uri
+        owner: vendor.address,
+        payer: feePayer,
+        productAsset,
+        seed: deviceSeed,
+        uri,
+        vendor
       })
     ]);
 
@@ -135,4 +140,4 @@ cli
     console.log(`Transaction: ${signature}`);
   });
 
-cli.parseAsync();
+await cli.parseAsync();

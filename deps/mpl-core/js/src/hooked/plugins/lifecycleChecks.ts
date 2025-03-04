@@ -1,7 +1,7 @@
-/* eslint-disable no-bitwise */
+ 
 import { ExternalCheckResult, HookableLifecycleEvent } from '../../generated';
 
-export type LifecycleEvent = 'create' | 'update' | 'transfer' | 'burn';
+export type LifecycleEvent = 'burn' | 'create' | 'transfer' | 'update';
 
 //  ExternalCheckResult is a bit array
 export enum CheckResult {

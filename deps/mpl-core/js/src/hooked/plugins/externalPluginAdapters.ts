@@ -1,21 +1,24 @@
+import { isSome, unwrapOption } from '@solana/kit';
+
 import {
   BaseExternalPluginAdapterKey,
   ExternalRegistryRecord,
   getExternalPluginAdapterDecoder,
 } from '../../generated';
 import {
-  lifecycleChecksFromBase,
-  LifecycleChecksContainer,
-} from './lifecycleChecks';
-import { BasePlugin } from './types';
+  pluginAuthorityFromBase,
+} from '.';
+import { appDataFromBase, AppDataPlugin } from './appData';
 import {
   dataSectionFromBase,
   DataSectionPlugin,
 } from './dataSection';
-import { isSome, unwrapOption } from '@solana/kit';
 import {
-  pluginAuthorityFromBase,
-} from '.';
+  LifecycleChecksContainer,
+  lifecycleChecksFromBase,
+} from './lifecycleChecks';
+import { linkedAppDataFromBase, LinkedAppDataPlugin } from './linkedAppData';
+import { BasePlugin } from './types';
 
 export type ExternalPluginAdapterTypeString =
   BaseExternalPluginAdapterKey['__kind'];
@@ -27,17 +30,17 @@ export type BaseExternalPluginAdapter = BasePlugin &
 export type ExternalPluginAdapters =
   // | LifecycleHookPlugin
   // | OraclePlugin
-  // | AppDataPlugin
+  | AppDataPlugin
   // | LinkedLifecycleHookPlugin
-  // | LinkedAppDataPlugin
+  | LinkedAppDataPlugin
   | DataSectionPlugin;
 
 export type ExternalPluginAdaptersList = {
   // lifecycleHooks?: LifecycleHookPlugin[];
   // oracles?: OraclePlugin[];
-  // appDatas?: AppDataPlugin[];
+  appDatas?: AppDataPlugin[];
   // linkedLifecycleHooks?: LinkedLifecycleHookPlugin[];
-  // linkedAppDatas?: LinkedAppDataPlugin[];
+  linkedAppDatas?: LinkedAppDataPlugin[];
   dataSections?: DataSectionPlugin[];
 };
 
@@ -57,11 +60,11 @@ export function externalRegistryRecordsToExternalPluginAdapterList(
     const deserializedPlugin = getExternalPluginAdapterDecoder().decode(accountData, Number(record.offset));
 
     const mappedPlugin: BaseExternalPluginAdapter = {
+      authority: pluginAuthorityFromBase(record.authority),
       lifecycleChecks:
         isSome(record.lifecycleChecks)
           ? lifecycleChecksFromBase(record.lifecycleChecks.value)
           : undefined,
-      authority: pluginAuthorityFromBase(record.authority),
       offset: record.offset,
     };
 
@@ -71,11 +74,35 @@ export function externalRegistryRecordsToExternalPluginAdapterList(
           result.dataSections = [];
         }
         result.dataSections.push({
-          type: 'DataSection',
-          dataOffset: unwrapOption(record.dataOffset),
           dataLen: unwrapOption(record.dataLen),
+          dataOffset: unwrapOption(record.dataOffset),
+          type: 'DataSection',
           ...mappedPlugin,
-          ...dataSectionFromBase(
+          ...dataSectionFromBase(deserializedPlugin.fields[0], record, accountData),
+        });
+        break;
+
+      case 'AppData':
+        if (!result.appDatas) {
+          result.appDatas = [];
+        }
+        result.appDatas.push({
+          dataLen: unwrapOption(record.dataLen),
+          dataOffset: unwrapOption(record.dataOffset),
+          type: 'AppData',
+          ...mappedPlugin,
+          ...appDataFromBase(deserializedPlugin.fields[0], record, accountData),
+        });
+        break;
+      
+      case 'LinkedAppData':
+        if (!result.linkedAppDatas) {
+          result.linkedAppDatas = [];
+        }
+        result.linkedAppDatas.push({
+          type: 'LinkedAppData',
+          ...mappedPlugin,
+          ...linkedAppDataFromBase(
             deserializedPlugin.fields[0],
             record,
             accountData
@@ -85,9 +112,7 @@ export function externalRegistryRecordsToExternalPluginAdapterList(
 
       case 'LifecycleHook':
       case 'Oracle':
-      case 'AppData':
       case 'LinkedLifecycleHook':
-      case 'LinkedAppData':
       default:
         throw new Error(`Unsupported plugin type: ${deserializedPlugin.__kind}`);
     }

@@ -1,5 +1,6 @@
-import { BaseMasterEdition } from '../../generated';
 import { unwrapOption } from "@solana/kit";
+
+import { BaseMasterEdition } from '../../generated';
 
 export type MasterEdition = {
   maxSupply?: number;

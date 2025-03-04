@@ -1,4 +1,5 @@
 import { Address } from '@solana/kit';
+
 import {
   AddBlocker, Attributes, Autograph, BasePluginAuthority, BaseRoyalties, BurnDelegate, Edition,
   FreezeDelegate, ImmutableMetadata, PermanentBurnDelegate, PermanentFreezeDelegate, PermanentTransferDelegate,
@@ -9,8 +10,8 @@ import { MasterEdition } from './masterEdition';
 export type PluginAuthorityType = BasePluginAuthority['__kind'];
 
 export type PluginAuthority = {
-  type: PluginAuthorityType;
   address?: Address;
+  type: PluginAuthorityType;
 };
 
 export type BasePlugin = {
@@ -24,40 +25,40 @@ export type TransferDelegatePlugin = BasePlugin & TransferDelegate;
 export type UpdateDelegatePlugin = BasePlugin & UpdateDelegate;
 export type PermanentFreezeDelegatePlugin = BasePlugin &
   PermanentFreezeDelegate;
-export type AttributesPlugin = BasePlugin & Attributes;
+export type AttributesPlugin = Attributes & BasePlugin;
 export type PermanentTransferDelegatePlugin = BasePlugin &
   PermanentTransferDelegate;
 export type PermanentBurnDelegatePlugin = BasePlugin & PermanentBurnDelegate;
 export type EditionPlugin = BasePlugin & Edition;
 export type MasterEditionPlugin = BasePlugin & MasterEdition;
-export type AddBlockerPlugin = BasePlugin & AddBlocker;
+export type AddBlockerPlugin = AddBlocker & BasePlugin;
 export type ImmutableMetadataPlugin = BasePlugin & ImmutableMetadata;
 export type VerifiedCreatorsPlugin = BasePlugin & VerifiedCreators;
-export type AutographPlugin = BasePlugin & Autograph;
+export type AutographPlugin = Autograph & BasePlugin;
 
 
 export type CommonPluginsList = {
+  addBlocker?: AddBlockerPlugin;
   attributes?: AttributesPlugin;
-  royalties?: BaseRoyalties;
-  updateDelegate?: UpdateDelegatePlugin;
+  autograph?: AutographPlugin;
+  immutableMetadata?: ImmutableMetadataPlugin;
+  permanentBurnDelegate?: PermanentBurnDelegatePlugin;
   permanentFreezeDelegate?: PermanentFreezeDelegatePlugin;
   permanentTransferDelegate?: PermanentTransferDelegatePlugin;
-  permanentBurnDelegate?: PermanentBurnDelegatePlugin;
-  addBlocker?: AddBlockerPlugin;
-  immutableMetadata?: ImmutableMetadataPlugin;
-  autograph?: AutographPlugin;
+  royalties?: BaseRoyalties;
+  updateDelegate?: UpdateDelegatePlugin;
   verifiedCreators?: VerifiedCreatorsPlugin;
 };
 
-export type AssetPluginsList = {
-  freezeDelegate?: FreezeDelegatePlugin;
+export type AssetPluginsList = CommonPluginsList & {
   burnDelegate?: BurnDelegatePlugin;
-  transferDelegate?: TransferDelegatePlugin;
   edition?: EditionPlugin;
-} & CommonPluginsList;
+  freezeDelegate?: FreezeDelegatePlugin;
+  transferDelegate?: TransferDelegatePlugin;
+};
 
-export type CollectionPluginsList = {
+export type CollectionPluginsList = CommonPluginsList & {
   masterEdition?: MasterEditionPlugin;
-} & CommonPluginsList;
+};
 
 export type PluginsList = AssetPluginsList & CollectionPluginsList;

@@ -1,5 +1,6 @@
 import { Address, createDecoder, Decoder } from "@solana/kit";
-import { AssetV1, BaseUpdateAuthority, getAssetV1Decoder, getPluginHeaderV1Decoder, getPluginRegistryV1Decoder } from "../generated";
+
+import { AssetV1, BaseUpdateAuthority, getAssetV1Decoder, getPluginHeaderV1Decoder, getPluginRegistryV1Decoder, PluginRegistryV1 } from "../generated";
 import {
   AssetPluginsList, ExternalPluginAdaptersList,
   externalRegistryRecordsToExternalPluginAdapterList, registryRecordsToPluginsList
@@ -8,8 +9,8 @@ import {
 export type UpdateAuthorityType = BaseUpdateAuthority['__kind'];
 
 export type UpdateAuthority = {
-  type: UpdateAuthorityType;
   address?: Address;
+  type: UpdateAuthorityType;
 };
 
 export type AssetAccountData = Omit<AssetV1, 'updateAuthority'> & {
@@ -27,11 +28,12 @@ export function getAssetAccountDecoder(): Decoder<AssetAccount> {
       const [base, assetOffset] = getAssetV1Decoder().read(bytes, offset)
       let finalOffset = assetOffset
       let plugins: AssetPluginsList = {};
+      let pluginRegistry: PluginRegistryV1
       let externalPlugins: ExternalPluginAdaptersList = {};
 
       if (bytes.length !== assetOffset) {
-        const pluginHeader = getPluginHeaderV1Decoder().decode(bytes, assetOffset)
-        const [pluginRegistry, finalOffset] = getPluginRegistryV1Decoder().read(bytes, Number(pluginHeader.pluginRegistryOffset))
+        const pluginHeader = getPluginHeaderV1Decoder().decode(bytes, assetOffset);
+        [pluginRegistry, finalOffset] = getPluginRegistryV1Decoder().read(bytes, Number(pluginHeader.pluginRegistryOffset));
 
         plugins = registryRecordsToPluginsList(pluginRegistry.registry, bytes);
 
@@ -39,11 +41,11 @@ export function getAssetAccountDecoder(): Decoder<AssetAccount> {
       }
 
       const updateAuthority = {
-        type: base.updateAuthority.__kind,
         address:
           base.updateAuthority.__kind === 'None'
             ? undefined
             : base.updateAuthority.fields[0],
+        type: base.updateAuthority.__kind,
       };
 
       const account = {

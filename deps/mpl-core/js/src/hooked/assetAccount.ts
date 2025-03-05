@@ -1,6 +1,12 @@
-import { Address, createDecoder, Decoder } from "@solana/kit";
+import {
+  Account, Address, assertAccountExists, createDecoder, decodeAccount, Decoder,
+  EncodedAccount, FetchAccountConfig, fetchEncodedAccount, MaybeAccount, MaybeEncodedAccount
+} from "@solana/kit";
 
-import { AssetV1, BaseUpdateAuthority, getAssetV1Decoder, getPluginHeaderV1Decoder, getPluginRegistryV1Decoder, PluginRegistryV1 } from "../generated";
+import {
+  AssetV1, BaseUpdateAuthority, getAssetV1Decoder,
+  getPluginHeaderV1Decoder, getPluginRegistryV1Decoder, PluginRegistryV1
+} from "../generated";
 import {
   AssetPluginsList, ExternalPluginAdaptersList,
   externalRegistryRecordsToExternalPluginAdapterList, registryRecordsToPluginsList
@@ -62,4 +68,38 @@ export function getAssetAccountDecoder(): Decoder<AssetAccount> {
       return [account, finalOffset]
     }
   })
+}
+
+export function decodeAssetAccount<TAddress extends string = string>(
+  encodedAccount: EncodedAccount<TAddress>
+): Account<AssetAccount, TAddress>;
+export function decodeAssetAccount<TAddress extends string = string>(
+  encodedAccount: MaybeEncodedAccount<TAddress>
+): MaybeAccount<AssetAccount, TAddress>;
+export function decodeAssetAccount<TAddress extends string = string>(
+  encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>
+): Account<AssetAccount, TAddress> | MaybeAccount<AssetAccount, TAddress> {
+  return decodeAccount(
+    encodedAccount as MaybeEncodedAccount<TAddress>,
+    getAssetAccountDecoder()
+  );
+}
+
+export async function fetchAssetAccount<TAddress extends string = string>(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  address: Address<TAddress>,
+  config?: FetchAccountConfig
+): Promise<Account<AssetAccount, TAddress>> {
+  const maybeAccount = await fetchMaybeAssetAccount(rpc, address, config);
+  assertAccountExists(maybeAccount);
+  return maybeAccount;
+}
+
+export async function fetchMaybeAssetAccount<TAddress extends string = string>(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  address: Address<TAddress>,
+  config?: FetchAccountConfig
+): Promise<MaybeAccount<AssetAccount, TAddress>> {
+  const maybeAccount = await fetchEncodedAccount(rpc, address, config);
+  return decodeAssetAccount(maybeAccount);
 }

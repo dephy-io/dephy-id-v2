@@ -1,6 +1,7 @@
 import {
   address,
   createSolanaClient, createTransaction,
+  generateKeyPairSigner,
   getAddressEncoder,
   getSignatureFromTransaction, IInstruction, isSolanaError,
   signTransactionMessageWithSigners,
@@ -51,17 +52,43 @@ const [deviceAsset, _deviceAssetBump] = await dephyId.findDeviceAssetPda({
   productAsset
 });
 
+const createDeviceIx = await dephyId.getCreateDeviceInstructionAsync({
+  name: 'Example Asset',
+  uri: 'https://example.com',
+  owner: vendor.address,
+  payer: feePayer,
+  productAsset,
+  seed: deviceSeed,
+  vendor,
+})
+
 // the tx to create asset
-const signature = await sendAndConfirmIxs([
-  await dephyId.getCreateDeviceInstructionAsync({
-    name: 'Example Asset',
-    uri: 'https://example.com',
-    owner: vendor.address,
-    payer: feePayer,
-    productAsset,
-    seed: deviceSeed,
-    vendor,
-  })
-]);
+const signature = await sendAndConfirmIxs([createDeviceIx]);
 
 console.log(`Device asset created at: ${deviceAsset} with ${signature}`)
+
+// mint multiple assets at once
+// max ~5 assets once, depending on name and uri size
+const seeds = await Array.fromAsync({ length: 5 }, async () => {
+  const randomBytes = new Uint8Array(32);
+  crypto.getRandomValues(randomBytes);
+  const owner = await generateKeyPairSigner()
+  return {
+    seed: randomBytes,
+    owner: owner.address
+  };
+});
+
+const ixs = await Promise.all(seeds.map(({ seed, owner }, i) =>
+  dephyId.getCreateDeviceInstructionAsync({
+    name: `Test Device ${i}`,
+    uri: `https://example.com/product-1/device-${i}`,
+    seed,
+    payer: feePayer,
+    productAsset,
+    owner,
+    vendor,
+  })
+))
+
+await sendAndConfirmIxs(ixs)

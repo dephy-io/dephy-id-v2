@@ -1,15 +1,15 @@
-import { createDecoder, Decoder } from "@solana/kit"
+import {
+  Account, Address, assertAccountExists, createDecoder, decodeAccount, Decoder,
+  EncodedAccount, FetchAccountConfig, fetchEncodedAccount, MaybeAccount, MaybeEncodedAccount
+} from "@solana/kit"
 
 import {
-  CollectionV1,
-  getCollectionV1Decoder, getPluginHeaderV1Decoder, getPluginRegistryV1Decoder,
-  PluginRegistryV1,
+  CollectionV1, getCollectionV1Decoder,
+  getPluginHeaderV1Decoder, getPluginRegistryV1Decoder, PluginRegistryV1,
 } from "../generated"
 import {
-  CollectionPluginsList,
-  ExternalPluginAdaptersList,
-  externalRegistryRecordsToExternalPluginAdapterList,
-  registryRecordsToPluginsList,
+  CollectionPluginsList, ExternalPluginAdaptersList,
+  externalRegistryRecordsToExternalPluginAdapterList, registryRecordsToPluginsList,
 } from "./plugins"
 
 
@@ -47,4 +47,38 @@ export function getCollectionAccountDecoder(): Decoder<CollectionAccount> {
       return [account, finalOffset]
     }
   })
+}
+
+export function decodeCollectionAccount<TAddress extends string = string>(
+  encodedAccount: EncodedAccount<TAddress>
+): Account<CollectionAccount, TAddress>;
+export function decodeCollectionAccount<TAddress extends string = string>(
+  encodedAccount: MaybeEncodedAccount<TAddress>
+): MaybeAccount<CollectionAccount, TAddress>;
+export function decodeCollectionAccount<TAddress extends string = string>(
+  encodedAccount: EncodedAccount<TAddress> | MaybeEncodedAccount<TAddress>
+): Account<CollectionAccount, TAddress> | MaybeAccount<CollectionAccount, TAddress> {
+  return decodeAccount(
+    encodedAccount as MaybeEncodedAccount<TAddress>,
+    getCollectionAccountDecoder()
+  );
+}
+
+export async function fetchCollectionAccount<TAddress extends string = string>(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  address: Address<TAddress>,
+  config?: FetchAccountConfig
+): Promise<Account<CollectionAccount, TAddress>> {
+  const maybeAccount = await fetchMaybeCollectionAccount(rpc, address, config);
+  assertAccountExists(maybeAccount);
+  return maybeAccount;
+}
+
+export async function fetchMaybeCollectionAccount<TAddress extends string = string>(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  address: Address<TAddress>,
+  config?: FetchAccountConfig
+): Promise<MaybeAccount<CollectionAccount, TAddress>> {
+  const maybeAccount = await fetchEncodedAccount(rpc, address, config);
+  return decodeCollectionAccount(maybeAccount);
 }

@@ -9,7 +9,7 @@ import * as solanaPrograms from 'gill/programs'
 import * as dephyId from '../clients/js/src/index.js'
 import * as mplCore from '../deps/mpl-core/js/src/index.js'
 
-const feePayer = await generateKeyPairSigner()
+const payer = await generateKeyPairSigner()
 
 describe("dephy-id", () => {
   const { rpc, rpcSubscriptions, sendAndConfirmTransaction } = createSolanaClient({
@@ -22,7 +22,7 @@ describe("dephy-id", () => {
     const latestBlockhash = (await rpc.getLatestBlockhash().send()).value
 
     const transaction = createTransaction({
-      feePayer,
+      feePayer: payer,
       instructions,
       latestBlockhash,
       version: 0
@@ -46,7 +46,7 @@ describe("dephy-id", () => {
     await airdrop({
       commitment: "confirmed",
       lamports: lamports(1_000_000_000n),
-      recipientAddress: feePayer.address,
+      recipientAddress: payer.address,
     })
 
     console.info('NOTE: The first tx may take >10s to confirm')
@@ -59,7 +59,7 @@ describe("dephy-id", () => {
     await sendAndConfirmIxs([
       await dephyId.getInitializeInstructionAsync({
         authority,
-        payer: feePayer,
+        payer,
       }),
     ]);
 
@@ -80,7 +80,7 @@ describe("dephy-id", () => {
     await sendAndConfirmIxs([
       dephyId.getCreateProductInstruction({
         name: productName,
-        payer: feePayer,
+        payer,
         productAsset,
         uri: "https://example.com/product-1",
         vendor
@@ -122,7 +122,7 @@ describe("dephy-id", () => {
       await dephyId.getCreateDeviceInstructionAsync({
         name: "Test Device 1",
         owner: user.address,
-        payer: feePayer,
+        payer,
         productAsset,
         seed: encodedSeed,
         uri: "https://example.com/product-1/device-1",
@@ -148,6 +148,44 @@ describe("dephy-id", () => {
   });
 
 
+  it("mint multiple assets in one tx", async () => {
+    const seeds = await Array.fromAsync({ length: 5 }, async () => {
+      const randomBytes = new Uint8Array(32);
+      crypto.getRandomValues(randomBytes);
+      const owner = await generateKeyPairSigner()
+      return {
+        seed: randomBytes,
+        owner: owner.address
+      };
+    });
+
+    const ixs = await Promise.all(seeds.map(({ seed, owner }, i) =>
+      dephyId.getCreateDeviceInstructionAsync({
+        name: `Test Device ${i}`,
+        uri: `https://example.com/product-1/device-${i}`,
+        seed,
+        payer,
+        productAsset,
+        owner,
+        vendor,
+      })
+    ))
+
+    await sendAndConfirmIxs(ixs)
+
+    await Promise.all(seeds.map(async ({ seed, owner }, i) => {
+      const [deviceAsset, _deviceAssetBump] = await dephyId.findDeviceAssetPda({
+        deviceSeed: seed,
+        productAsset
+      })
+
+      const assetAccount = await mplCore.fetchAssetAccount(rpc, deviceAsset)
+      assert.equal(assetAccount.data.base.name, `Test Device ${i}`)
+      assert.equal(assetAccount.data.base.owner, owner)
+    }))
+  })
+
+
   it("act as wallet", async () => {
     const assetSigner = (await mplCore.findAssetSignerPda({ asset: deviceAsset }))[0]
 
@@ -170,7 +208,7 @@ describe("dephy-id", () => {
           destination: user.address,
           source: createNoopSigner(assetSigner),
         }),
-        payer: feePayer,
+        payer,
       }),
     ])
 

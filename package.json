@@ -8,14 +8,11 @@
     "@types/bun": "^1.2.4",
     "@types/mocha": "^10.0.10",
     "codama": "^1.2.8",
-    "gill": "^0.5.0",
+    "gill": "^0.6.0",
     "mocha": "^11.1.0",
     "prettier": "^2.8.8",
     "ts-mocha": "^10.1.0",
     "typescript": "^5.8.2"
-  },
-  "overrides": {
-    "@solana-program/system": "^0.7.0"
   },
   "license": "ISC",
   "scripts": {

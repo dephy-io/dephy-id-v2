@@ -1,8 +1,12 @@
 import assert from 'assert';
 import {
-  Address, airdropFactory, createNoopSigner, createSolanaClient, createTransaction, devnet,
-  fetchEncodedAccount, generateKeyPair, generateKeyPairSigner, getAddressDecoder, getAddressEncoder, getAddressFromPublicKey,
-  getSignatureFromTransaction, IInstruction, isSolanaError, KeyPairSigner, lamports, signTransactionMessageWithSigners
+  Address, airdropFactory, appendTransactionMessageInstruction, createNoopSigner,
+  createSolanaClient, createTransaction, createTransactionMessage, devnet,
+  fetchEncodedAccount, generateKeyPair, generateKeyPairSigner,
+  getAddressDecoder, getAddressEncoder, getAddressFromPublicKey, getCompiledTransactionMessageDecoder,
+  getSignatureFromTransaction, IInstruction, isSolanaError, KeyPairSigner, lamports,
+  partiallySignTransactionMessageWithSigners, pipe, setTransactionMessageFeePayer, setTransactionMessageLifetimeUsingBlockhash,
+  signTransaction, signTransactionMessageWithSigners, transactionFromBase64, transactionToBase64,
 } from 'gill'
 import * as solanaPrograms from 'gill/programs'
 
@@ -183,6 +187,68 @@ describe("dephy-id", () => {
       assert.equal(assetAccount.data.base.name, `Test Device ${i}`)
       assert.equal(assetAccount.data.base.owner, owner)
     }))
+  })
+
+
+  it("co-sign create-device", async () => {
+    // 1. Server create the tx
+    const seed = new Uint8Array(32);
+    crypto.getRandomValues(seed);
+
+    const ix = await dephyId.getCreateDeviceInstructionAsync({
+      name: `Test Device X`,
+      uri: `https://example.com/product-1/device-X`,
+      seed,
+      payer,
+      productAsset,
+      owner: payer.address,
+      vendor,
+    })
+
+    const latestBlockhash = (await rpc.getLatestBlockhash().send()).value
+    const transactionMessage = pipe(
+      createTransactionMessage({ version: 0 }),
+      tx => setTransactionMessageFeePayer(payer.address, tx),
+      tx => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
+      tx => appendTransactionMessageInstruction(ix, tx),
+    )
+
+    // 2. Server sign the tx
+    const partiallySignedTransactionMessage = await partiallySignTransactionMessageWithSigners(transactionMessage)
+
+    // 3. Server encode the tx and send it to user
+    const base64EncodedTransaction = transactionToBase64(partiallySignedTransactionMessage)
+
+    // 4. User decode the received tx
+    const decodedTransaction = transactionFromBase64(base64EncodedTransaction)
+
+    // 5. User can then verify the tx message
+    const compiledTransactionMessage = getCompiledTransactionMessageDecoder().decode(decodedTransaction.messageBytes);
+    const compiledInstruction = compiledTransactionMessage.instructions[0]
+    assert.equal(compiledTransactionMessage.staticAccounts[compiledInstruction.programAddressIndex], dephyId.DEPHY_ID_PROGRAM_ADDRESS)
+
+    const createDeviceIx = dephyId.getCreateDeviceInstructionDataDecoder().decode(compiledInstruction.data)
+    assert.equal(createDeviceIx.name, `Test Device X`)
+    assert.equal(createDeviceIx.uri, `https://example.com/product-1/device-X`)
+    assert.deepEqual(createDeviceIx.seed, seed)
+
+    // 6. User sign the tx
+    const fullySignedTx = await signTransaction([payer.keyPair], decodedTransaction)
+    const fullySignedTxWithLifetime = {
+      ...fullySignedTx,
+      lifetimeConstraint: latestBlockhash
+    }
+
+    await sendAndConfirmTransaction(fullySignedTxWithLifetime, { commitment: 'confirmed' })
+
+    const [deviceAsset, _deviceAssetBump] = await dephyId.findDeviceAssetPda({
+      deviceSeed: seed,
+      productAsset
+    })
+
+    const assetAccount = await mplCore.fetchAssetAccount(rpc, deviceAsset)
+    assert.equal(assetAccount.data.base.name, `Test Device X`)
+    assert.equal(assetAccount.data.base.owner, payer.address)
   })
 
 

@@ -203,6 +203,7 @@ describe("dephy-id", () => {
       productAsset,
       owner: payer.address,
       vendor,
+      expiry: Math.trunc(Date.now() / 1000) + 300
     })
 
     const latestBlockhash = (await rpc.getLatestBlockhash().send()).value

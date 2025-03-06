@@ -14,12 +14,17 @@ import {
   fixEncoderSize,
   getBytesDecoder,
   getBytesEncoder,
+  getOptionDecoder,
+  getOptionEncoder,
   getStructDecoder,
   getStructEncoder,
   getU32Decoder,
   getU32Encoder,
+  getU64Decoder,
+  getU64Encoder,
   getUtf8Decoder,
   getUtf8Encoder,
+  none,
   transformEncoder,
   type Address,
   type Codec,
@@ -30,6 +35,8 @@ import {
   type IInstruction,
   type IInstructionWithAccounts,
   type IInstructionWithData,
+  type Option,
+  type OptionOrNullable,
   type ReadonlyAccount,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
@@ -106,12 +113,14 @@ export type CreateDeviceInstructionData = {
   seed: ReadonlyUint8Array;
   name: string;
   uri: string;
+  expiry: Option<bigint>;
 };
 
 export type CreateDeviceInstructionDataArgs = {
   seed: ReadonlyUint8Array;
   name: string;
   uri: string;
+  expiry?: OptionOrNullable<number | bigint>;
 };
 
 export function getCreateDeviceInstructionDataEncoder(): Encoder<CreateDeviceInstructionDataArgs> {
@@ -121,8 +130,13 @@ export function getCreateDeviceInstructionDataEncoder(): Encoder<CreateDeviceIns
       ['seed', fixEncoderSize(getBytesEncoder(), 32)],
       ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ['uri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ['expiry', getOptionEncoder(getU64Encoder())],
     ]),
-    (value) => ({ ...value, discriminator: CREATE_DEVICE_DISCRIMINATOR })
+    (value) => ({
+      ...value,
+      discriminator: CREATE_DEVICE_DISCRIMINATOR,
+      expiry: value.expiry ?? none(),
+    })
   );
 }
 
@@ -132,6 +146,7 @@ export function getCreateDeviceInstructionDataDecoder(): Decoder<CreateDeviceIns
     ['seed', fixDecoderSize(getBytesDecoder(), 32)],
     ['name', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ['uri', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['expiry', getOptionDecoder(getU64Decoder())],
   ]);
 }
 
@@ -154,6 +169,7 @@ export type CreateDeviceAsyncInput<
   TAccountSystemProgram extends string = string,
   TAccountMplCore extends string = string,
 > = {
+  /** The authority of the product */
   vendor: TransactionSigner<TAccountVendor>;
   productAsset: Address<TAccountProductAsset>;
   deviceAsset?: Address<TAccountDeviceAsset>;
@@ -164,6 +180,7 @@ export type CreateDeviceAsyncInput<
   seed: CreateDeviceInstructionDataArgs['seed'];
   name: CreateDeviceInstructionDataArgs['name'];
   uri: CreateDeviceInstructionDataArgs['uri'];
+  expiry?: CreateDeviceInstructionDataArgs['expiry'];
 };
 
 export async function getCreateDeviceInstructionAsync<
@@ -273,6 +290,7 @@ export type CreateDeviceInput<
   TAccountSystemProgram extends string = string,
   TAccountMplCore extends string = string,
 > = {
+  /** The authority of the product */
   vendor: TransactionSigner<TAccountVendor>;
   productAsset: Address<TAccountProductAsset>;
   deviceAsset: Address<TAccountDeviceAsset>;
@@ -283,6 +301,7 @@ export type CreateDeviceInput<
   seed: CreateDeviceInstructionDataArgs['seed'];
   name: CreateDeviceInstructionDataArgs['name'];
   uri: CreateDeviceInstructionDataArgs['uri'];
+  expiry?: CreateDeviceInstructionDataArgs['expiry'];
 };
 
 export function getCreateDeviceInstruction<
@@ -381,6 +400,7 @@ export type ParsedCreateDeviceInstruction<
 > = {
   programAddress: Address<TProgram>;
   accounts: {
+    /** The authority of the product */
     vendor: TAccountMetas[0];
     productAsset: TAccountMetas[1];
     deviceAsset: TAccountMetas[2];

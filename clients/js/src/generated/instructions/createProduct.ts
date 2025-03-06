@@ -131,6 +131,7 @@ export type CreateProductInput<
   TAccountSystemProgram extends string = string,
   TAccountMplCore extends string = string,
 > = {
+  /** The authority of the product */
   vendor: TransactionSigner<TAccountVendor>;
   productAsset: Address<TAccountProductAsset>;
   payer: TransactionSigner<TAccountPayer>;
@@ -224,6 +225,7 @@ export type ParsedCreateProductInstruction<
 > = {
   programAddress: Address<TProgram>;
   accounts: {
+    /** The authority of the product */
     vendor: TAccountMetas[0];
     productAsset: TAccountMetas[1];
     payer: TAccountMetas[2];

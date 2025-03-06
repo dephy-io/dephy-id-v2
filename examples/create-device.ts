@@ -93,6 +93,13 @@ console.log(`Device asset created at: ${deviceAsset} with ${signature}`)
 
 
 {
+  // example for partial sign tx by server and user
+
+  // the user wallet
+  const user = feePayer
+  // server has vendor keypair
+
+  // 1. Server generate the tx
   // mint multiple assets at once
   // max ~5 assets once, depending on name and uri size
   const seeds = await Array.fromAsync({ length: 5 }, async () => {
@@ -114,16 +121,10 @@ console.log(`Device asset created at: ${deviceAsset} with ${signature}`)
       productAsset,
       owner,
       vendor,
+      expiry: Math.trunc(Date.now() / 1000) + 300,  // the tx will expire in 300s
     })
   ))
 
-  // example for partial sign tx by server and user
-
-  // the user wallet
-  const user = feePayer
-  // server has vendor keypair
-
-  // 1. Server generate the tx
   const latestBlockhash = (await client.rpc.getLatestBlockhash().send()).value
   const transactionMessage = pipe(
     createTransactionMessage({ version: 0 }),

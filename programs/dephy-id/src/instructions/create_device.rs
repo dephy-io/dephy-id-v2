@@ -7,6 +7,7 @@ pub struct CreateDeviceArgs {
     pub seed: [u8; 32],
     pub name: String,
     pub uri: String,
+    pub expiry: Option<u64>,
 }
 
 #[derive(Accounts)]
@@ -31,6 +32,13 @@ pub struct CreateDevice<'info> {
 }
 
 pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) -> Result<()> {
+    if let Some(expiry) = args.expiry {
+        let clock = Clock::get()?;
+        if clock.unix_timestamp as u64 > expiry {
+            return Err(ErrorCode::TransactionExpired.into());
+        }
+    }
+
     let product = mpl_core::Collection::deserialize(&ctx.accounts.product_asset.data.borrow()).map_err(|_| ErrorCode::InvalidProductAccount)?;
 
     let (expected_product_pubkey, product_bump) = Pubkey::find_program_address(

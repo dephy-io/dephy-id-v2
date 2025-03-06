@@ -8,4 +8,6 @@ pub enum ErrorCode {
     InvalidProductAccount,
     #[msg("Product address not match")]
     ProductAddressMismatch,
+    #[msg("Transaction expired")]
+    TransactionExpired,
 }

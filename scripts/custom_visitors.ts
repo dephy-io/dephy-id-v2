@@ -1,13 +1,9 @@
 import {
-  updateProgramsVisitor, addPdasVisitor, updateInstructionsVisitor,
-  constantPdaSeedNodeFromString, pdaValueNode, payerValueNode,
-  variablePdaSeedNode,
-  publicKeyTypeNode,
-  stringTypeNode,
-  bytesTypeNode,
-  accountValueNode,
-  argumentValueNode,
-  pdaSeedValueNode,
+  accountValueNode, addPdasVisitor, argumentValueNode,
+  bytesTypeNode, constantPdaSeedNodeFromString,
+  noneValueNode, payerValueNode, pdaSeedValueNode,
+  pdaValueNode, publicKeyTypeNode, stringTypeNode,
+  updateInstructionsVisitor, updateProgramsVisitor, variablePdaSeedNode,
 } from 'codama';
 
 export const program = updateProgramsVisitor({
@@ -48,6 +44,9 @@ export const instructions = updateInstructionsVisitor({
     },
   },
   createDevice: {
+    arguments: {
+      expiry: { defaultValue: noneValueNode() },
+    },
     accounts: {
       deviceAsset: {
         defaultValue: pdaValueNode('deviceAsset', [

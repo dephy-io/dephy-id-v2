@@ -1,12 +1,21 @@
 import { Command, Option } from '@commander-js/extra-typings';
+import { dasApi } from "@metaplex-foundation/digital-asset-standard-api"
+import * as mplCore from '@metaplex-foundation/mpl-core';
+import { das } from '@metaplex-foundation/mpl-core-das';
+import { publicKey } from '@metaplex-foundation/umi';
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import {
-  address, createSolanaClient, createTransaction,
-  getAddressEncoder, getSignatureFromTransaction, IInstruction, isSolanaError, KeyPairSigner,
-  ReadonlyUint8Array, signTransactionMessageWithSigners,
+  address, createSolanaClient, createTransaction, getAddressEncoder, getSignatureFromTransaction,
+  IInstruction, isSolanaError, KeyPairSigner, ReadonlyUint8Array, signTransactionMessageWithSigners
 } from "gill";
 import { loadKeypairSignerFromFile } from "gill/node";
 
 import * as dephyId from '../clients/js/src/index.js';
+import {
+  getAssetAccountDecoder,
+  MPL_CORE_PROGRAM_ADDRESS
+} from '../deps/mpl-core/js/src/index.js';
+
 
 let feePayer: KeyPairSigner;
 let rpc: ReturnType<typeof createSolanaClient>['rpc'];
@@ -39,10 +48,8 @@ const sendAndConfirmIxs = async (instructions: IInstruction[]) => {
 const cli = new Command()
   .name('dephy-id')
   .version('0.1.0')
-  .description('CLI for dephy-id');
-
-cli
-  .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair')
+  .description('CLI for dephy-id')
+  .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
   .option('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
   .hook('preAction', async (cmd) => {
     const { keypair, url: urlOrMoniker } = cmd.opts();
@@ -63,7 +70,7 @@ cli
   .description('Initialize DePHY program')
   .option('-a, --authority <path>', 'Path to authority keypair file')
   .action(async (options) => {
-    const authority = await loadKeypairSignerFromFile(options.authority);
+    const authority = options.authority ? await loadKeypairSignerFromFile(options.authority) : feePayer;
 
     const signature = await sendAndConfirmIxs([
       await dephyId.getInitializeInstructionAsync({ authority, payer: feePayer })
@@ -72,6 +79,7 @@ cli
     console.log(`Program initialized with authority ${authority.address}`);
     console.log(`Transaction: ${signature}`);
   });
+
 
 cli
   .command('create-product <name> <uri>')
@@ -97,6 +105,7 @@ cli
     console.log(`Product ${name} created at ${productAssetPda[0]}`);
     console.log(`Transaction: ${signature}`);
   });
+
 
 cli
   .command('create-device <name> <uri>')
@@ -139,5 +148,76 @@ cli
     console.log(`Device ${name} registered at ${deviceAssetPda[0]}`);
     console.log(`Transaction: ${signature}`);
   });
+
+
+
+cli
+  .command('get-product <product>')
+  .description('Get product details')
+  .action(async (product, _options, cmd) => {
+    const { url } = cmd.optsWithGlobals()
+    const umi = createUmi(url)
+    const collection = await mplCore.fetchCollection(umi, publicKey(product))
+    console.dir(collection, { depth: null })
+  })
+
+
+cli
+  .command('get-device <device>')
+  .description('Get device details')
+  .action(async (device, _options, cmd) => {
+    const { url } = cmd.optsWithGlobals()
+    const umi = createUmi(url)
+    const asset = await mplCore.fetchAsset(umi, publicKey(device))
+    console.dir(asset, { depth: null })
+  })
+
+
+const listDevicesNative = async (product: string) => {
+  const rawAccounts = await rpc
+    .getProgramAccounts(
+      MPL_CORE_PROGRAM_ADDRESS, {
+      encoding: 'base64',
+      filters: [{
+        memcmp: {
+          offset: 34n,
+          encoding: 'base58',
+          bytes: address(product)
+        }
+      }]
+    })
+    .send()
+
+  return rawAccounts.map(({ account, pubkey }) => {
+    const base64Data = account.data[0]
+    const data = Buffer.from(base64Data, 'base64')
+    const decodedAccount = getAssetAccountDecoder().decode(data)
+    return { address: pubkey, ...decodedAccount }
+  })
+}
+
+cli
+  .command('list-devices <product>')
+  .description('List all devices of the product')
+  .action(async (product) => {
+    const accounts = await listDevicesNative(product)
+    console.dir(accounts, { depth: null })
+  })
+
+
+cli
+  .command('list-devices-das <product>')
+  .description('List all devices of the product, requires a endpoint with DAS support like helius.dev')
+  .action(async (product, _options, cmd) => {
+    const { url } = cmd.optsWithGlobals()
+    const umi = createUmi(url).use(dasApi())
+
+    const collection = publicKey(product)
+
+    // eslint-disable-next-line
+    const devices = await das.getAssetsByCollection(umi, { collection });
+    console.dir(devices, { depth: null })
+  })
+
 
 await cli.parseAsync();

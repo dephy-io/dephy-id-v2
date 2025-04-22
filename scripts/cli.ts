@@ -84,9 +84,9 @@ cli
 cli
   .command('create-product <name> <uri>')
   .description('Create a new product asset')
-  .requiredOption('-v, --vendor <path>', 'Path to vendor keypair file')
+  .option('-v, --vendor <path>', 'Path to vendor keypair file')
   .action(async (name, uri, options) => {
-    const vendor = await loadKeypairSignerFromFile(options.vendor);
+    const vendor = options.vendor ? await loadKeypairSignerFromFile(options.vendor) : feePayer;
     const productAssetPda = await dephyId.findProductAssetPda({
       productName: name,
       vendor: vendor.address
@@ -110,12 +110,12 @@ cli
 cli
   .command('create-device <name> <uri>')
   .description('Register a device under a product')
-  .requiredOption('-v, --vendor <vendor>', 'Path to vendor keypair file')
+  .option('-v, --vendor <vendor>', 'Path to vendor keypair file')
   .requiredOption('-p, --product <product>', 'Product asset address')
   .requiredOption('-s, --seed <seed>', 'Device seed')
   .addOption(new Option('-t, --seed-type <seedType>', 'Device seed type').choices(['base58']).default('base58'))
   .action(async (name, uri, options) => {
-    const vendor = await loadKeypairSignerFromFile(options.vendor);
+    const vendor = options.vendor ? await loadKeypairSignerFromFile(options.vendor) : feePayer;
     const productAsset = address(options.product);
 
     let deviceSeed: ReadonlyUint8Array

@@ -10,7 +10,7 @@ import {
 } from 'gill'
 import * as solanaPrograms from 'gill/programs'
 
-import * as dephyId from '../clients/js/src/index.js'
+import * as dephyId from '../clients/dephy-id/js/src/index.js'
 import * as mplCore from '../deps/mpl-core/js/src/index.js'
 
 const payer = await generateKeyPairSigner()

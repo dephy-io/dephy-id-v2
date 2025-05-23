@@ -10,7 +10,7 @@ import {
 } from "gill";
 import { loadKeypairSignerFromFile } from "gill/node";
 
-import * as dephyId from '../clients/js/src/index.js';
+import * as dephyId from '../clients/dephy-id/js/src/index.js';
 import {
   getAssetAccountDecoder,
   MPL_CORE_PROGRAM_ADDRESS

@@ -21,7 +21,14 @@
         "typescript": "^5.8.3",
       },
     },
-    "clients/js": {
+    "clients/dephy-id-stake-pool/js": {
+      "name": "dephy-id-stake-pool-client",
+      "version": "0.1.0",
+      "dependencies": {
+        "@solana/kit": "^2.1.1",
+      },
+    },
+    "clients/dephy-id/js": {
       "name": "dephy-id-client",
       "version": "0.1.0",
       "dependencies": {
@@ -541,7 +548,9 @@
 
     "delay": ["delay@5.0.0", "", {}, "sha512-ReEBKkIfe4ya47wlPYf/gu5ib6yUG0/Aez0JQZQz94kiWtRQvZIQbTiehsnwHvLSWJnQdhVeqYue7Id1dKr0qw=="],
 
-    "dephy-id-client": ["dephy-id-client@workspace:clients/js"],
+    "dephy-id-client": ["dephy-id-client@workspace:clients/dephy-id/js"],
+
+    "dephy-id-stake-pool-client": ["dephy-id-stake-pool-client@workspace:clients/dephy-id-stake-pool/js"],
 
     "detect-newline": ["detect-newline@3.1.0", "", {}, "sha512-TLz+x/vEXm/Y7P7wn1EJFNLxYpUD4TgMosxY6fAVJUnJMbupHBOncxyWUG9OpTaH9EBD7uFI5LfEgmMOc54DsA=="],
 

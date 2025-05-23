@@ -20,12 +20,14 @@
   "license": "ISC",
   "scripts": {
     "cli": "bun -b scripts/cli.ts",
-    "generate-dephy-id": "bunx @codama/cli -c codama/dephy-id.js run js"
+    "generate-dephy-id": "bunx @codama/cli -c codama/dephy-id.js run js",
+    "generate-dephy-id-stake-pool": "bunx @codama/cli -c codama/dephy-id-stake-pool.js run js"
   },
   "type": "module",
   "workspaces": [
     ".",
     "clients/dephy-id/js",
+    "clients/dephy-id-stake-pool/js",
     "deps/mpl-core/js"
   ]
 }

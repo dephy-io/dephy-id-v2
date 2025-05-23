@@ -1,0 +1,8 @@
+{
+  "name": "dephy-id-stake-pool-client",
+  "version": "0.1.0",
+  "module": "./src/index.ts",
+  "dependencies": {
+    "@solana/kit": "^2.1.1"
+  }
+}

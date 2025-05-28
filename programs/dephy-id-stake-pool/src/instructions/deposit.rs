@@ -1,8 +1,7 @@
 use crate::{
-    constants::PRECISION_FACTOR,
+    constants::USER_STAKE_SEED,
     error::ErrorCode,
-    state::{StakePoolAccount, UserStakeAccount},
-    utils::mul_div,
+    state::{NftStakeAccount, StakePoolAccount, UserStakeAccount},
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
@@ -13,11 +12,12 @@ use anchor_spl::token_interface::{
 pub struct Deposit<'info> {
     #[account(mut)]
     pub stake_pool: Box<Account<'info, StakePoolAccount>>,
+    pub nft_stake: Box<Account<'info, NftStakeAccount>>,
     pub user: Signer<'info>,
     #[account(
         init_if_needed, payer = payer,
         space = 8 + UserStakeAccount::INIT_SPACE,
-        seeds = [stake_pool.key().as_ref(), b"USER_STAKE", user.key.as_ref()], bump
+        seeds = [nft_stake.key().as_ref(), USER_STAKE_SEED, user.key.as_ref()], bump
     )]
     pub user_stake_account: Box<Account<'info, UserStakeAccount>>,
     #[account(address = stake_pool.config.stake_token_mint @ ErrorCode::InvalidStakeToken)]
@@ -63,13 +63,10 @@ pub fn process_deposit(ctx: Context<Deposit>, amount: u64, locktime: u64) -> Res
     // crate::accumulate_reward(user_stake, stake_pool)?;
 
     user_stake.amount += amount;
-    user_stake.share += amount;
     user_stake.last_deposit_timestamp = now;
     user_stake.locktime = locktime;
 
-    stake_pool.total_amount += amount;
-    stake_pool.unallocated_staking += amount;
-    stake_pool.total_share += amount;
+    stake_pool.total_staking += amount;
 
     if amount > 0 {
         // enter reserve first
@@ -99,13 +96,8 @@ pub fn process_deposit(ctx: Context<Deposit>, amount: u64, locktime: u64) -> Res
         )?;
     }
 
-    user_stake.reward_debt = mul_div(
-        user_stake.share,
-        stake_pool.acc_token_per_share,
-        PRECISION_FACTOR,
-    )?;
-
     user_stake.stake_pool = stake_pool.key();
+    user_stake.nft_stake = ctx.accounts.nft_stake.key();
     user_stake.user = ctx.accounts.user.key();
 
     Ok(())

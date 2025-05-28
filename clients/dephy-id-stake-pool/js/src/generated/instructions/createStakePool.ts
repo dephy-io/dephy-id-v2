@@ -10,6 +10,7 @@ import {
   combineCodec,
   fixDecoderSize,
   fixEncoderSize,
+  getAddressDecoder,
   getAddressEncoder,
   getBytesDecoder,
   getBytesEncoder,
@@ -41,12 +42,6 @@ import {
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
-import {
-  getNftCollectionDecoder,
-  getNftCollectionEncoder,
-  type NftCollection,
-  type NftCollectionArgs,
-} from '../types';
 
 export const CREATE_STAKE_POOL_DISCRIMINATOR = new Uint8Array([
   198, 175, 88, 63, 128, 43, 8, 214,
@@ -60,25 +55,25 @@ export function getCreateStakePoolDiscriminatorBytes() {
 
 export type CreateStakePoolInstruction<
   TProgram extends string = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
+  TAccountAdmin extends string | IAccountMeta<string> = string,
   TAccountStakePool extends string | IAccountMeta<string> = string,
   TAccountAuthority extends string | IAccountMeta<string> = string,
   TAccountStakeTokenMint extends string | IAccountMeta<string> = string,
-  TAccountRewardTokenMint extends string | IAccountMeta<string> = string,
   TAccountPoolWallet extends string | IAccountMeta<string> = string,
   TAccountStakeTokenAccount extends string | IAccountMeta<string> = string,
-  TAccountRewardTokenAccount extends string | IAccountMeta<string> = string,
-  TAccountCommissionTokenAccount extends string | IAccountMeta<string> = string,
   TAccountPayer extends string | IAccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
     | IAccountMeta<string> = '11111111111111111111111111111111',
   TAccountStakeTokenProgram extends string | IAccountMeta<string> = string,
-  TAccountRewardTokenProgram extends string | IAccountMeta<string> = string,
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
     [
+      TAccountAdmin extends string
+        ? ReadonlyAccount<TAccountAdmin>
+        : TAccountAdmin,
       TAccountStakePool extends string
         ? WritableSignerAccount<TAccountStakePool> &
             IAccountSignerMeta<TAccountStakePool>
@@ -90,21 +85,12 @@ export type CreateStakePoolInstruction<
       TAccountStakeTokenMint extends string
         ? ReadonlyAccount<TAccountStakeTokenMint>
         : TAccountStakeTokenMint,
-      TAccountRewardTokenMint extends string
-        ? ReadonlyAccount<TAccountRewardTokenMint>
-        : TAccountRewardTokenMint,
       TAccountPoolWallet extends string
         ? ReadonlyAccount<TAccountPoolWallet>
         : TAccountPoolWallet,
       TAccountStakeTokenAccount extends string
         ? WritableAccount<TAccountStakeTokenAccount>
         : TAccountStakeTokenAccount,
-      TAccountRewardTokenAccount extends string
-        ? ReadonlyAccount<TAccountRewardTokenAccount>
-        : TAccountRewardTokenAccount,
-      TAccountCommissionTokenAccount extends string
-        ? ReadonlyAccount<TAccountCommissionTokenAccount>
-        : TAccountCommissionTokenAccount,
       TAccountPayer extends string
         ? WritableSignerAccount<TAccountPayer> &
             IAccountSignerMeta<TAccountPayer>
@@ -115,42 +101,36 @@ export type CreateStakePoolInstruction<
       TAccountStakeTokenProgram extends string
         ? ReadonlyAccount<TAccountStakeTokenProgram>
         : TAccountStakeTokenProgram,
-      TAccountRewardTokenProgram extends string
-        ? ReadonlyAccount<TAccountRewardTokenProgram>
-        : TAccountRewardTokenProgram,
       ...TRemainingAccounts,
     ]
   >;
 
 export type CreateStakePoolInstructionData = {
   discriminator: ReadonlyUint8Array;
-  nftCollection: NftCollection;
+  collection: Address;
   minStakeAmount: bigint;
   maxStakeAmount: bigint;
   minLocktime: bigint;
   maxLocktime: bigint;
-  commission: bigint;
 };
 
 export type CreateStakePoolInstructionDataArgs = {
-  nftCollection: NftCollectionArgs;
+  collection: Address;
   minStakeAmount: number | bigint;
   maxStakeAmount: number | bigint;
   minLocktime: number | bigint;
   maxLocktime: number | bigint;
-  commission: number | bigint;
 };
 
 export function getCreateStakePoolInstructionDataEncoder(): Encoder<CreateStakePoolInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
-      ['nftCollection', getNftCollectionEncoder()],
+      ['collection', getAddressEncoder()],
       ['minStakeAmount', getU64Encoder()],
       ['maxStakeAmount', getU64Encoder()],
       ['minLocktime', getU64Encoder()],
       ['maxLocktime', getU64Encoder()],
-      ['commission', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: CREATE_STAKE_POOL_DISCRIMINATOR })
   );
@@ -159,12 +139,11 @@ export function getCreateStakePoolInstructionDataEncoder(): Encoder<CreateStakeP
 export function getCreateStakePoolInstructionDataDecoder(): Decoder<CreateStakePoolInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
-    ['nftCollection', getNftCollectionDecoder()],
+    ['collection', getAddressDecoder()],
     ['minStakeAmount', getU64Decoder()],
     ['maxStakeAmount', getU64Decoder()],
     ['minLocktime', getU64Decoder()],
     ['maxLocktime', getU64Decoder()],
-    ['commission', getU64Decoder()],
   ]);
 }
 
@@ -179,84 +158,68 @@ export function getCreateStakePoolInstructionDataCodec(): Codec<
 }
 
 export type CreateStakePoolAsyncInput<
+  TAccountAdmin extends string = string,
   TAccountStakePool extends string = string,
   TAccountAuthority extends string = string,
   TAccountStakeTokenMint extends string = string,
-  TAccountRewardTokenMint extends string = string,
   TAccountPoolWallet extends string = string,
   TAccountStakeTokenAccount extends string = string,
-  TAccountRewardTokenAccount extends string = string,
-  TAccountCommissionTokenAccount extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountStakeTokenProgram extends string = string,
-  TAccountRewardTokenProgram extends string = string,
 > = {
+  admin: Address<TAccountAdmin>;
   stakePool: TransactionSigner<TAccountStakePool>;
   authority: TransactionSigner<TAccountAuthority>;
   stakeTokenMint: Address<TAccountStakeTokenMint>;
-  rewardTokenMint: Address<TAccountRewardTokenMint>;
   poolWallet?: Address<TAccountPoolWallet>;
   stakeTokenAccount?: Address<TAccountStakeTokenAccount>;
-  rewardTokenAccount?: Address<TAccountRewardTokenAccount>;
-  commissionTokenAccount?: Address<TAccountCommissionTokenAccount>;
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   stakeTokenProgram: Address<TAccountStakeTokenProgram>;
-  rewardTokenProgram: Address<TAccountRewardTokenProgram>;
-  nftCollection: CreateStakePoolInstructionDataArgs['nftCollection'];
+  collection: CreateStakePoolInstructionDataArgs['collection'];
   minStakeAmount: CreateStakePoolInstructionDataArgs['minStakeAmount'];
   maxStakeAmount: CreateStakePoolInstructionDataArgs['maxStakeAmount'];
   minLocktime: CreateStakePoolInstructionDataArgs['minLocktime'];
   maxLocktime: CreateStakePoolInstructionDataArgs['maxLocktime'];
-  commission: CreateStakePoolInstructionDataArgs['commission'];
 };
 
 export async function getCreateStakePoolInstructionAsync<
+  TAccountAdmin extends string,
   TAccountStakePool extends string,
   TAccountAuthority extends string,
   TAccountStakeTokenMint extends string,
-  TAccountRewardTokenMint extends string,
   TAccountPoolWallet extends string,
   TAccountStakeTokenAccount extends string,
-  TAccountRewardTokenAccount extends string,
-  TAccountCommissionTokenAccount extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
   TAccountStakeTokenProgram extends string,
-  TAccountRewardTokenProgram extends string,
   TProgramAddress extends Address = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
 >(
   input: CreateStakePoolAsyncInput<
+    TAccountAdmin,
     TAccountStakePool,
     TAccountAuthority,
     TAccountStakeTokenMint,
-    TAccountRewardTokenMint,
     TAccountPoolWallet,
     TAccountStakeTokenAccount,
-    TAccountRewardTokenAccount,
-    TAccountCommissionTokenAccount,
     TAccountPayer,
     TAccountSystemProgram,
-    TAccountStakeTokenProgram,
-    TAccountRewardTokenProgram
+    TAccountStakeTokenProgram
   >,
   config?: { programAddress?: TProgramAddress }
 ): Promise<
   CreateStakePoolInstruction<
     TProgramAddress,
+    TAccountAdmin,
     TAccountStakePool,
     TAccountAuthority,
     TAccountStakeTokenMint,
-    TAccountRewardTokenMint,
     TAccountPoolWallet,
     TAccountStakeTokenAccount,
-    TAccountRewardTokenAccount,
-    TAccountCommissionTokenAccount,
     TAccountPayer,
     TAccountSystemProgram,
-    TAccountStakeTokenProgram,
-    TAccountRewardTokenProgram
+    TAccountStakeTokenProgram
   >
 > {
   // Program address.
@@ -265,34 +228,19 @@ export async function getCreateStakePoolInstructionAsync<
 
   // Original accounts.
   const originalAccounts = {
+    admin: { value: input.admin ?? null, isWritable: false },
     stakePool: { value: input.stakePool ?? null, isWritable: true },
     authority: { value: input.authority ?? null, isWritable: false },
     stakeTokenMint: { value: input.stakeTokenMint ?? null, isWritable: false },
-    rewardTokenMint: {
-      value: input.rewardTokenMint ?? null,
-      isWritable: false,
-    },
     poolWallet: { value: input.poolWallet ?? null, isWritable: false },
     stakeTokenAccount: {
       value: input.stakeTokenAccount ?? null,
       isWritable: true,
     },
-    rewardTokenAccount: {
-      value: input.rewardTokenAccount ?? null,
-      isWritable: false,
-    },
-    commissionTokenAccount: {
-      value: input.commissionTokenAccount ?? null,
-      isWritable: false,
-    },
     payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     stakeTokenProgram: {
       value: input.stakeTokenProgram ?? null,
-      isWritable: false,
-    },
-    rewardTokenProgram: {
-      value: input.rewardTokenProgram ?? null,
       isWritable: false,
     },
   };
@@ -327,28 +275,6 @@ export async function getCreateStakePoolInstructionAsync<
       ],
     });
   }
-  if (!accounts.rewardTokenAccount.value) {
-    accounts.rewardTokenAccount.value = await getProgramDerivedAddress({
-      programAddress,
-      seeds: [
-        getAddressEncoder().encode(expectAddress(accounts.stakePool.value)),
-        getBytesEncoder().encode(
-          new Uint8Array([82, 69, 87, 65, 82, 68, 95, 84, 79, 75, 69, 78])
-        ),
-      ],
-    });
-  }
-  if (!accounts.commissionTokenAccount.value) {
-    accounts.commissionTokenAccount.value = await getProgramDerivedAddress({
-      programAddress,
-      seeds: [
-        getAddressEncoder().encode(expectAddress(accounts.stakePool.value)),
-        getBytesEncoder().encode(
-          new Uint8Array([67, 79, 77, 77, 73, 83, 83, 73, 79, 78])
-        ),
-      ],
-    });
-  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
@@ -357,18 +283,15 @@ export async function getCreateStakePoolInstructionAsync<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
+      getAccountMeta(accounts.admin),
       getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.authority),
       getAccountMeta(accounts.stakeTokenMint),
-      getAccountMeta(accounts.rewardTokenMint),
       getAccountMeta(accounts.poolWallet),
       getAccountMeta(accounts.stakeTokenAccount),
-      getAccountMeta(accounts.rewardTokenAccount),
-      getAccountMeta(accounts.commissionTokenAccount),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.stakeTokenProgram),
-      getAccountMeta(accounts.rewardTokenProgram),
     ],
     programAddress,
     data: getCreateStakePoolInstructionDataEncoder().encode(
@@ -376,101 +299,82 @@ export async function getCreateStakePoolInstructionAsync<
     ),
   } as CreateStakePoolInstruction<
     TProgramAddress,
+    TAccountAdmin,
     TAccountStakePool,
     TAccountAuthority,
     TAccountStakeTokenMint,
-    TAccountRewardTokenMint,
     TAccountPoolWallet,
     TAccountStakeTokenAccount,
-    TAccountRewardTokenAccount,
-    TAccountCommissionTokenAccount,
     TAccountPayer,
     TAccountSystemProgram,
-    TAccountStakeTokenProgram,
-    TAccountRewardTokenProgram
+    TAccountStakeTokenProgram
   >;
 
   return instruction;
 }
 
 export type CreateStakePoolInput<
+  TAccountAdmin extends string = string,
   TAccountStakePool extends string = string,
   TAccountAuthority extends string = string,
   TAccountStakeTokenMint extends string = string,
-  TAccountRewardTokenMint extends string = string,
   TAccountPoolWallet extends string = string,
   TAccountStakeTokenAccount extends string = string,
-  TAccountRewardTokenAccount extends string = string,
-  TAccountCommissionTokenAccount extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountStakeTokenProgram extends string = string,
-  TAccountRewardTokenProgram extends string = string,
 > = {
+  admin: Address<TAccountAdmin>;
   stakePool: TransactionSigner<TAccountStakePool>;
   authority: TransactionSigner<TAccountAuthority>;
   stakeTokenMint: Address<TAccountStakeTokenMint>;
-  rewardTokenMint: Address<TAccountRewardTokenMint>;
   poolWallet: Address<TAccountPoolWallet>;
   stakeTokenAccount: Address<TAccountStakeTokenAccount>;
-  rewardTokenAccount: Address<TAccountRewardTokenAccount>;
-  commissionTokenAccount: Address<TAccountCommissionTokenAccount>;
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   stakeTokenProgram: Address<TAccountStakeTokenProgram>;
-  rewardTokenProgram: Address<TAccountRewardTokenProgram>;
-  nftCollection: CreateStakePoolInstructionDataArgs['nftCollection'];
+  collection: CreateStakePoolInstructionDataArgs['collection'];
   minStakeAmount: CreateStakePoolInstructionDataArgs['minStakeAmount'];
   maxStakeAmount: CreateStakePoolInstructionDataArgs['maxStakeAmount'];
   minLocktime: CreateStakePoolInstructionDataArgs['minLocktime'];
   maxLocktime: CreateStakePoolInstructionDataArgs['maxLocktime'];
-  commission: CreateStakePoolInstructionDataArgs['commission'];
 };
 
 export function getCreateStakePoolInstruction<
+  TAccountAdmin extends string,
   TAccountStakePool extends string,
   TAccountAuthority extends string,
   TAccountStakeTokenMint extends string,
-  TAccountRewardTokenMint extends string,
   TAccountPoolWallet extends string,
   TAccountStakeTokenAccount extends string,
-  TAccountRewardTokenAccount extends string,
-  TAccountCommissionTokenAccount extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
   TAccountStakeTokenProgram extends string,
-  TAccountRewardTokenProgram extends string,
   TProgramAddress extends Address = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
 >(
   input: CreateStakePoolInput<
+    TAccountAdmin,
     TAccountStakePool,
     TAccountAuthority,
     TAccountStakeTokenMint,
-    TAccountRewardTokenMint,
     TAccountPoolWallet,
     TAccountStakeTokenAccount,
-    TAccountRewardTokenAccount,
-    TAccountCommissionTokenAccount,
     TAccountPayer,
     TAccountSystemProgram,
-    TAccountStakeTokenProgram,
-    TAccountRewardTokenProgram
+    TAccountStakeTokenProgram
   >,
   config?: { programAddress?: TProgramAddress }
 ): CreateStakePoolInstruction<
   TProgramAddress,
+  TAccountAdmin,
   TAccountStakePool,
   TAccountAuthority,
   TAccountStakeTokenMint,
-  TAccountRewardTokenMint,
   TAccountPoolWallet,
   TAccountStakeTokenAccount,
-  TAccountRewardTokenAccount,
-  TAccountCommissionTokenAccount,
   TAccountPayer,
   TAccountSystemProgram,
-  TAccountStakeTokenProgram,
-  TAccountRewardTokenProgram
+  TAccountStakeTokenProgram
 > {
   // Program address.
   const programAddress =
@@ -478,34 +382,19 @@ export function getCreateStakePoolInstruction<
 
   // Original accounts.
   const originalAccounts = {
+    admin: { value: input.admin ?? null, isWritable: false },
     stakePool: { value: input.stakePool ?? null, isWritable: true },
     authority: { value: input.authority ?? null, isWritable: false },
     stakeTokenMint: { value: input.stakeTokenMint ?? null, isWritable: false },
-    rewardTokenMint: {
-      value: input.rewardTokenMint ?? null,
-      isWritable: false,
-    },
     poolWallet: { value: input.poolWallet ?? null, isWritable: false },
     stakeTokenAccount: {
       value: input.stakeTokenAccount ?? null,
       isWritable: true,
     },
-    rewardTokenAccount: {
-      value: input.rewardTokenAccount ?? null,
-      isWritable: false,
-    },
-    commissionTokenAccount: {
-      value: input.commissionTokenAccount ?? null,
-      isWritable: false,
-    },
     payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     stakeTokenProgram: {
       value: input.stakeTokenProgram ?? null,
-      isWritable: false,
-    },
-    rewardTokenProgram: {
-      value: input.rewardTokenProgram ?? null,
       isWritable: false,
     },
   };
@@ -526,18 +415,15 @@ export function getCreateStakePoolInstruction<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
+      getAccountMeta(accounts.admin),
       getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.authority),
       getAccountMeta(accounts.stakeTokenMint),
-      getAccountMeta(accounts.rewardTokenMint),
       getAccountMeta(accounts.poolWallet),
       getAccountMeta(accounts.stakeTokenAccount),
-      getAccountMeta(accounts.rewardTokenAccount),
-      getAccountMeta(accounts.commissionTokenAccount),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.stakeTokenProgram),
-      getAccountMeta(accounts.rewardTokenProgram),
     ],
     programAddress,
     data: getCreateStakePoolInstructionDataEncoder().encode(
@@ -545,18 +431,15 @@ export function getCreateStakePoolInstruction<
     ),
   } as CreateStakePoolInstruction<
     TProgramAddress,
+    TAccountAdmin,
     TAccountStakePool,
     TAccountAuthority,
     TAccountStakeTokenMint,
-    TAccountRewardTokenMint,
     TAccountPoolWallet,
     TAccountStakeTokenAccount,
-    TAccountRewardTokenAccount,
-    TAccountCommissionTokenAccount,
     TAccountPayer,
     TAccountSystemProgram,
-    TAccountStakeTokenProgram,
-    TAccountRewardTokenProgram
+    TAccountStakeTokenProgram
   >;
 
   return instruction;
@@ -568,18 +451,15 @@ export type ParsedCreateStakePoolInstruction<
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    stakePool: TAccountMetas[0];
-    authority: TAccountMetas[1];
-    stakeTokenMint: TAccountMetas[2];
-    rewardTokenMint: TAccountMetas[3];
+    admin: TAccountMetas[0];
+    stakePool: TAccountMetas[1];
+    authority: TAccountMetas[2];
+    stakeTokenMint: TAccountMetas[3];
     poolWallet: TAccountMetas[4];
     stakeTokenAccount: TAccountMetas[5];
-    rewardTokenAccount: TAccountMetas[6];
-    commissionTokenAccount: TAccountMetas[7];
-    payer: TAccountMetas[8];
-    systemProgram: TAccountMetas[9];
-    stakeTokenProgram: TAccountMetas[10];
-    rewardTokenProgram: TAccountMetas[11];
+    payer: TAccountMetas[6];
+    systemProgram: TAccountMetas[7];
+    stakeTokenProgram: TAccountMetas[8];
   };
   data: CreateStakePoolInstructionData;
 };
@@ -592,7 +472,7 @@ export function parseCreateStakePoolInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedCreateStakePoolInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 12) {
+  if (instruction.accounts.length < 9) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -605,18 +485,15 @@ export function parseCreateStakePoolInstruction<
   return {
     programAddress: instruction.programAddress,
     accounts: {
+      admin: getNextAccount(),
       stakePool: getNextAccount(),
       authority: getNextAccount(),
       stakeTokenMint: getNextAccount(),
-      rewardTokenMint: getNextAccount(),
       poolWallet: getNextAccount(),
       stakeTokenAccount: getNextAccount(),
-      rewardTokenAccount: getNextAccount(),
-      commissionTokenAccount: getNextAccount(),
       payer: getNextAccount(),
       systemProgram: getNextAccount(),
       stakeTokenProgram: getNextAccount(),
-      rewardTokenProgram: getNextAccount(),
     },
     data: getCreateStakePoolInstructionDataDecoder().decode(instruction.data),
   };

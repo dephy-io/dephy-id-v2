@@ -1,4 +1,4 @@
-import { addPdasVisitor, constantPdaSeedNodeFromString, updateProgramsVisitor } from 'codama';
+import { addPdasVisitor, constantPdaSeedNodeFromString, updateProgramsVisitor, variablePdaSeedNode, publicKeyTypeNode } from 'codama';
 
 export const program = updateProgramsVisitor({
   dephyIoDephyIdStakePool: { name: 'dephyIdStakePool' },
@@ -8,6 +8,15 @@ export const pdas = addPdasVisitor({
   dephyIdStakePool: [{
     name: 'adminAccount',
     seeds: [constantPdaSeedNodeFromString('utf8', 'ADMIN')],
+  }, {
+    name: 'stakeTokenAccount',
+    seeds: [variablePdaSeedNode('stakePool', publicKeyTypeNode()), constantPdaSeedNodeFromString('utf8', 'STAKE_TOKEN')],
+  }, {
+    name: 'poolWallet',
+    seeds: [variablePdaSeedNode('stakePool', publicKeyTypeNode()), constantPdaSeedNodeFromString('utf8', 'POOL_WALLET')],
+  }, {
+    name: 'userStakeAccount',
+    seeds: [variablePdaSeedNode('nftStake', publicKeyTypeNode()), constantPdaSeedNodeFromString('utf8', 'USER_STAKE'), variablePdaSeedNode('user', publicKeyTypeNode())],
   }]
 })
 

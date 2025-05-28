@@ -6,20 +6,10 @@
  * @see https://github.com/codama-idl/codama
  */
 
-export * from './announceUpdateConfig';
-export * from './approveWithdraw';
-export * from './cancelUpdateConfig';
-export * from './claim';
-export * from './closeNftStakeWithMplCore';
-export * from './confirmUpdateConfig';
-export * from './createNftStakeWithMplCore';
+export * from './closeNftStake';
+export * from './createNftStake';
 export * from './createStakePool';
-export * from './deposit';
-export * from './feed';
-export * from './getClaimable';
+export * from './depositToken';
 export * from './initialize';
-export * from './prepareRewardTokenAccounts';
-export * from './reallocateStake';
-export * from './redeemWithdraw';
-export * from './requestWithdraw';
-export * from './withdraw';
+export * from './redeemWithdrawToken';
+export * from './requestWithdrawToken';

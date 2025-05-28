@@ -50,24 +50,20 @@ export function getUserStakeAccountDiscriminatorBytes() {
 export type UserStakeAccount = {
   discriminator: ReadonlyUint8Array;
   stakePool: Address;
+  nftStake: Address;
   user: Address;
   amount: bigint;
-  share: bigint;
   locktime: bigint;
   lastDepositTimestamp: bigint;
-  rewardDebt: bigint;
-  accReward: bigint;
 };
 
 export type UserStakeAccountArgs = {
   stakePool: Address;
+  nftStake: Address;
   user: Address;
   amount: number | bigint;
-  share: number | bigint;
   locktime: number | bigint;
   lastDepositTimestamp: number | bigint;
-  rewardDebt: number | bigint;
-  accReward: number | bigint;
 };
 
 export function getUserStakeAccountEncoder(): Encoder<UserStakeAccountArgs> {
@@ -75,13 +71,11 @@ export function getUserStakeAccountEncoder(): Encoder<UserStakeAccountArgs> {
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['stakePool', getAddressEncoder()],
+      ['nftStake', getAddressEncoder()],
       ['user', getAddressEncoder()],
       ['amount', getU64Encoder()],
-      ['share', getU64Encoder()],
       ['locktime', getU64Encoder()],
       ['lastDepositTimestamp', getU64Encoder()],
-      ['rewardDebt', getU64Encoder()],
-      ['accReward', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: USER_STAKE_ACCOUNT_DISCRIMINATOR })
   );
@@ -91,13 +85,11 @@ export function getUserStakeAccountDecoder(): Decoder<UserStakeAccount> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['stakePool', getAddressDecoder()],
+    ['nftStake', getAddressDecoder()],
     ['user', getAddressDecoder()],
     ['amount', getU64Decoder()],
-    ['share', getU64Decoder()],
     ['locktime', getU64Decoder()],
     ['lastDepositTimestamp', getU64Decoder()],
-    ['rewardDebt', getU64Decoder()],
-    ['accReward', getU64Decoder()],
   ]);
 }
 
@@ -175,5 +167,5 @@ export async function fetchAllMaybeUserStakeAccount(
 }
 
 export function getUserStakeAccountSize(): number {
-  return 120;
+  return 128;
 }

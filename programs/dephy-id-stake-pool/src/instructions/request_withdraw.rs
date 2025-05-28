@@ -45,7 +45,7 @@ pub fn process_request_withdraw(ctx: Context<RequestWithdraw>, amount: u64) -> R
         return Err(ErrorCode::InvalidAmount.into());
     }
 
-    if amount > user_stake.share {
+    if amount > user_stake.amount {
         return Err(ErrorCode::InvalidAmount.into());
     }
 
@@ -60,7 +60,7 @@ pub fn process_request_withdraw(ctx: Context<RequestWithdraw>, amount: u64) -> R
     withdraw_request.approved = false;
 
     stake_pool.requested_withdrawal += amount;
-    user_stake.share -= amount;
+    user_stake.amount -= amount;
 
     Ok(())
 }

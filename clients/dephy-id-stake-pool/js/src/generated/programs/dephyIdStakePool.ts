@@ -14,23 +14,13 @@ import {
   type ReadonlyUint8Array,
 } from '@solana/kit';
 import {
-  type ParsedAnnounceUpdateConfigInstruction,
-  type ParsedApproveWithdrawInstruction,
-  type ParsedCancelUpdateConfigInstruction,
-  type ParsedClaimInstruction,
-  type ParsedCloseNftStakeWithMplCoreInstruction,
-  type ParsedConfirmUpdateConfigInstruction,
-  type ParsedCreateNftStakeWithMplCoreInstruction,
+  type ParsedCloseNftStakeInstruction,
+  type ParsedCreateNftStakeInstruction,
   type ParsedCreateStakePoolInstruction,
-  type ParsedDepositInstruction,
-  type ParsedFeedInstruction,
-  type ParsedGetClaimableInstruction,
+  type ParsedDepositTokenInstruction,
   type ParsedInitializeInstruction,
-  type ParsedPrepareRewardTokenAccountsInstruction,
-  type ParsedReallocateStakeInstruction,
-  type ParsedRedeemWithdrawInstruction,
-  type ParsedRequestWithdrawInstruction,
-  type ParsedWithdrawInstruction,
+  type ParsedRedeemWithdrawTokenInstruction,
+  type ParsedRequestWithdrawTokenInstruction,
 } from '../instructions';
 
 export const DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS =
@@ -38,7 +28,6 @@ export const DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS =
 
 export enum DephyIdStakePoolAccount {
   AdminAccount,
-  AnnouncedConfigAccount,
   NftStakeAccount,
   StakePoolAccount,
   UserStakeAccount,
@@ -59,17 +48,6 @@ export function identifyDephyIdStakePoolAccount(
     )
   ) {
     return DephyIdStakePoolAccount.AdminAccount;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([56, 17, 67, 145, 200, 140, 137, 226])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolAccount.AnnouncedConfigAccount;
   }
   if (
     containsBytes(
@@ -121,23 +99,13 @@ export function identifyDephyIdStakePoolAccount(
 }
 
 export enum DephyIdStakePoolInstruction {
-  AnnounceUpdateConfig,
-  ApproveWithdraw,
-  CancelUpdateConfig,
-  Claim,
-  CloseNftStakeWithMplCore,
-  ConfirmUpdateConfig,
-  CreateNftStakeWithMplCore,
+  CloseNftStake,
+  CreateNftStake,
   CreateStakePool,
-  Deposit,
-  Feed,
-  GetClaimable,
+  DepositToken,
   Initialize,
-  PrepareRewardTokenAccounts,
-  ReallocateStake,
-  RedeemWithdraw,
-  RequestWithdraw,
-  Withdraw,
+  RedeemWithdrawToken,
+  RequestWithdrawToken,
 }
 
 export function identifyDephyIdStakePoolInstruction(
@@ -148,78 +116,23 @@ export function identifyDephyIdStakePoolInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([25, 72, 63, 45, 123, 42, 124, 197])
+        new Uint8Array([254, 163, 164, 157, 253, 253, 83, 23])
       ),
       0
     )
   ) {
-    return DephyIdStakePoolInstruction.AnnounceUpdateConfig;
+    return DephyIdStakePoolInstruction.CloseNftStake;
   }
   if (
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([21, 206, 37, 159, 241, 136, 119, 153])
+        new Uint8Array([107, 143, 248, 220, 223, 135, 171, 100])
       ),
       0
     )
   ) {
-    return DephyIdStakePoolInstruction.ApproveWithdraw;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([235, 155, 243, 161, 6, 145, 121, 173])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolInstruction.CancelUpdateConfig;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([62, 198, 214, 193, 213, 159, 108, 210])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolInstruction.Claim;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([162, 243, 243, 34, 70, 124, 101, 106])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolInstruction.CloseNftStakeWithMplCore;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([25, 58, 1, 51, 3, 105, 99, 234])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolInstruction.ConfirmUpdateConfig;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([175, 120, 106, 151, 215, 96, 177, 37])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolInstruction.CreateNftStakeWithMplCore;
+    return DephyIdStakePoolInstruction.CreateNftStake;
   }
   if (
     containsBytes(
@@ -236,34 +149,12 @@ export function identifyDephyIdStakePoolInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([242, 35, 198, 137, 82, 225, 242, 182])
+        new Uint8Array([11, 156, 96, 218, 39, 163, 180, 19])
       ),
       0
     )
   ) {
-    return DephyIdStakePoolInstruction.Deposit;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([46, 213, 237, 176, 190, 113, 182, 94])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolInstruction.Feed;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([111, 52, 219, 251, 78, 77, 231, 124])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolInstruction.GetClaimable;
+    return DephyIdStakePoolInstruction.DepositToken;
   }
   if (
     containsBytes(
@@ -280,56 +171,23 @@ export function identifyDephyIdStakePoolInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([163, 81, 196, 110, 71, 97, 184, 97])
+        new Uint8Array([94, 46, 239, 193, 99, 233, 243, 19])
       ),
       0
     )
   ) {
-    return DephyIdStakePoolInstruction.PrepareRewardTokenAccounts;
+    return DephyIdStakePoolInstruction.RedeemWithdrawToken;
   }
   if (
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([206, 203, 151, 19, 70, 177, 124, 121])
+        new Uint8Array([49, 150, 198, 22, 253, 95, 59, 136])
       ),
       0
     )
   ) {
-    return DephyIdStakePoolInstruction.ReallocateStake;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([207, 106, 55, 85, 39, 199, 151, 142])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolInstruction.RedeemWithdraw;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([137, 95, 187, 96, 250, 138, 31, 182])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolInstruction.RequestWithdraw;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([183, 18, 70, 156, 148, 109, 161, 34])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolInstruction.Withdraw;
+    return DephyIdStakePoolInstruction.RequestWithdrawToken;
   }
   throw new Error(
     'The provided instruction could not be identified as a dephyIdStakePool instruction.'
@@ -340,53 +198,23 @@ export type ParsedDephyIdStakePoolInstruction<
   TProgram extends string = 'DeSTKZaWUDGLAx4FFVzMtJPSDTgWi3sccj4MACs9vj6Y',
 > =
   | ({
-      instructionType: DephyIdStakePoolInstruction.AnnounceUpdateConfig;
-    } & ParsedAnnounceUpdateConfigInstruction<TProgram>)
+      instructionType: DephyIdStakePoolInstruction.CloseNftStake;
+    } & ParsedCloseNftStakeInstruction<TProgram>)
   | ({
-      instructionType: DephyIdStakePoolInstruction.ApproveWithdraw;
-    } & ParsedApproveWithdrawInstruction<TProgram>)
-  | ({
-      instructionType: DephyIdStakePoolInstruction.CancelUpdateConfig;
-    } & ParsedCancelUpdateConfigInstruction<TProgram>)
-  | ({
-      instructionType: DephyIdStakePoolInstruction.Claim;
-    } & ParsedClaimInstruction<TProgram>)
-  | ({
-      instructionType: DephyIdStakePoolInstruction.CloseNftStakeWithMplCore;
-    } & ParsedCloseNftStakeWithMplCoreInstruction<TProgram>)
-  | ({
-      instructionType: DephyIdStakePoolInstruction.ConfirmUpdateConfig;
-    } & ParsedConfirmUpdateConfigInstruction<TProgram>)
-  | ({
-      instructionType: DephyIdStakePoolInstruction.CreateNftStakeWithMplCore;
-    } & ParsedCreateNftStakeWithMplCoreInstruction<TProgram>)
+      instructionType: DephyIdStakePoolInstruction.CreateNftStake;
+    } & ParsedCreateNftStakeInstruction<TProgram>)
   | ({
       instructionType: DephyIdStakePoolInstruction.CreateStakePool;
     } & ParsedCreateStakePoolInstruction<TProgram>)
   | ({
-      instructionType: DephyIdStakePoolInstruction.Deposit;
-    } & ParsedDepositInstruction<TProgram>)
-  | ({
-      instructionType: DephyIdStakePoolInstruction.Feed;
-    } & ParsedFeedInstruction<TProgram>)
-  | ({
-      instructionType: DephyIdStakePoolInstruction.GetClaimable;
-    } & ParsedGetClaimableInstruction<TProgram>)
+      instructionType: DephyIdStakePoolInstruction.DepositToken;
+    } & ParsedDepositTokenInstruction<TProgram>)
   | ({
       instructionType: DephyIdStakePoolInstruction.Initialize;
     } & ParsedInitializeInstruction<TProgram>)
   | ({
-      instructionType: DephyIdStakePoolInstruction.PrepareRewardTokenAccounts;
-    } & ParsedPrepareRewardTokenAccountsInstruction<TProgram>)
+      instructionType: DephyIdStakePoolInstruction.RedeemWithdrawToken;
+    } & ParsedRedeemWithdrawTokenInstruction<TProgram>)
   | ({
-      instructionType: DephyIdStakePoolInstruction.ReallocateStake;
-    } & ParsedReallocateStakeInstruction<TProgram>)
-  | ({
-      instructionType: DephyIdStakePoolInstruction.RedeemWithdraw;
-    } & ParsedRedeemWithdrawInstruction<TProgram>)
-  | ({
-      instructionType: DephyIdStakePoolInstruction.RequestWithdraw;
-    } & ParsedRequestWithdrawInstruction<TProgram>)
-  | ({
-      instructionType: DephyIdStakePoolInstruction.Withdraw;
-    } & ParsedWithdrawInstruction<TProgram>);
+      instructionType: DephyIdStakePoolInstruction.RequestWithdrawToken;
+    } & ParsedRequestWithdrawTokenInstruction<TProgram>);

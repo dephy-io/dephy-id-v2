@@ -1,18 +1,16 @@
 use crate::{
+    constants::POOL_WALLET_SEED,
     error::ErrorCode,
-    state::{NftCollection, NftStakeAccount, StakePoolAccount},
+    state::{NftStakeAccount, StakePoolAccount},
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::TokenAccount;
 
 #[derive(Accounts)]
-pub struct CreateNftStakeWithMplCore<'info> {
+pub struct CreateNftStake<'info> {
     #[account(mut)]
     pub stake_pool: Box<Account<'info, StakePoolAccount>>,
-    #[account(
-        init, payer = payer, space = 8 + NftStakeAccount::INIT_SPACE,
-        seeds = [stake_pool.key().as_ref(), b"NFT_STAKE", stake_pool.nonce.to_le_bytes().as_ref()], bump
-    )]
+    #[account(init, payer = payer, space = 8 + NftStakeAccount::INIT_SPACE)]
     pub nft_stake: Box<Account<'info, NftStakeAccount>>,
     pub stake_authority: Signer<'info>,
     /// CHECK:
@@ -24,16 +22,11 @@ pub struct CreateNftStakeWithMplCore<'info> {
     /// CHECK:
     #[account(address = stake_pool.config.stake_token_mint @ ErrorCode::InvalidStakeToken)]
     pub stake_token_mint: UncheckedAccount<'info>,
-    /// CHECK:
-    #[account(address = stake_pool.config.reward_token_mint @ ErrorCode::InvalidRewardToken)]
-    pub reward_token_mint: UncheckedAccount<'info>,
     /// CHECK: PDA
-    #[account(seeds = [stake_pool.key().as_ref(), b"POOL_WALLET"], bump)]
+    #[account(seeds = [stake_pool.key().as_ref(), POOL_WALLET_SEED], bump)]
     pub pool_wallet: UncheckedAccount<'info>,
     #[account(mut, address = stake_pool.stake_token_account @ ErrorCode::InvalidStakeToken)]
     pub stake_token_account: InterfaceAccount<'info, TokenAccount>,
-    #[account(mut, address = stake_pool.reward_token_account @ ErrorCode::InvalidRewardToken)]
-    pub reward_token_account: InterfaceAccount<'info, TokenAccount>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
@@ -42,22 +35,13 @@ pub struct CreateNftStakeWithMplCore<'info> {
     pub mpl_core_program: UncheckedAccount<'info>,
 }
 
-pub fn process_create_nft_stake_with_mpl_core(
-    ctx: Context<CreateNftStakeWithMplCore>,
-) -> Result<()> {
-    msg!("create stake pool with mpl core");
+pub fn process_create_nft_stake(ctx: Context<CreateNftStake>) -> Result<()> {
+    msg!("create nft stake");
 
     let stake_pool = &mut ctx.accounts.stake_pool;
 
-    match stake_pool.config.nft_collection {
-        NftCollection::MplCore(collection) => {
-            if collection != ctx.accounts.mpl_core_collection.key() {
-                return Err(ErrorCode::CollectionNotMatch.into());
-            }
-        } // future collection type
-          // _ => {
-          //     return Err(ErrorCode::CollectionNotMatch.into());
-          // }
+    if stake_pool.config.collection != ctx.accounts.mpl_core_collection.key() {
+        return Err(ErrorCode::CollectionNotMatch.into());
     }
 
     mpl_core::instructions::AddPluginV1Cpi::new(
@@ -82,13 +66,10 @@ pub fn process_create_nft_stake_with_mpl_core(
     .invoke()?;
 
     let nft_stake = &mut ctx.accounts.nft_stake;
-    nft_stake.id = stake_pool.nonce;
     nft_stake.stake_authority = ctx.accounts.stake_authority.key();
     nft_stake.nft_token_account = ctx.accounts.mpl_core_asset.key();
     nft_stake.stake_pool = stake_pool.key();
     nft_stake.token_amount = 0;
-
-    stake_pool.nonce += 1;
 
     Ok(())
 }

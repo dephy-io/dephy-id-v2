@@ -19,58 +19,44 @@ import {
   type Decoder,
   type Encoder,
 } from '@solana/kit';
-import {
-  getNftCollectionDecoder,
-  getNftCollectionEncoder,
-  type NftCollection,
-  type NftCollectionArgs,
-} from '.';
 
 export type StakePoolConfig = {
-  nftCollection: NftCollection;
+  collection: Address;
   stakeTokenMint: Address;
-  rewardTokenMint: Address;
   minStakeAmount: bigint;
   maxStakeAmount: bigint;
   minLocktime: bigint;
   maxLocktime: bigint;
-  commission: bigint;
 };
 
 export type StakePoolConfigArgs = {
-  nftCollection: NftCollectionArgs;
+  collection: Address;
   stakeTokenMint: Address;
-  rewardTokenMint: Address;
   minStakeAmount: number | bigint;
   maxStakeAmount: number | bigint;
   minLocktime: number | bigint;
   maxLocktime: number | bigint;
-  commission: number | bigint;
 };
 
 export function getStakePoolConfigEncoder(): Encoder<StakePoolConfigArgs> {
   return getStructEncoder([
-    ['nftCollection', getNftCollectionEncoder()],
+    ['collection', getAddressEncoder()],
     ['stakeTokenMint', getAddressEncoder()],
-    ['rewardTokenMint', getAddressEncoder()],
     ['minStakeAmount', getU64Encoder()],
     ['maxStakeAmount', getU64Encoder()],
     ['minLocktime', getU64Encoder()],
     ['maxLocktime', getU64Encoder()],
-    ['commission', getU64Encoder()],
   ]);
 }
 
 export function getStakePoolConfigDecoder(): Decoder<StakePoolConfig> {
   return getStructDecoder([
-    ['nftCollection', getNftCollectionDecoder()],
+    ['collection', getAddressDecoder()],
     ['stakeTokenMint', getAddressDecoder()],
-    ['rewardTokenMint', getAddressDecoder()],
     ['minStakeAmount', getU64Decoder()],
     ['maxStakeAmount', getU64Decoder()],
     ['minLocktime', getU64Decoder()],
     ['maxLocktime', getU64Decoder()],
-    ['commission', getU64Decoder()],
   ]);
 }
 

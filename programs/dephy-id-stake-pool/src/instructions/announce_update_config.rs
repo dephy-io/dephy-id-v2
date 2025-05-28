@@ -31,10 +31,6 @@ pub fn process_announce_update_config(
         return Err(ErrorCode::InvalidConfig.into());
     }
 
-    if config.commission > 5000 {
-        return Err(ErrorCode::InvalidConfig.into());
-    }
-
     let stake_pool = &mut ctx.accounts.stake_pool;
     stake_pool.announced_config = Some(ctx.accounts.announced_config.key());
 

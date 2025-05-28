@@ -53,7 +53,6 @@ pub fn process_confirm_update_config(ctx: Context<ConfirmUpdateConfig>) -> Resul
     config.max_stake_amount = new_config.max_stake_amount;
     config.min_locktime = new_config.min_locktime;
     config.max_locktime = new_config.max_locktime;
-    config.commission = new_config.commission;
 
     Ok(())
 }

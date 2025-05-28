@@ -59,57 +59,36 @@ export function getStakePoolAccountDiscriminatorBytes() {
 
 export type StakePoolAccount = {
   discriminator: ReadonlyUint8Array;
-  nonce: bigint;
   authority: Address;
   announcedConfig: Option<Address>;
   config: StakePoolConfig;
   stakeTokenAccount: Address;
-  rewardTokenAccount: Address;
-  commissionTokenAccount: Address;
-  totalAmount: bigint;
-  totalShare: bigint;
-  unallocatedStaking: bigint;
+  totalStaking: bigint;
   requestedWithdrawal: bigint;
   reserved: bigint;
-  lastRewardTimestamp: bigint;
-  accTokenPerShare: bigint;
 };
 
 export type StakePoolAccountArgs = {
-  nonce: number | bigint;
   authority: Address;
   announcedConfig: OptionOrNullable<Address>;
   config: StakePoolConfigArgs;
   stakeTokenAccount: Address;
-  rewardTokenAccount: Address;
-  commissionTokenAccount: Address;
-  totalAmount: number | bigint;
-  totalShare: number | bigint;
-  unallocatedStaking: number | bigint;
+  totalStaking: number | bigint;
   requestedWithdrawal: number | bigint;
   reserved: number | bigint;
-  lastRewardTimestamp: number | bigint;
-  accTokenPerShare: number | bigint;
 };
 
 export function getStakePoolAccountEncoder(): Encoder<StakePoolAccountArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
-      ['nonce', getU64Encoder()],
       ['authority', getAddressEncoder()],
       ['announcedConfig', getOptionEncoder(getAddressEncoder())],
       ['config', getStakePoolConfigEncoder()],
       ['stakeTokenAccount', getAddressEncoder()],
-      ['rewardTokenAccount', getAddressEncoder()],
-      ['commissionTokenAccount', getAddressEncoder()],
-      ['totalAmount', getU64Encoder()],
-      ['totalShare', getU64Encoder()],
-      ['unallocatedStaking', getU64Encoder()],
+      ['totalStaking', getU64Encoder()],
       ['requestedWithdrawal', getU64Encoder()],
       ['reserved', getU64Encoder()],
-      ['lastRewardTimestamp', getU64Encoder()],
-      ['accTokenPerShare', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: STAKE_POOL_ACCOUNT_DISCRIMINATOR })
   );
@@ -118,20 +97,13 @@ export function getStakePoolAccountEncoder(): Encoder<StakePoolAccountArgs> {
 export function getStakePoolAccountDecoder(): Decoder<StakePoolAccount> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
-    ['nonce', getU64Decoder()],
     ['authority', getAddressDecoder()],
     ['announcedConfig', getOptionDecoder(getAddressDecoder())],
     ['config', getStakePoolConfigDecoder()],
     ['stakeTokenAccount', getAddressDecoder()],
-    ['rewardTokenAccount', getAddressDecoder()],
-    ['commissionTokenAccount', getAddressDecoder()],
-    ['totalAmount', getU64Decoder()],
-    ['totalShare', getU64Decoder()],
-    ['unallocatedStaking', getU64Decoder()],
+    ['totalStaking', getU64Decoder()],
     ['requestedWithdrawal', getU64Decoder()],
     ['reserved', getU64Decoder()],
-    ['lastRewardTimestamp', getU64Decoder()],
-    ['accTokenPerShare', getU64Decoder()],
   ]);
 }
 

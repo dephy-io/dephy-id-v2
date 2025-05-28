@@ -6,7 +6,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 #[derive(Accounts)]
-pub struct CloseNftStakeWithMplCore<'info> {
+pub struct CloseNftStake<'info> {
     pub stake_pool: Box<Account<'info, StakePoolAccount>>,
     #[account(mut, close = payer, has_one = stake_pool)]
     pub nft_stake: Box<Account<'info, NftStakeAccount>>,
@@ -19,12 +19,8 @@ pub struct CloseNftStakeWithMplCore<'info> {
     pub mpl_core_collection: UncheckedAccount<'info>,
     #[account(address = stake_pool.config.stake_token_mint @ ErrorCode::InvalidStakeToken)]
     pub stake_token_mint: Box<InterfaceAccount<'info, Mint>>,
-    #[account(address = stake_pool.config.reward_token_mint @ ErrorCode::InvalidRewardToken)]
-    pub reward_token_mint: Box<InterfaceAccount<'info, Mint>>,
     #[account(address = stake_pool.stake_token_account @ ErrorCode::InvalidStakeToken)]
     pub stake_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
-    #[account(mut, address = stake_pool.reward_token_account @ ErrorCode::InvalidRewardToken)]
-    pub reward_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: PDA
     #[account(seeds = [stake_pool.key().as_ref(), b"POOL_WALLET"], bump)]
     pub pool_wallet: UncheckedAccount<'info>,
@@ -37,7 +33,7 @@ pub struct CloseNftStakeWithMplCore<'info> {
     pub mpl_core_program: UncheckedAccount<'info>,
 }
 
-pub fn process_close_nft_stake_with_mpl_core(ctx: Context<CloseNftStakeWithMplCore>) -> Result<()> {
+pub fn process_close_nft_stake(ctx: Context<CloseNftStake>) -> Result<()> {
     msg!("close nft stake with mpl core");
 
     let nft_stake = &ctx.accounts.nft_stake;

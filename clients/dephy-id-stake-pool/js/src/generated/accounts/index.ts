@@ -7,7 +7,6 @@
  */
 
 export * from './adminAccount';
-export * from './announcedConfigAccount';
 export * from './nftStakeAccount';
 export * from './stakePoolAccount';
 export * from './userStakeAccount';

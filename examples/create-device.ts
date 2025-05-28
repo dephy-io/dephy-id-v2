@@ -22,7 +22,7 @@ import {
 } from "gill";
 import { loadKeypairSignerFromFile } from "gill/node";
 
-import * as dephyId from '../clients/js/src/index.js';
+import * as dephyId from '../clients/dephy-id/js/src/index.js';
 
 // common stuff to send txs
 const feePayer = await loadKeypairSignerFromFile();  // default to ~/.config/solana/id.json

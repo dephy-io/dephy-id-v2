@@ -58,3 +58,31 @@ export const instructions = updateInstructionsVisitor({
     },
   },
 })
+
+
+export default {
+  idl: '../target/idl/dephy_id.json',
+  before: [
+    './dephy-id.js#program',
+    './dephy-id.js#pdas',
+    './dephy-id.js#instructions',
+  ],
+  scripts: {
+    js: {
+      from: '@codama/renderers-js',
+      args: [
+        'clients/dephy-id/js/src/generated',
+      ]
+    },
+    // rust: {
+    //   from: '@codama/renderers-rust',
+    //   args: [
+    //     'clients/dephy-id/rust/src/generated',
+    //     {
+    //       crateFolder: 'clients/dephy-id/rust',
+    //       formatCode: true,
+    //     }
+    //   ]
+    // }
+  }
+}

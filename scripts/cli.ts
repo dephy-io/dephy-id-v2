@@ -5,12 +5,12 @@ import { das } from '@metaplex-foundation/mpl-core-das';
 import { publicKey } from '@metaplex-foundation/umi';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import {
-  address, createSolanaClient, createTransaction, getAddressEncoder, getSignatureFromTransaction,
+  address, Base58EncodedBytes, createSolanaClient, createTransaction, getAddressEncoder, getSignatureFromTransaction,
   IInstruction, isSolanaError, KeyPairSigner, ReadonlyUint8Array, signTransactionMessageWithSigners
 } from "gill";
 import { loadKeypairSignerFromFile } from "gill/node";
 
-import * as dephyId from '../clients/js/src/index.js';
+import * as dephyId from '../clients/dephy-id/js/src/index.js';
 import {
   getAssetAccountDecoder,
   MPL_CORE_PROGRAM_ADDRESS
@@ -182,7 +182,7 @@ const listDevicesNative = async (product: string) => {
         memcmp: {
           offset: 34n,
           encoding: 'base58',
-          bytes: address(product)
+          bytes: address(product) as unknown as Base58EncodedBytes
         }
       }]
     })
@@ -214,7 +214,6 @@ cli
 
     const collection = publicKey(product)
 
-    // eslint-disable-next-line
     const devices = await das.getAssetsByCollection(umi, { collection });
     console.dir(devices, { depth: null })
   })

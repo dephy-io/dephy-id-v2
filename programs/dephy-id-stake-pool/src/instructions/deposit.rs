@@ -1,5 +1,5 @@
 use crate::{
-    constants::USER_STAKE_SEED,
+    constants::{POOL_WALLET_SEED, USER_STAKE_SEED},
     error::ErrorCode,
     state::{NftStakeAccount, StakePoolAccount, UserStakeAccount},
 };
@@ -32,8 +32,8 @@ pub struct Deposit<'info> {
     )]
     pub user_stake_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: PDA
-    #[account(seeds = [stake_pool.key().as_ref(), b"POOL_WALLET"], bump)]
-    pub pool_wallet: UncheckedAccount<'info>,
+    #[account(seeds = [stake_pool.key().as_ref(), POOL_WALLET_SEED], bump)]
+    pub pool_wallet: SystemAccount<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub token_program: Interface<'info, TokenInterface>,
@@ -58,9 +58,6 @@ pub fn process_deposit(ctx: Context<Deposit>, amount: u64, locktime: u64) -> Res
     if user_stake.last_deposit_timestamp + user_stake.locktime > now + locktime {
         return Err(ErrorCode::InvalidLocktime.into());
     }
-
-    // TODO
-    // crate::accumulate_reward(user_stake, stake_pool)?;
 
     user_stake.amount += amount;
     user_stake.last_deposit_timestamp = now;

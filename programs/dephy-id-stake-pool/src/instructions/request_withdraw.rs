@@ -1,4 +1,5 @@
 use crate::{
+    constants::{POOL_WALLET_SEED, USER_STAKE_SEED},
     error::ErrorCode,
     state::{StakePoolAccount, UserStakeAccount, WithdrawRequestAccount},
 };
@@ -11,7 +12,7 @@ pub struct RequestWithdraw<'info> {
     pub stake_pool: Box<Account<'info, StakePoolAccount>>,
     #[account(address = user_stake_account.user @ ErrorCode::InvalidAuthority)]
     pub user: Signer<'info>,
-    #[account(mut, seeds = [stake_pool.key().as_ref(), b"USER_STAKE", user.key.as_ref()], bump)]
+    #[account(mut, seeds = [stake_pool.key().as_ref(), USER_STAKE_SEED, user.key.as_ref()], bump)]
     pub user_stake_account: Account<'info, UserStakeAccount>,
     #[account(init, payer = payer, space = 8 + WithdrawRequestAccount::INIT_SPACE)]
     pub withdraw_request: Account<'info, WithdrawRequestAccount>,
@@ -20,7 +21,7 @@ pub struct RequestWithdraw<'info> {
     #[account(mut, address = stake_pool.stake_token_account @ ErrorCode::InvalidStakeToken)]
     pub stake_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
     /// CHECK: PDA
-    #[account(seeds = [stake_pool.key().as_ref(), b"POOL_WALLET"], bump)]
+    #[account(seeds = [stake_pool.key().as_ref(), POOL_WALLET_SEED], bump)]
     pub pool_wallet: UncheckedAccount<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -48,9 +49,6 @@ pub fn process_request_withdraw(ctx: Context<RequestWithdraw>, amount: u64) -> R
     if amount > user_stake.amount {
         return Err(ErrorCode::InvalidAmount.into());
     }
-
-    // TODO:
-    // crate::accumulate_reward(user_stake, stake_pool)?;
 
     let withdraw_request = &mut ctx.accounts.withdraw_request;
     withdraw_request.stake_pool = stake_pool.key();

@@ -31,7 +31,7 @@ pub struct CreateNftStake<'info> {
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
     /// CHECK:
-    #[account(address = mpl_core::ID)]
+    #[account(address = mpl_core::ID @ ErrorCode::InvalidMplCoreProgram)]
     pub mpl_core_program: UncheckedAccount<'info>,
 }
 

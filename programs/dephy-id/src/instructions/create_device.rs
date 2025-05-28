@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{DEVICE_SEED_PREFIX, PRODUCT_SEED_PREFIX, error::ErrorCode};
+use crate::{error::ErrorCode, DEVICE_SEED_PREFIX, PRODUCT_SEED_PREFIX};
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct CreateDeviceArgs {
@@ -27,7 +27,7 @@ pub struct CreateDevice<'info> {
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
     /// CHECK: The mpl-core program address
-    #[account(address = mpl_core::ID)]
+    #[account(address = mpl_core::ID @ ErrorCode::InvalidMplCoreProgram)]
     pub mpl_core: UncheckedAccount<'info>,
 }
 
@@ -39,7 +39,8 @@ pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) 
         }
     }
 
-    let product = mpl_core::Collection::deserialize(&ctx.accounts.product_asset.data.borrow()).map_err(|_| ErrorCode::InvalidProductAccount)?;
+    let product = mpl_core::Collection::deserialize(&ctx.accounts.product_asset.data.borrow())
+        .map_err(|_| ErrorCode::InvalidProductAccount)?;
 
     let (expected_product_pubkey, product_bump) = Pubkey::find_program_address(
         &[
@@ -113,19 +114,17 @@ pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) 
         },
         mpl_core::instructions::WriteExternalPluginAdapterDataV1InstructionArgs {
             key: mpl_core::types::ExternalPluginAdapterKey::LinkedAppData(
-                mpl_core::types::PluginAuthority::UpdateAuthority
+                mpl_core::types::PluginAuthority::UpdateAuthority,
             ),
             data: Some(args.seed.to_vec()),
         },
     )
-    .invoke_signed(&[
-        &[
-            PRODUCT_SEED_PREFIX,
-            ctx.accounts.vendor.key().as_ref(),
-            product.base.name.as_ref(),
-            &[product_bump],
-        ],
-    ])?;
+    .invoke_signed(&[&[
+        PRODUCT_SEED_PREFIX,
+        ctx.accounts.vendor.key().as_ref(),
+        product.base.name.as_ref(),
+        &[product_bump],
+    ]])?;
 
     Ok(())
 }

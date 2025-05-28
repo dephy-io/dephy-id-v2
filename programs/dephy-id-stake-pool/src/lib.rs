@@ -56,7 +56,6 @@ pub mod dephy_id_stake_pool {
         process_deposit(ctx, amount, locktime)
     }
 
-    // all withdraws require cooldown and are granted automatically
     pub fn request_withdraw_token(ctx: Context<RequestWithdraw>, amount: u64) -> Result<()> {
         process_request_withdraw(ctx, amount)
     }

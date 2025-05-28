@@ -1,5 +1,5 @@
 use crate::{
-    constants::WITHDRAW_REQUEST_PREPARE_TIME,
+    constants::{POOL_WALLET_SEED, USER_STAKE_SEED, WITHDRAW_REQUEST_PREPARE_TIME},
     error::ErrorCode,
     state::{NftStakeAccount, StakePoolAccount, UserStakeAccount, WithdrawRequestAccount},
 };
@@ -14,7 +14,7 @@ pub struct RedeemWithdraw<'info> {
     pub stake_pool: Box<Account<'info, StakePoolAccount>>,
     #[account(address = user_stake_account.user @ ErrorCode::InvalidAuthority)]
     pub user: Signer<'info>,
-    #[account(mut, seeds = [stake_pool.key().as_ref(), b"USER_STAKE", user.key.as_ref()], bump)]
+    #[account(mut, seeds = [stake_pool.key().as_ref(), USER_STAKE_SEED, user.key.as_ref()], bump)]
     pub user_stake_account: Box<Account<'info, UserStakeAccount>>,
     #[account(mut)]
     pub withdraw_request: Box<Account<'info, WithdrawRequestAccount>>,
@@ -32,7 +32,7 @@ pub struct RedeemWithdraw<'info> {
     #[account(mut)]
     pub nft_stake: Option<Account<'info, NftStakeAccount>>,
     /// CHECK: PDA
-    #[account(seeds = [stake_pool.key().as_ref(), b"POOL_WALLET"], bump)]
+    #[account(seeds = [stake_pool.key().as_ref(), POOL_WALLET_SEED], bump)]
     pub pool_wallet: UncheckedAccount<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -103,7 +103,7 @@ pub fn process_redeem_withdraw(ctx: Context<RedeemWithdraw>, amount: u64) -> Res
             },
             &[&[
                 stake_pool.key().as_ref(),
-                b"POOL_WALLET",
+                POOL_WALLET_SEED,
                 &[ctx.bumps.pool_wallet],
             ]],
         ),

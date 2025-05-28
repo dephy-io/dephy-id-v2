@@ -7,6 +7,9 @@ pub const WITHDRAW_REQUEST_PREPARE_TIME: u64 = 60 * 60 * 24 * 21; // 21 days
 pub const CONFIG_REVIEW_TIME: u64 = 60 * 60 * 24 * 3; // 3 days
 
 #[constant]
+pub const ADMIN_SEED: &[u8] = b"ADMIN";
+
+#[constant]
 pub const POOL_WALLET_SEED: &[u8] = b"POOL_WALLET";
 
 #[constant]

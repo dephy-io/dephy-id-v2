@@ -1,4 +1,5 @@
 use crate::{
+    constants::POOL_WALLET_SEED,
     error::ErrorCode,
     state::{NftStakeAccount, StakePoolAccount},
 };
@@ -21,15 +22,14 @@ pub struct CloseNftStake<'info> {
     pub stake_token_mint: Box<InterfaceAccount<'info, Mint>>,
     #[account(address = stake_pool.stake_token_account @ ErrorCode::InvalidStakeToken)]
     pub stake_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
-    /// CHECK: PDA
-    #[account(seeds = [stake_pool.key().as_ref(), b"POOL_WALLET"], bump)]
-    pub pool_wallet: UncheckedAccount<'info>,
+    #[account(seeds = [stake_pool.key().as_ref(), POOL_WALLET_SEED], bump)]
+    pub pool_wallet: SystemAccount<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
     pub token_program: Interface<'info, TokenInterface>,
     /// CHECK:
-    #[account(address = mpl_core::ID)]
+    #[account(address = mpl_core::ID @ ErrorCode::InvalidMplCoreProgram)]
     pub mpl_core_program: UncheckedAccount<'info>,
 }
 
@@ -63,7 +63,7 @@ pub fn process_close_nft_stake(ctx: Context<CloseNftStake>) -> Result<()> {
     )
     .invoke_signed(&[&[
         ctx.accounts.stake_pool.key().as_ref(),
-        b"POOL_WALLET",
+        POOL_WALLET_SEED,
         &[ctx.bumps.pool_wallet],
     ]])?;
 
@@ -83,7 +83,7 @@ pub fn process_close_nft_stake(ctx: Context<CloseNftStake>) -> Result<()> {
     )
     .invoke_signed(&[&[
         ctx.accounts.stake_pool.key().as_ref(),
-        b"POOL_WALLET",
+        POOL_WALLET_SEED,
         &[ctx.bumps.pool_wallet],
     ]])?;
 

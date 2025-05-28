@@ -27,8 +27,6 @@ pub struct StakePoolAccount {
     pub reserved: u64,
 }
 
-// TODO:
-// add withdraw penalty?
 #[derive(Debug, Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
 pub struct StakePoolConfig {
     pub collection: Pubkey,

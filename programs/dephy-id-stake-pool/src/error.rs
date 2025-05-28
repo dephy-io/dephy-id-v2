@@ -20,6 +20,8 @@ pub enum ErrorCode {
     InvalidAccount,
     #[msg("Collection not match")]
     CollectionNotMatch,
+    #[msg("Invalid mpl core program")]
+    InvalidMplCoreProgram,
     #[msg("Rewards not claimed")]
     RewardsNotClaimed,
     #[msg("Stake not empty")]

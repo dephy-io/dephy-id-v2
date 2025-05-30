@@ -22,9 +22,9 @@ pub mod dephy_id_stake_pool {
 
     pub fn create_stake_pool(
         ctx: Context<CreateStakePool>,
-        config: StakePoolInitConfig,
+        args: StakePoolConfigArgs,
     ) -> Result<()> {
-        process_create_stake_pool(ctx, config)
+        process_create_stake_pool(ctx, args)
     }
 
     // Do config later
@@ -52,15 +52,15 @@ pub mod dephy_id_stake_pool {
         process_close_nft_stake(ctx)
     }
 
-    pub fn deposit_token(ctx: Context<Deposit>, amount: u64, locktime: u64) -> Result<()> {
-        process_deposit(ctx, amount, locktime)
+    pub fn deposit_token(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+        process_deposit(ctx, amount)
     }
 
     pub fn request_withdraw_token(ctx: Context<RequestWithdraw>, amount: u64) -> Result<()> {
         process_request_withdraw(ctx, amount)
     }
 
-    pub fn redeem_withdraw_token(ctx: Context<RedeemWithdraw>, amount: u64) -> Result<()> {
-        process_redeem_withdraw(ctx, amount)
+    pub fn redeem_withdraw_token(ctx: Context<RedeemWithdraw>) -> Result<()> {
+        process_redeem_withdraw(ctx)
     }
 }

@@ -51,6 +51,7 @@ export type NftStakeAccount = {
   discriminator: ReadonlyUint8Array;
   stakePool: Address;
   stakeAuthority: Address;
+  depositAuthority: Address;
   nftTokenAccount: Address;
   tokenAmount: bigint;
 };
@@ -58,6 +59,7 @@ export type NftStakeAccount = {
 export type NftStakeAccountArgs = {
   stakePool: Address;
   stakeAuthority: Address;
+  depositAuthority: Address;
   nftTokenAccount: Address;
   tokenAmount: number | bigint;
 };
@@ -68,6 +70,7 @@ export function getNftStakeAccountEncoder(): Encoder<NftStakeAccountArgs> {
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['stakePool', getAddressEncoder()],
       ['stakeAuthority', getAddressEncoder()],
+      ['depositAuthority', getAddressEncoder()],
       ['nftTokenAccount', getAddressEncoder()],
       ['tokenAmount', getU64Encoder()],
     ]),
@@ -80,6 +83,7 @@ export function getNftStakeAccountDecoder(): Decoder<NftStakeAccount> {
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['stakePool', getAddressDecoder()],
     ['stakeAuthority', getAddressDecoder()],
+    ['depositAuthority', getAddressDecoder()],
     ['nftTokenAccount', getAddressDecoder()],
     ['tokenAmount', getU64Decoder()],
   ]);
@@ -156,5 +160,5 @@ export async function fetchAllMaybeNftStakeAccount(
 }
 
 export function getNftStakeAccountSize(): number {
-  return 112;
+  return 144;
 }

@@ -53,8 +53,8 @@ export type UserStakeAccount = {
   nftStake: Address;
   user: Address;
   amount: bigint;
-  locktime: bigint;
   lastDepositTimestamp: bigint;
+  requestedWithdrawal: bigint;
 };
 
 export type UserStakeAccountArgs = {
@@ -62,8 +62,8 @@ export type UserStakeAccountArgs = {
   nftStake: Address;
   user: Address;
   amount: number | bigint;
-  locktime: number | bigint;
   lastDepositTimestamp: number | bigint;
+  requestedWithdrawal: number | bigint;
 };
 
 export function getUserStakeAccountEncoder(): Encoder<UserStakeAccountArgs> {
@@ -74,8 +74,8 @@ export function getUserStakeAccountEncoder(): Encoder<UserStakeAccountArgs> {
       ['nftStake', getAddressEncoder()],
       ['user', getAddressEncoder()],
       ['amount', getU64Encoder()],
-      ['locktime', getU64Encoder()],
       ['lastDepositTimestamp', getU64Encoder()],
+      ['requestedWithdrawal', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: USER_STAKE_ACCOUNT_DISCRIMINATOR })
   );
@@ -88,8 +88,8 @@ export function getUserStakeAccountDecoder(): Decoder<UserStakeAccount> {
     ['nftStake', getAddressDecoder()],
     ['user', getAddressDecoder()],
     ['amount', getU64Decoder()],
-    ['locktime', getU64Decoder()],
     ['lastDepositTimestamp', getU64Decoder()],
+    ['requestedWithdrawal', getU64Decoder()],
   ]);
 }
 

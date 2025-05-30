@@ -78,7 +78,7 @@ export type DepositTokenInstruction<
         ? WritableAccount<TAccountStakePool>
         : TAccountStakePool,
       TAccountNftStake extends string
-        ? ReadonlyAccount<TAccountNftStake>
+        ? WritableAccount<TAccountNftStake>
         : TAccountNftStake,
       TAccountUser extends string
         ? ReadonlySignerAccount<TAccountUser> & IAccountSignerMeta<TAccountUser>
@@ -115,20 +115,15 @@ export type DepositTokenInstruction<
 export type DepositTokenInstructionData = {
   discriminator: ReadonlyUint8Array;
   amount: bigint;
-  locktime: bigint;
 };
 
-export type DepositTokenInstructionDataArgs = {
-  amount: number | bigint;
-  locktime: number | bigint;
-};
+export type DepositTokenInstructionDataArgs = { amount: number | bigint };
 
 export function getDepositTokenInstructionDataEncoder(): Encoder<DepositTokenInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['amount', getU64Encoder()],
-      ['locktime', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: DEPOSIT_TOKEN_DISCRIMINATOR })
   );
@@ -138,7 +133,6 @@ export function getDepositTokenInstructionDataDecoder(): Decoder<DepositTokenIns
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['amount', getU64Decoder()],
-    ['locktime', getU64Decoder()],
   ]);
 }
 
@@ -177,7 +171,6 @@ export type DepositTokenAsyncInput<
   tokenProgram?: Address<TAccountTokenProgram>;
   systemProgram?: Address<TAccountSystemProgram>;
   amount: DepositTokenInstructionDataArgs['amount'];
-  locktime: DepositTokenInstructionDataArgs['locktime'];
 };
 
 export async function getDepositTokenInstructionAsync<
@@ -231,7 +224,7 @@ export async function getDepositTokenInstructionAsync<
   // Original accounts.
   const originalAccounts = {
     stakePool: { value: input.stakePool ?? null, isWritable: true },
-    nftStake: { value: input.nftStake ?? null, isWritable: false },
+    nftStake: { value: input.nftStake ?? null, isWritable: true },
     user: { value: input.user ?? null, isWritable: false },
     userStakeAccount: {
       value: input.userStakeAccount ?? null,
@@ -354,7 +347,6 @@ export type DepositTokenInput<
   tokenProgram?: Address<TAccountTokenProgram>;
   systemProgram?: Address<TAccountSystemProgram>;
   amount: DepositTokenInstructionDataArgs['amount'];
-  locktime: DepositTokenInstructionDataArgs['locktime'];
 };
 
 export function getDepositTokenInstruction<
@@ -406,7 +398,7 @@ export function getDepositTokenInstruction<
   // Original accounts.
   const originalAccounts = {
     stakePool: { value: input.stakePool ?? null, isWritable: true },
-    nftStake: { value: input.nftStake ?? null, isWritable: false },
+    nftStake: { value: input.nftStake ?? null, isWritable: true },
     user: { value: input.user ?? null, isWritable: false },
     userStakeAccount: {
       value: input.userStakeAccount ?? null,

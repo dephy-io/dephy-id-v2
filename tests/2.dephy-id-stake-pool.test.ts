@@ -126,7 +126,7 @@ describe("dephy-id-stake-pool", () => {
         mintAuthority: vendor,
         destination: tokenOwner1.address,
         ata: tokenAccount1,
-        amount: 1_000_000,
+        amount: 10000_000_000n,
         tokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
       })
     ])
@@ -150,6 +150,7 @@ describe("dephy-id-stake-pool", () => {
 
 
   let stakeTokenAddress: Address
+  const withdrawPending = 3n
   it('create stake pool', async () => {
     const stakePoolKeypair = await generateKeyPairSigner()
     stakePool = stakePoolKeypair.address
@@ -162,11 +163,9 @@ describe("dephy-id-stake-pool", () => {
         payer,
         stakeTokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
         collection: productAsset,
-        minStakeAmount: 1000_000_000n,
         maxStakeAmount: 20000_000_000n,
-        minLocktime: 0,
-        maxLocktime: 0,
         admin,
+        withdrawPending,
       })
     ])
 
@@ -177,14 +176,11 @@ describe("dephy-id-stake-pool", () => {
     assert.equal(stakePoolAccount.data.authority, authority.address, 'authority')
     assert.equal(stakePoolAccount.data.config.collection, productAsset, 'collection')
     assert.equal(stakePoolAccount.data.config.stakeTokenMint, stDephyToken, 'stakeTokenMint')
-    assert.equal(stakePoolAccount.data.config.minStakeAmount, 1000_000_000n, 'minStakeAmount')
     assert.equal(stakePoolAccount.data.config.maxStakeAmount, 20000_000_000n, 'maxStakeAmount')
-    assert.equal(stakePoolAccount.data.config.minLocktime, 0, 'minLocktime')
-    assert.equal(stakePoolAccount.data.config.maxLocktime, 0, 'maxLocktime')
+    assert.equal(stakePoolAccount.data.config.withdrawPending, withdrawPending, 'withdrawPending')
     assert.equal(stakePoolAccount.data.stakeTokenAccount, stakeTokenAddress, 'stakeTokenAccount')
     assert.equal(stakePoolAccount.data.totalStaking, 0, 'totalStaking')
     assert.equal(stakePoolAccount.data.requestedWithdrawal, 0, 'requestedWithdrawal')
-    assert.equal(stakePoolAccount.data.reserved, 0, 'reserved')
   })
 
 
@@ -195,11 +191,10 @@ describe("dephy-id-stake-pool", () => {
     await sendAndConfirmIxs([
       await dephyIdStakePool.getCreateNftStakeInstructionAsync({
         stakePool,
-        stakeTokenAccount: stakeTokenAddress,
         payer,
-        stakeTokenMint: stDephyToken,
         nftStake,
         stakeAuthority: didOwner1,
+        depositAuthority: tokenOwner1.address,
         mplCoreAsset: did1,
         mplCoreCollection: productAsset,
       })
@@ -208,19 +203,23 @@ describe("dephy-id-stake-pool", () => {
     const nftStakeAccount = await dephyIdStakePool.fetchNftStakeAccount(rpc, nftStake.address)
     assert.equal(nftStakeAccount.data.stakePool, stakePool, 'stakePool')
     assert.equal(nftStakeAccount.data.stakeAuthority, didOwner1.address, 'stakeAuthority')
+    assert.equal(nftStakeAccount.data.depositAuthority, tokenOwner1.address, 'depositAuthority')
     assert.equal(nftStakeAccount.data.nftTokenAccount, did1, 'nftTokenAccount')
     assert.equal(nftStakeAccount.data.tokenAmount, 0, 'tokenAmount')
   })
 
+  // TODO: deposit from other than depositAuthority
+  // TODO: deposit amount out of range
+
+  let userStakeAddress: Address
   it('deposit', async () => {
-    const depositAmount = 1_000_000n
-    const locktime = 0n
+    const depositAmount = 1000_000_000n
 
     const userStakeAccountPda = await dephyIdStakePool.findUserStakeAccountPda({
       nftStake: nftStake.address,
       user: tokenOwner1.address,
     })
-    const userStakeAddress = userStakeAccountPda[0]
+    userStakeAddress = userStakeAccountPda[0]
 
     await sendAndConfirmIxs([
       await dephyIdStakePool.getDepositTokenInstructionAsync({
@@ -232,7 +231,6 @@ describe("dephy-id-stake-pool", () => {
         userStakeTokenAccount: tokenAccount1,
         payer,
         amount: depositAmount,
-        locktime,
         tokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
       })
     ])
@@ -245,6 +243,29 @@ describe("dephy-id-stake-pool", () => {
     assert.equal(userStakeAccount.data.nftStake, nftStake.address, 'nftStake')
     assert.equal(userStakeAccount.data.user, tokenOwner1.address, 'user')
     assert.equal(userStakeAccount.data.amount, depositAmount, 'amount')
-    assert.equal(userStakeAccount.data.locktime, locktime, 'locktime')
   })
+
+  it('request withdraw', async () => {
+    const withdrawAmount = 500_000_000n
+
+    const withdrawRequestKeypair = await generateKeyPairSigner()
+
+    await sendAndConfirmIxs([
+      dephyIdStakePool.getRequestWithdrawTokenInstruction({
+        stakePool,
+        nftStake: nftStake.address,
+        user: tokenOwner1,
+        userStakeAccount: userStakeAddress,
+        withdrawRequest: withdrawRequestKeypair,
+        payer,
+        amount: withdrawAmount,
+      })
+    ])
+
+    const withdrawRequestAccount = await dephyIdStakePool.fetchWithdrawRequestAccount(rpc, withdrawRequestKeypair.address)
+    assert.equal(withdrawRequestAccount.data.stakePool, stakePool, 'stakePool')
+    assert.equal(withdrawRequestAccount.data.user, tokenOwner1.address, 'user')
+    assert.equal(withdrawRequestAccount.data.amount, withdrawAmount, 'amount')
+  })
+
 })

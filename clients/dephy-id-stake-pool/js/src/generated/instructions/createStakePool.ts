@@ -10,7 +10,6 @@ import {
   combineCodec,
   fixDecoderSize,
   fixEncoderSize,
-  getAddressDecoder,
   getAddressEncoder,
   getBytesDecoder,
   getBytesEncoder,
@@ -58,6 +57,7 @@ export type CreateStakePoolInstruction<
   TAccountAdmin extends string | IAccountMeta<string> = string,
   TAccountStakePool extends string | IAccountMeta<string> = string,
   TAccountAuthority extends string | IAccountMeta<string> = string,
+  TAccountCollection extends string | IAccountMeta<string> = string,
   TAccountStakeTokenMint extends string | IAccountMeta<string> = string,
   TAccountPoolWallet extends string | IAccountMeta<string> = string,
   TAccountStakeTokenAccount extends string | IAccountMeta<string> = string,
@@ -82,6 +82,9 @@ export type CreateStakePoolInstruction<
         ? ReadonlySignerAccount<TAccountAuthority> &
             IAccountSignerMeta<TAccountAuthority>
         : TAccountAuthority,
+      TAccountCollection extends string
+        ? ReadonlyAccount<TAccountCollection>
+        : TAccountCollection,
       TAccountStakeTokenMint extends string
         ? ReadonlyAccount<TAccountStakeTokenMint>
         : TAccountStakeTokenMint,
@@ -107,30 +110,21 @@ export type CreateStakePoolInstruction<
 
 export type CreateStakePoolInstructionData = {
   discriminator: ReadonlyUint8Array;
-  collection: Address;
-  minStakeAmount: bigint;
   maxStakeAmount: bigint;
-  minLocktime: bigint;
-  maxLocktime: bigint;
+  withdrawPending: bigint;
 };
 
 export type CreateStakePoolInstructionDataArgs = {
-  collection: Address;
-  minStakeAmount: number | bigint;
   maxStakeAmount: number | bigint;
-  minLocktime: number | bigint;
-  maxLocktime: number | bigint;
+  withdrawPending: number | bigint;
 };
 
 export function getCreateStakePoolInstructionDataEncoder(): Encoder<CreateStakePoolInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
-      ['collection', getAddressEncoder()],
-      ['minStakeAmount', getU64Encoder()],
       ['maxStakeAmount', getU64Encoder()],
-      ['minLocktime', getU64Encoder()],
-      ['maxLocktime', getU64Encoder()],
+      ['withdrawPending', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: CREATE_STAKE_POOL_DISCRIMINATOR })
   );
@@ -139,11 +133,8 @@ export function getCreateStakePoolInstructionDataEncoder(): Encoder<CreateStakeP
 export function getCreateStakePoolInstructionDataDecoder(): Decoder<CreateStakePoolInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
-    ['collection', getAddressDecoder()],
-    ['minStakeAmount', getU64Decoder()],
     ['maxStakeAmount', getU64Decoder()],
-    ['minLocktime', getU64Decoder()],
-    ['maxLocktime', getU64Decoder()],
+    ['withdrawPending', getU64Decoder()],
   ]);
 }
 
@@ -161,6 +152,7 @@ export type CreateStakePoolAsyncInput<
   TAccountAdmin extends string = string,
   TAccountStakePool extends string = string,
   TAccountAuthority extends string = string,
+  TAccountCollection extends string = string,
   TAccountStakeTokenMint extends string = string,
   TAccountPoolWallet extends string = string,
   TAccountStakeTokenAccount extends string = string,
@@ -171,23 +163,22 @@ export type CreateStakePoolAsyncInput<
   admin: Address<TAccountAdmin>;
   stakePool: TransactionSigner<TAccountStakePool>;
   authority: TransactionSigner<TAccountAuthority>;
+  collection: Address<TAccountCollection>;
   stakeTokenMint: Address<TAccountStakeTokenMint>;
   poolWallet?: Address<TAccountPoolWallet>;
   stakeTokenAccount?: Address<TAccountStakeTokenAccount>;
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   stakeTokenProgram: Address<TAccountStakeTokenProgram>;
-  collection: CreateStakePoolInstructionDataArgs['collection'];
-  minStakeAmount: CreateStakePoolInstructionDataArgs['minStakeAmount'];
   maxStakeAmount: CreateStakePoolInstructionDataArgs['maxStakeAmount'];
-  minLocktime: CreateStakePoolInstructionDataArgs['minLocktime'];
-  maxLocktime: CreateStakePoolInstructionDataArgs['maxLocktime'];
+  withdrawPending: CreateStakePoolInstructionDataArgs['withdrawPending'];
 };
 
 export async function getCreateStakePoolInstructionAsync<
   TAccountAdmin extends string,
   TAccountStakePool extends string,
   TAccountAuthority extends string,
+  TAccountCollection extends string,
   TAccountStakeTokenMint extends string,
   TAccountPoolWallet extends string,
   TAccountStakeTokenAccount extends string,
@@ -200,6 +191,7 @@ export async function getCreateStakePoolInstructionAsync<
     TAccountAdmin,
     TAccountStakePool,
     TAccountAuthority,
+    TAccountCollection,
     TAccountStakeTokenMint,
     TAccountPoolWallet,
     TAccountStakeTokenAccount,
@@ -214,6 +206,7 @@ export async function getCreateStakePoolInstructionAsync<
     TAccountAdmin,
     TAccountStakePool,
     TAccountAuthority,
+    TAccountCollection,
     TAccountStakeTokenMint,
     TAccountPoolWallet,
     TAccountStakeTokenAccount,
@@ -231,6 +224,7 @@ export async function getCreateStakePoolInstructionAsync<
     admin: { value: input.admin ?? null, isWritable: false },
     stakePool: { value: input.stakePool ?? null, isWritable: true },
     authority: { value: input.authority ?? null, isWritable: false },
+    collection: { value: input.collection ?? null, isWritable: false },
     stakeTokenMint: { value: input.stakeTokenMint ?? null, isWritable: false },
     poolWallet: { value: input.poolWallet ?? null, isWritable: false },
     stakeTokenAccount: {
@@ -286,6 +280,7 @@ export async function getCreateStakePoolInstructionAsync<
       getAccountMeta(accounts.admin),
       getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.authority),
+      getAccountMeta(accounts.collection),
       getAccountMeta(accounts.stakeTokenMint),
       getAccountMeta(accounts.poolWallet),
       getAccountMeta(accounts.stakeTokenAccount),
@@ -302,6 +297,7 @@ export async function getCreateStakePoolInstructionAsync<
     TAccountAdmin,
     TAccountStakePool,
     TAccountAuthority,
+    TAccountCollection,
     TAccountStakeTokenMint,
     TAccountPoolWallet,
     TAccountStakeTokenAccount,
@@ -317,6 +313,7 @@ export type CreateStakePoolInput<
   TAccountAdmin extends string = string,
   TAccountStakePool extends string = string,
   TAccountAuthority extends string = string,
+  TAccountCollection extends string = string,
   TAccountStakeTokenMint extends string = string,
   TAccountPoolWallet extends string = string,
   TAccountStakeTokenAccount extends string = string,
@@ -327,23 +324,22 @@ export type CreateStakePoolInput<
   admin: Address<TAccountAdmin>;
   stakePool: TransactionSigner<TAccountStakePool>;
   authority: TransactionSigner<TAccountAuthority>;
+  collection: Address<TAccountCollection>;
   stakeTokenMint: Address<TAccountStakeTokenMint>;
   poolWallet: Address<TAccountPoolWallet>;
   stakeTokenAccount: Address<TAccountStakeTokenAccount>;
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   stakeTokenProgram: Address<TAccountStakeTokenProgram>;
-  collection: CreateStakePoolInstructionDataArgs['collection'];
-  minStakeAmount: CreateStakePoolInstructionDataArgs['minStakeAmount'];
   maxStakeAmount: CreateStakePoolInstructionDataArgs['maxStakeAmount'];
-  minLocktime: CreateStakePoolInstructionDataArgs['minLocktime'];
-  maxLocktime: CreateStakePoolInstructionDataArgs['maxLocktime'];
+  withdrawPending: CreateStakePoolInstructionDataArgs['withdrawPending'];
 };
 
 export function getCreateStakePoolInstruction<
   TAccountAdmin extends string,
   TAccountStakePool extends string,
   TAccountAuthority extends string,
+  TAccountCollection extends string,
   TAccountStakeTokenMint extends string,
   TAccountPoolWallet extends string,
   TAccountStakeTokenAccount extends string,
@@ -356,6 +352,7 @@ export function getCreateStakePoolInstruction<
     TAccountAdmin,
     TAccountStakePool,
     TAccountAuthority,
+    TAccountCollection,
     TAccountStakeTokenMint,
     TAccountPoolWallet,
     TAccountStakeTokenAccount,
@@ -369,6 +366,7 @@ export function getCreateStakePoolInstruction<
   TAccountAdmin,
   TAccountStakePool,
   TAccountAuthority,
+  TAccountCollection,
   TAccountStakeTokenMint,
   TAccountPoolWallet,
   TAccountStakeTokenAccount,
@@ -385,6 +383,7 @@ export function getCreateStakePoolInstruction<
     admin: { value: input.admin ?? null, isWritable: false },
     stakePool: { value: input.stakePool ?? null, isWritable: true },
     authority: { value: input.authority ?? null, isWritable: false },
+    collection: { value: input.collection ?? null, isWritable: false },
     stakeTokenMint: { value: input.stakeTokenMint ?? null, isWritable: false },
     poolWallet: { value: input.poolWallet ?? null, isWritable: false },
     stakeTokenAccount: {
@@ -418,6 +417,7 @@ export function getCreateStakePoolInstruction<
       getAccountMeta(accounts.admin),
       getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.authority),
+      getAccountMeta(accounts.collection),
       getAccountMeta(accounts.stakeTokenMint),
       getAccountMeta(accounts.poolWallet),
       getAccountMeta(accounts.stakeTokenAccount),
@@ -434,6 +434,7 @@ export function getCreateStakePoolInstruction<
     TAccountAdmin,
     TAccountStakePool,
     TAccountAuthority,
+    TAccountCollection,
     TAccountStakeTokenMint,
     TAccountPoolWallet,
     TAccountStakeTokenAccount,
@@ -454,12 +455,13 @@ export type ParsedCreateStakePoolInstruction<
     admin: TAccountMetas[0];
     stakePool: TAccountMetas[1];
     authority: TAccountMetas[2];
-    stakeTokenMint: TAccountMetas[3];
-    poolWallet: TAccountMetas[4];
-    stakeTokenAccount: TAccountMetas[5];
-    payer: TAccountMetas[6];
-    systemProgram: TAccountMetas[7];
-    stakeTokenProgram: TAccountMetas[8];
+    collection: TAccountMetas[3];
+    stakeTokenMint: TAccountMetas[4];
+    poolWallet: TAccountMetas[5];
+    stakeTokenAccount: TAccountMetas[6];
+    payer: TAccountMetas[7];
+    systemProgram: TAccountMetas[8];
+    stakeTokenProgram: TAccountMetas[9];
   };
   data: CreateStakePoolInstructionData;
 };
@@ -472,7 +474,7 @@ export function parseCreateStakePoolInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedCreateStakePoolInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 9) {
+  if (instruction.accounts.length < 10) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -488,6 +490,7 @@ export function parseCreateStakePoolInstruction<
       admin: getNextAccount(),
       stakePool: getNextAccount(),
       authority: getNextAccount(),
+      collection: getNextAccount(),
       stakeTokenMint: getNextAccount(),
       poolWallet: getNextAccount(),
       stakeTokenAccount: getNextAccount(),

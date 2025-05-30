@@ -4,29 +4,24 @@ use crate::{
     state::{NftStakeAccount, StakePoolAccount},
 };
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::TokenAccount;
 
 #[derive(Accounts)]
 pub struct CreateNftStake<'info> {
     #[account(mut)]
-    pub stake_pool: Box<Account<'info, StakePoolAccount>>,
+    pub stake_pool: Account<'info, StakePoolAccount>,
     #[account(init, payer = payer, space = 8 + NftStakeAccount::INIT_SPACE)]
-    pub nft_stake: Box<Account<'info, NftStakeAccount>>,
+    pub nft_stake: Account<'info, NftStakeAccount>,
     pub stake_authority: Signer<'info>,
+    /// CHECK:
+    pub deposit_authority: UncheckedAccount<'info>,
     /// CHECK:
     #[account(mut)]
     pub mpl_core_asset: UncheckedAccount<'info>,
     /// CHECK:
     #[account(mut)]
     pub mpl_core_collection: UncheckedAccount<'info>,
-    /// CHECK:
-    #[account(address = stake_pool.config.stake_token_mint @ ErrorCode::InvalidStakeToken)]
-    pub stake_token_mint: UncheckedAccount<'info>,
-    /// CHECK: PDA
     #[account(seeds = [stake_pool.key().as_ref(), POOL_WALLET_SEED], bump)]
-    pub pool_wallet: UncheckedAccount<'info>,
-    #[account(mut, address = stake_pool.stake_token_account @ ErrorCode::InvalidStakeToken)]
-    pub stake_token_account: InterfaceAccount<'info, TokenAccount>,
+    pub pool_wallet: SystemAccount<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub system_program: Program<'info, System>,
@@ -40,9 +35,11 @@ pub fn process_create_nft_stake(ctx: Context<CreateNftStake>) -> Result<()> {
 
     let stake_pool = &mut ctx.accounts.stake_pool;
 
-    if stake_pool.config.collection != ctx.accounts.mpl_core_collection.key() {
-        return Err(ErrorCode::CollectionNotMatch.into());
-    }
+    require_keys_eq!(
+        ctx.accounts.mpl_core_collection.key(),
+        stake_pool.config.collection,
+        ErrorCode::CollectionNotMatch
+    );
 
     mpl_core::instructions::AddPluginV1Cpi::new(
         &ctx.accounts.mpl_core_program.to_account_info(),
@@ -66,9 +63,10 @@ pub fn process_create_nft_stake(ctx: Context<CreateNftStake>) -> Result<()> {
     .invoke()?;
 
     let nft_stake = &mut ctx.accounts.nft_stake;
-    nft_stake.stake_authority = ctx.accounts.stake_authority.key();
-    nft_stake.nft_token_account = ctx.accounts.mpl_core_asset.key();
     nft_stake.stake_pool = stake_pool.key();
+    nft_stake.stake_authority = ctx.accounts.stake_authority.key();
+    nft_stake.deposit_authority = ctx.accounts.deposit_authority.key();
+    nft_stake.nft_token_account = ctx.accounts.mpl_core_asset.key();
     nft_stake.token_amount = 0;
 
     Ok(())

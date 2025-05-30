@@ -55,11 +55,10 @@ export type CreateNftStakeInstruction<
   TAccountStakePool extends string | IAccountMeta<string> = string,
   TAccountNftStake extends string | IAccountMeta<string> = string,
   TAccountStakeAuthority extends string | IAccountMeta<string> = string,
+  TAccountDepositAuthority extends string | IAccountMeta<string> = string,
   TAccountMplCoreAsset extends string | IAccountMeta<string> = string,
   TAccountMplCoreCollection extends string | IAccountMeta<string> = string,
-  TAccountStakeTokenMint extends string | IAccountMeta<string> = string,
   TAccountPoolWallet extends string | IAccountMeta<string> = string,
-  TAccountStakeTokenAccount extends string | IAccountMeta<string> = string,
   TAccountPayer extends string | IAccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
@@ -83,21 +82,18 @@ export type CreateNftStakeInstruction<
         ? ReadonlySignerAccount<TAccountStakeAuthority> &
             IAccountSignerMeta<TAccountStakeAuthority>
         : TAccountStakeAuthority,
+      TAccountDepositAuthority extends string
+        ? ReadonlyAccount<TAccountDepositAuthority>
+        : TAccountDepositAuthority,
       TAccountMplCoreAsset extends string
         ? WritableAccount<TAccountMplCoreAsset>
         : TAccountMplCoreAsset,
       TAccountMplCoreCollection extends string
         ? WritableAccount<TAccountMplCoreCollection>
         : TAccountMplCoreCollection,
-      TAccountStakeTokenMint extends string
-        ? ReadonlyAccount<TAccountStakeTokenMint>
-        : TAccountStakeTokenMint,
       TAccountPoolWallet extends string
         ? ReadonlyAccount<TAccountPoolWallet>
         : TAccountPoolWallet,
-      TAccountStakeTokenAccount extends string
-        ? WritableAccount<TAccountStakeTokenAccount>
-        : TAccountStakeTokenAccount,
       TAccountPayer extends string
         ? WritableSignerAccount<TAccountPayer> &
             IAccountSignerMeta<TAccountPayer>
@@ -145,11 +141,10 @@ export type CreateNftStakeAsyncInput<
   TAccountStakePool extends string = string,
   TAccountNftStake extends string = string,
   TAccountStakeAuthority extends string = string,
+  TAccountDepositAuthority extends string = string,
   TAccountMplCoreAsset extends string = string,
   TAccountMplCoreCollection extends string = string,
-  TAccountStakeTokenMint extends string = string,
   TAccountPoolWallet extends string = string,
-  TAccountStakeTokenAccount extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountMplCoreProgram extends string = string,
@@ -157,11 +152,10 @@ export type CreateNftStakeAsyncInput<
   stakePool: Address<TAccountStakePool>;
   nftStake: TransactionSigner<TAccountNftStake>;
   stakeAuthority: TransactionSigner<TAccountStakeAuthority>;
+  depositAuthority: Address<TAccountDepositAuthority>;
   mplCoreAsset: Address<TAccountMplCoreAsset>;
   mplCoreCollection: Address<TAccountMplCoreCollection>;
-  stakeTokenMint: Address<TAccountStakeTokenMint>;
   poolWallet?: Address<TAccountPoolWallet>;
-  stakeTokenAccount: Address<TAccountStakeTokenAccount>;
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   mplCoreProgram?: Address<TAccountMplCoreProgram>;
@@ -171,11 +165,10 @@ export async function getCreateNftStakeInstructionAsync<
   TAccountStakePool extends string,
   TAccountNftStake extends string,
   TAccountStakeAuthority extends string,
+  TAccountDepositAuthority extends string,
   TAccountMplCoreAsset extends string,
   TAccountMplCoreCollection extends string,
-  TAccountStakeTokenMint extends string,
   TAccountPoolWallet extends string,
-  TAccountStakeTokenAccount extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
   TAccountMplCoreProgram extends string,
@@ -185,11 +178,10 @@ export async function getCreateNftStakeInstructionAsync<
     TAccountStakePool,
     TAccountNftStake,
     TAccountStakeAuthority,
+    TAccountDepositAuthority,
     TAccountMplCoreAsset,
     TAccountMplCoreCollection,
-    TAccountStakeTokenMint,
     TAccountPoolWallet,
-    TAccountStakeTokenAccount,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountMplCoreProgram
@@ -201,11 +193,10 @@ export async function getCreateNftStakeInstructionAsync<
     TAccountStakePool,
     TAccountNftStake,
     TAccountStakeAuthority,
+    TAccountDepositAuthority,
     TAccountMplCoreAsset,
     TAccountMplCoreCollection,
-    TAccountStakeTokenMint,
     TAccountPoolWallet,
-    TAccountStakeTokenAccount,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountMplCoreProgram
@@ -220,17 +211,16 @@ export async function getCreateNftStakeInstructionAsync<
     stakePool: { value: input.stakePool ?? null, isWritable: true },
     nftStake: { value: input.nftStake ?? null, isWritable: true },
     stakeAuthority: { value: input.stakeAuthority ?? null, isWritable: false },
+    depositAuthority: {
+      value: input.depositAuthority ?? null,
+      isWritable: false,
+    },
     mplCoreAsset: { value: input.mplCoreAsset ?? null, isWritable: true },
     mplCoreCollection: {
       value: input.mplCoreCollection ?? null,
       isWritable: true,
     },
-    stakeTokenMint: { value: input.stakeTokenMint ?? null, isWritable: false },
     poolWallet: { value: input.poolWallet ?? null, isWritable: false },
-    stakeTokenAccount: {
-      value: input.stakeTokenAccount ?? null,
-      isWritable: true,
-    },
     payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     mplCoreProgram: { value: input.mplCoreProgram ?? null, isWritable: false },
@@ -267,11 +257,10 @@ export async function getCreateNftStakeInstructionAsync<
       getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.nftStake),
       getAccountMeta(accounts.stakeAuthority),
+      getAccountMeta(accounts.depositAuthority),
       getAccountMeta(accounts.mplCoreAsset),
       getAccountMeta(accounts.mplCoreCollection),
-      getAccountMeta(accounts.stakeTokenMint),
       getAccountMeta(accounts.poolWallet),
-      getAccountMeta(accounts.stakeTokenAccount),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.mplCoreProgram),
@@ -283,11 +272,10 @@ export async function getCreateNftStakeInstructionAsync<
     TAccountStakePool,
     TAccountNftStake,
     TAccountStakeAuthority,
+    TAccountDepositAuthority,
     TAccountMplCoreAsset,
     TAccountMplCoreCollection,
-    TAccountStakeTokenMint,
     TAccountPoolWallet,
-    TAccountStakeTokenAccount,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountMplCoreProgram
@@ -300,11 +288,10 @@ export type CreateNftStakeInput<
   TAccountStakePool extends string = string,
   TAccountNftStake extends string = string,
   TAccountStakeAuthority extends string = string,
+  TAccountDepositAuthority extends string = string,
   TAccountMplCoreAsset extends string = string,
   TAccountMplCoreCollection extends string = string,
-  TAccountStakeTokenMint extends string = string,
   TAccountPoolWallet extends string = string,
-  TAccountStakeTokenAccount extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountMplCoreProgram extends string = string,
@@ -312,11 +299,10 @@ export type CreateNftStakeInput<
   stakePool: Address<TAccountStakePool>;
   nftStake: TransactionSigner<TAccountNftStake>;
   stakeAuthority: TransactionSigner<TAccountStakeAuthority>;
+  depositAuthority: Address<TAccountDepositAuthority>;
   mplCoreAsset: Address<TAccountMplCoreAsset>;
   mplCoreCollection: Address<TAccountMplCoreCollection>;
-  stakeTokenMint: Address<TAccountStakeTokenMint>;
   poolWallet: Address<TAccountPoolWallet>;
-  stakeTokenAccount: Address<TAccountStakeTokenAccount>;
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   mplCoreProgram?: Address<TAccountMplCoreProgram>;
@@ -326,11 +312,10 @@ export function getCreateNftStakeInstruction<
   TAccountStakePool extends string,
   TAccountNftStake extends string,
   TAccountStakeAuthority extends string,
+  TAccountDepositAuthority extends string,
   TAccountMplCoreAsset extends string,
   TAccountMplCoreCollection extends string,
-  TAccountStakeTokenMint extends string,
   TAccountPoolWallet extends string,
-  TAccountStakeTokenAccount extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
   TAccountMplCoreProgram extends string,
@@ -340,11 +325,10 @@ export function getCreateNftStakeInstruction<
     TAccountStakePool,
     TAccountNftStake,
     TAccountStakeAuthority,
+    TAccountDepositAuthority,
     TAccountMplCoreAsset,
     TAccountMplCoreCollection,
-    TAccountStakeTokenMint,
     TAccountPoolWallet,
-    TAccountStakeTokenAccount,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountMplCoreProgram
@@ -355,11 +339,10 @@ export function getCreateNftStakeInstruction<
   TAccountStakePool,
   TAccountNftStake,
   TAccountStakeAuthority,
+  TAccountDepositAuthority,
   TAccountMplCoreAsset,
   TAccountMplCoreCollection,
-  TAccountStakeTokenMint,
   TAccountPoolWallet,
-  TAccountStakeTokenAccount,
   TAccountPayer,
   TAccountSystemProgram,
   TAccountMplCoreProgram
@@ -373,17 +356,16 @@ export function getCreateNftStakeInstruction<
     stakePool: { value: input.stakePool ?? null, isWritable: true },
     nftStake: { value: input.nftStake ?? null, isWritable: true },
     stakeAuthority: { value: input.stakeAuthority ?? null, isWritable: false },
+    depositAuthority: {
+      value: input.depositAuthority ?? null,
+      isWritable: false,
+    },
     mplCoreAsset: { value: input.mplCoreAsset ?? null, isWritable: true },
     mplCoreCollection: {
       value: input.mplCoreCollection ?? null,
       isWritable: true,
     },
-    stakeTokenMint: { value: input.stakeTokenMint ?? null, isWritable: false },
     poolWallet: { value: input.poolWallet ?? null, isWritable: false },
-    stakeTokenAccount: {
-      value: input.stakeTokenAccount ?? null,
-      isWritable: true,
-    },
     payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     mplCoreProgram: { value: input.mplCoreProgram ?? null, isWritable: false },
@@ -409,11 +391,10 @@ export function getCreateNftStakeInstruction<
       getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.nftStake),
       getAccountMeta(accounts.stakeAuthority),
+      getAccountMeta(accounts.depositAuthority),
       getAccountMeta(accounts.mplCoreAsset),
       getAccountMeta(accounts.mplCoreCollection),
-      getAccountMeta(accounts.stakeTokenMint),
       getAccountMeta(accounts.poolWallet),
-      getAccountMeta(accounts.stakeTokenAccount),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.mplCoreProgram),
@@ -425,11 +406,10 @@ export function getCreateNftStakeInstruction<
     TAccountStakePool,
     TAccountNftStake,
     TAccountStakeAuthority,
+    TAccountDepositAuthority,
     TAccountMplCoreAsset,
     TAccountMplCoreCollection,
-    TAccountStakeTokenMint,
     TAccountPoolWallet,
-    TAccountStakeTokenAccount,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountMplCoreProgram
@@ -447,14 +427,13 @@ export type ParsedCreateNftStakeInstruction<
     stakePool: TAccountMetas[0];
     nftStake: TAccountMetas[1];
     stakeAuthority: TAccountMetas[2];
-    mplCoreAsset: TAccountMetas[3];
-    mplCoreCollection: TAccountMetas[4];
-    stakeTokenMint: TAccountMetas[5];
+    depositAuthority: TAccountMetas[3];
+    mplCoreAsset: TAccountMetas[4];
+    mplCoreCollection: TAccountMetas[5];
     poolWallet: TAccountMetas[6];
-    stakeTokenAccount: TAccountMetas[7];
-    payer: TAccountMetas[8];
-    systemProgram: TAccountMetas[9];
-    mplCoreProgram: TAccountMetas[10];
+    payer: TAccountMetas[7];
+    systemProgram: TAccountMetas[8];
+    mplCoreProgram: TAccountMetas[9];
   };
   data: CreateNftStakeInstructionData;
 };
@@ -467,7 +446,7 @@ export function parseCreateNftStakeInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedCreateNftStakeInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 11) {
+  if (instruction.accounts.length < 10) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -483,11 +462,10 @@ export function parseCreateNftStakeInstruction<
       stakePool: getNextAccount(),
       nftStake: getNextAccount(),
       stakeAuthority: getNextAccount(),
+      depositAuthority: getNextAccount(),
       mplCoreAsset: getNextAccount(),
       mplCoreCollection: getNextAccount(),
-      stakeTokenMint: getNextAccount(),
       poolWallet: getNextAccount(),
-      stakeTokenAccount: getNextAccount(),
       payer: getNextAccount(),
       systemProgram: getNextAccount(),
       mplCoreProgram: getNextAccount(),

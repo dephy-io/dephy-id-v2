@@ -17,8 +17,6 @@ import {
   fixEncoderSize,
   getAddressDecoder,
   getAddressEncoder,
-  getBooleanDecoder,
-  getBooleanEncoder,
   getBytesDecoder,
   getBytesEncoder,
   getStructDecoder,
@@ -52,18 +50,18 @@ export function getWithdrawRequestAccountDiscriminatorBytes() {
 export type WithdrawRequestAccount = {
   discriminator: ReadonlyUint8Array;
   stakePool: Address;
+  nftStake: Address;
   user: Address;
   amount: bigint;
   timestamp: bigint;
-  approved: boolean;
 };
 
 export type WithdrawRequestAccountArgs = {
   stakePool: Address;
+  nftStake: Address;
   user: Address;
   amount: number | bigint;
   timestamp: number | bigint;
-  approved: boolean;
 };
 
 export function getWithdrawRequestAccountEncoder(): Encoder<WithdrawRequestAccountArgs> {
@@ -71,10 +69,10 @@ export function getWithdrawRequestAccountEncoder(): Encoder<WithdrawRequestAccou
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['stakePool', getAddressEncoder()],
+      ['nftStake', getAddressEncoder()],
       ['user', getAddressEncoder()],
       ['amount', getU64Encoder()],
       ['timestamp', getU64Encoder()],
-      ['approved', getBooleanEncoder()],
     ]),
     (value) => ({
       ...value,
@@ -87,10 +85,10 @@ export function getWithdrawRequestAccountDecoder(): Decoder<WithdrawRequestAccou
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['stakePool', getAddressDecoder()],
+    ['nftStake', getAddressDecoder()],
     ['user', getAddressDecoder()],
     ['amount', getU64Decoder()],
     ['timestamp', getU64Decoder()],
-    ['approved', getBooleanDecoder()],
   ]);
 }
 
@@ -174,5 +172,5 @@ export async function fetchAllMaybeWithdrawRequestAccount(
 }
 
 export function getWithdrawRequestAccountSize(): number {
-  return 89;
+  return 120;
 }

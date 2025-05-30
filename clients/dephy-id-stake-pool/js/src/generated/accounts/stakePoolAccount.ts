@@ -65,7 +65,6 @@ export type StakePoolAccount = {
   stakeTokenAccount: Address;
   totalStaking: bigint;
   requestedWithdrawal: bigint;
-  reserved: bigint;
 };
 
 export type StakePoolAccountArgs = {
@@ -75,7 +74,6 @@ export type StakePoolAccountArgs = {
   stakeTokenAccount: Address;
   totalStaking: number | bigint;
   requestedWithdrawal: number | bigint;
-  reserved: number | bigint;
 };
 
 export function getStakePoolAccountEncoder(): Encoder<StakePoolAccountArgs> {
@@ -88,7 +86,6 @@ export function getStakePoolAccountEncoder(): Encoder<StakePoolAccountArgs> {
       ['stakeTokenAccount', getAddressEncoder()],
       ['totalStaking', getU64Encoder()],
       ['requestedWithdrawal', getU64Encoder()],
-      ['reserved', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: STAKE_POOL_ACCOUNT_DISCRIMINATOR })
   );
@@ -103,7 +100,6 @@ export function getStakePoolAccountDecoder(): Decoder<StakePoolAccount> {
     ['stakeTokenAccount', getAddressDecoder()],
     ['totalStaking', getU64Decoder()],
     ['requestedWithdrawal', getU64Decoder()],
-    ['reserved', getU64Decoder()],
   ]);
 }
 

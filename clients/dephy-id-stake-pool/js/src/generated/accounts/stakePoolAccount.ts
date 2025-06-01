@@ -63,7 +63,7 @@ export type StakePoolAccount = {
   announcedConfig: Option<Address>;
   config: StakePoolConfig;
   stakeTokenAccount: Address;
-  totalStaking: bigint;
+  totalAmount: bigint;
   requestedWithdrawal: bigint;
 };
 
@@ -72,7 +72,7 @@ export type StakePoolAccountArgs = {
   announcedConfig: OptionOrNullable<Address>;
   config: StakePoolConfigArgs;
   stakeTokenAccount: Address;
-  totalStaking: number | bigint;
+  totalAmount: number | bigint;
   requestedWithdrawal: number | bigint;
 };
 
@@ -84,7 +84,7 @@ export function getStakePoolAccountEncoder(): Encoder<StakePoolAccountArgs> {
       ['announcedConfig', getOptionEncoder(getAddressEncoder())],
       ['config', getStakePoolConfigEncoder()],
       ['stakeTokenAccount', getAddressEncoder()],
-      ['totalStaking', getU64Encoder()],
+      ['totalAmount', getU64Encoder()],
       ['requestedWithdrawal', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: STAKE_POOL_ACCOUNT_DISCRIMINATOR })
@@ -98,7 +98,7 @@ export function getStakePoolAccountDecoder(): Decoder<StakePoolAccount> {
     ['announcedConfig', getOptionDecoder(getAddressDecoder())],
     ['config', getStakePoolConfigDecoder()],
     ['stakeTokenAccount', getAddressDecoder()],
-    ['totalStaking', getU64Decoder()],
+    ['totalAmount', getU64Decoder()],
     ['requestedWithdrawal', getU64Decoder()],
   ]);
 }

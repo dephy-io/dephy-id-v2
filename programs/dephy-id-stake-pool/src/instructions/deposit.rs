@@ -68,9 +68,9 @@ pub fn process_deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
     user_stake.amount += amount;
     user_stake.last_deposit_timestamp = now;
 
-    nft_stake.token_amount += amount;
+    nft_stake.amount += amount;
 
-    stake_pool.total_staking += amount;
+    stake_pool.total_amount += amount;
 
     // Transfer tokens
     transfer_checked(

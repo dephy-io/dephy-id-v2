@@ -18,51 +18,30 @@ import { DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS } from '../programs';
 export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_AUTHORITY = 0x1770; // 6000
 /** InvalidConfig: The config is invalid */
 export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_CONFIG = 0x1771; // 6001
-/** NoTokenStaking: There is no token staking */
-export const DEPHY_ID_STAKE_POOL_ERROR__NO_TOKEN_STAKING = 0x1772; // 6002
-/** InvalidLocktime: Locktime is invalid */
-export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_LOCKTIME = 0x1773; // 6003
-/** StakeLocked: The tokens are locked */
-export const DEPHY_ID_STAKE_POOL_ERROR__STAKE_LOCKED = 0x1774; // 6004
 /** InvalidStakeToken: The stake token is invalid */
-export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_STAKE_TOKEN = 0x1775; // 6005
-/** InvalidRewardToken: The reward token is invalid */
-export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_REWARD_TOKEN = 0x1776; // 6006
+export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_STAKE_TOKEN = 0x1772; // 6002
 /** InvalidAccount: Invalid account */
-export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_ACCOUNT = 0x1777; // 6007
-/** CollectionNotMatch: Collection not match */
-export const DEPHY_ID_STAKE_POOL_ERROR__COLLECTION_NOT_MATCH = 0x1778; // 6008
+export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_ACCOUNT = 0x1773; // 6003
+/** InvalidCollection: The collection is invalid */
+export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_COLLECTION = 0x1774; // 6004
 /** InvalidMplCoreProgram: Invalid mpl core program */
-export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_MPL_CORE_PROGRAM = 0x1779; // 6009
-/** RewardsNotClaimed: Rewards not claimed */
-export const DEPHY_ID_STAKE_POOL_ERROR__REWARDS_NOT_CLAIMED = 0x177a; // 6010
+export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_MPL_CORE_PROGRAM = 0x1775; // 6005
 /** StakeNonEmpty: Stake not empty */
-export const DEPHY_ID_STAKE_POOL_ERROR__STAKE_NON_EMPTY = 0x177b; // 6011
-/** NotEnoughToken: Not enough token */
-export const DEPHY_ID_STAKE_POOL_ERROR__NOT_ENOUGH_TOKEN = 0x177c; // 6012
+export const DEPHY_ID_STAKE_POOL_ERROR__STAKE_NON_EMPTY = 0x1776; // 6006
 /** InvalidAmount: Invalid amount */
-export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_AMOUNT = 0x177d; // 6013
+export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_AMOUNT = 0x1777; // 6007
 /** NotReadyYet: Not ready yet */
-export const DEPHY_ID_STAKE_POOL_ERROR__NOT_READY_YET = 0x177e; // 6014
-/** ReserveAvailable: Should withdraw from reserve */
-export const DEPHY_ID_STAKE_POOL_ERROR__RESERVE_AVAILABLE = 0x177f; // 6015
+export const DEPHY_ID_STAKE_POOL_ERROR__NOT_READY_YET = 0x1778; // 6008
 
 export type DephyIdStakePoolError =
-  | typeof DEPHY_ID_STAKE_POOL_ERROR__COLLECTION_NOT_MATCH
   | typeof DEPHY_ID_STAKE_POOL_ERROR__INVALID_ACCOUNT
   | typeof DEPHY_ID_STAKE_POOL_ERROR__INVALID_AMOUNT
   | typeof DEPHY_ID_STAKE_POOL_ERROR__INVALID_AUTHORITY
+  | typeof DEPHY_ID_STAKE_POOL_ERROR__INVALID_COLLECTION
   | typeof DEPHY_ID_STAKE_POOL_ERROR__INVALID_CONFIG
-  | typeof DEPHY_ID_STAKE_POOL_ERROR__INVALID_LOCKTIME
   | typeof DEPHY_ID_STAKE_POOL_ERROR__INVALID_MPL_CORE_PROGRAM
-  | typeof DEPHY_ID_STAKE_POOL_ERROR__INVALID_REWARD_TOKEN
   | typeof DEPHY_ID_STAKE_POOL_ERROR__INVALID_STAKE_TOKEN
-  | typeof DEPHY_ID_STAKE_POOL_ERROR__NOT_ENOUGH_TOKEN
-  | typeof DEPHY_ID_STAKE_POOL_ERROR__NO_TOKEN_STAKING
   | typeof DEPHY_ID_STAKE_POOL_ERROR__NOT_READY_YET
-  | typeof DEPHY_ID_STAKE_POOL_ERROR__RESERVE_AVAILABLE
-  | typeof DEPHY_ID_STAKE_POOL_ERROR__REWARDS_NOT_CLAIMED
-  | typeof DEPHY_ID_STAKE_POOL_ERROR__STAKE_LOCKED
   | typeof DEPHY_ID_STAKE_POOL_ERROR__STAKE_NON_EMPTY;
 
 let dephyIdStakePoolErrorMessages:
@@ -70,21 +49,14 @@ let dephyIdStakePoolErrorMessages:
   | undefined;
 if (process.env.NODE_ENV !== 'production') {
   dephyIdStakePoolErrorMessages = {
-    [DEPHY_ID_STAKE_POOL_ERROR__COLLECTION_NOT_MATCH]: `Collection not match`,
     [DEPHY_ID_STAKE_POOL_ERROR__INVALID_ACCOUNT]: `Invalid account`,
     [DEPHY_ID_STAKE_POOL_ERROR__INVALID_AMOUNT]: `Invalid amount`,
     [DEPHY_ID_STAKE_POOL_ERROR__INVALID_AUTHORITY]: `The provided authority is invalid`,
+    [DEPHY_ID_STAKE_POOL_ERROR__INVALID_COLLECTION]: `The collection is invalid`,
     [DEPHY_ID_STAKE_POOL_ERROR__INVALID_CONFIG]: `The config is invalid`,
-    [DEPHY_ID_STAKE_POOL_ERROR__INVALID_LOCKTIME]: `Locktime is invalid`,
     [DEPHY_ID_STAKE_POOL_ERROR__INVALID_MPL_CORE_PROGRAM]: `Invalid mpl core program`,
-    [DEPHY_ID_STAKE_POOL_ERROR__INVALID_REWARD_TOKEN]: `The reward token is invalid`,
     [DEPHY_ID_STAKE_POOL_ERROR__INVALID_STAKE_TOKEN]: `The stake token is invalid`,
-    [DEPHY_ID_STAKE_POOL_ERROR__NOT_ENOUGH_TOKEN]: `Not enough token`,
-    [DEPHY_ID_STAKE_POOL_ERROR__NO_TOKEN_STAKING]: `There is no token staking`,
     [DEPHY_ID_STAKE_POOL_ERROR__NOT_READY_YET]: `Not ready yet`,
-    [DEPHY_ID_STAKE_POOL_ERROR__RESERVE_AVAILABLE]: `Should withdraw from reserve`,
-    [DEPHY_ID_STAKE_POOL_ERROR__REWARDS_NOT_CLAIMED]: `Rewards not claimed`,
-    [DEPHY_ID_STAKE_POOL_ERROR__STAKE_LOCKED]: `The tokens are locked`,
     [DEPHY_ID_STAKE_POOL_ERROR__STAKE_NON_EMPTY]: `Stake not empty`,
   };
 }

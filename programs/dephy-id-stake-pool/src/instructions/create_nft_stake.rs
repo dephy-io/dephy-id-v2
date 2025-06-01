@@ -38,7 +38,7 @@ pub fn process_create_nft_stake(ctx: Context<CreateNftStake>) -> Result<()> {
     require_keys_eq!(
         ctx.accounts.mpl_core_collection.key(),
         stake_pool.config.collection,
-        ErrorCode::CollectionNotMatch
+        ErrorCode::InvalidCollection
     );
 
     mpl_core::instructions::AddPluginV1Cpi::new(
@@ -67,7 +67,7 @@ pub fn process_create_nft_stake(ctx: Context<CreateNftStake>) -> Result<()> {
     nft_stake.stake_authority = ctx.accounts.stake_authority.key();
     nft_stake.deposit_authority = ctx.accounts.deposit_authority.key();
     nft_stake.nft_token_account = ctx.accounts.mpl_core_asset.key();
-    nft_stake.token_amount = 0;
+    nft_stake.amount = 0;
 
     Ok(())
 }

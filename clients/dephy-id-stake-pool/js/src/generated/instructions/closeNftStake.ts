@@ -55,8 +55,8 @@ export type CloseNftStakeInstruction<
   TAccountStakePool extends string | IAccountMeta<string> = string,
   TAccountNftStake extends string | IAccountMeta<string> = string,
   TAccountStakeAuthority extends string | IAccountMeta<string> = string,
-  TAccountMplCoreAsset extends string | IAccountMeta<string> = string,
   TAccountMplCoreCollection extends string | IAccountMeta<string> = string,
+  TAccountMplCoreAsset extends string | IAccountMeta<string> = string,
   TAccountStakeTokenMint extends string | IAccountMeta<string> = string,
   TAccountStakeTokenAccount extends string | IAccountMeta<string> = string,
   TAccountPoolWallet extends string | IAccountMeta<string> = string,
@@ -85,12 +85,12 @@ export type CloseNftStakeInstruction<
         ? ReadonlySignerAccount<TAccountStakeAuthority> &
             IAccountSignerMeta<TAccountStakeAuthority>
         : TAccountStakeAuthority,
-      TAccountMplCoreAsset extends string
-        ? WritableAccount<TAccountMplCoreAsset>
-        : TAccountMplCoreAsset,
       TAccountMplCoreCollection extends string
         ? WritableAccount<TAccountMplCoreCollection>
         : TAccountMplCoreCollection,
+      TAccountMplCoreAsset extends string
+        ? WritableAccount<TAccountMplCoreAsset>
+        : TAccountMplCoreAsset,
       TAccountStakeTokenMint extends string
         ? ReadonlyAccount<TAccountStakeTokenMint>
         : TAccountStakeTokenMint,
@@ -150,8 +150,8 @@ export type CloseNftStakeAsyncInput<
   TAccountStakePool extends string = string,
   TAccountNftStake extends string = string,
   TAccountStakeAuthority extends string = string,
-  TAccountMplCoreAsset extends string = string,
   TAccountMplCoreCollection extends string = string,
+  TAccountMplCoreAsset extends string = string,
   TAccountStakeTokenMint extends string = string,
   TAccountStakeTokenAccount extends string = string,
   TAccountPoolWallet extends string = string,
@@ -163,8 +163,8 @@ export type CloseNftStakeAsyncInput<
   stakePool: Address<TAccountStakePool>;
   nftStake: Address<TAccountNftStake>;
   stakeAuthority: TransactionSigner<TAccountStakeAuthority>;
-  mplCoreAsset: Address<TAccountMplCoreAsset>;
   mplCoreCollection: Address<TAccountMplCoreCollection>;
+  mplCoreAsset: Address<TAccountMplCoreAsset>;
   stakeTokenMint: Address<TAccountStakeTokenMint>;
   stakeTokenAccount: Address<TAccountStakeTokenAccount>;
   poolWallet?: Address<TAccountPoolWallet>;
@@ -178,8 +178,8 @@ export async function getCloseNftStakeInstructionAsync<
   TAccountStakePool extends string,
   TAccountNftStake extends string,
   TAccountStakeAuthority extends string,
-  TAccountMplCoreAsset extends string,
   TAccountMplCoreCollection extends string,
+  TAccountMplCoreAsset extends string,
   TAccountStakeTokenMint extends string,
   TAccountStakeTokenAccount extends string,
   TAccountPoolWallet extends string,
@@ -193,8 +193,8 @@ export async function getCloseNftStakeInstructionAsync<
     TAccountStakePool,
     TAccountNftStake,
     TAccountStakeAuthority,
-    TAccountMplCoreAsset,
     TAccountMplCoreCollection,
+    TAccountMplCoreAsset,
     TAccountStakeTokenMint,
     TAccountStakeTokenAccount,
     TAccountPoolWallet,
@@ -210,8 +210,8 @@ export async function getCloseNftStakeInstructionAsync<
     TAccountStakePool,
     TAccountNftStake,
     TAccountStakeAuthority,
-    TAccountMplCoreAsset,
     TAccountMplCoreCollection,
+    TAccountMplCoreAsset,
     TAccountStakeTokenMint,
     TAccountStakeTokenAccount,
     TAccountPoolWallet,
@@ -230,11 +230,11 @@ export async function getCloseNftStakeInstructionAsync<
     stakePool: { value: input.stakePool ?? null, isWritable: false },
     nftStake: { value: input.nftStake ?? null, isWritable: true },
     stakeAuthority: { value: input.stakeAuthority ?? null, isWritable: false },
-    mplCoreAsset: { value: input.mplCoreAsset ?? null, isWritable: true },
     mplCoreCollection: {
       value: input.mplCoreCollection ?? null,
       isWritable: true,
     },
+    mplCoreAsset: { value: input.mplCoreAsset ?? null, isWritable: true },
     stakeTokenMint: { value: input.stakeTokenMint ?? null, isWritable: false },
     stakeTokenAccount: {
       value: input.stakeTokenAccount ?? null,
@@ -282,8 +282,8 @@ export async function getCloseNftStakeInstructionAsync<
       getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.nftStake),
       getAccountMeta(accounts.stakeAuthority),
-      getAccountMeta(accounts.mplCoreAsset),
       getAccountMeta(accounts.mplCoreCollection),
+      getAccountMeta(accounts.mplCoreAsset),
       getAccountMeta(accounts.stakeTokenMint),
       getAccountMeta(accounts.stakeTokenAccount),
       getAccountMeta(accounts.poolWallet),
@@ -299,8 +299,8 @@ export async function getCloseNftStakeInstructionAsync<
     TAccountStakePool,
     TAccountNftStake,
     TAccountStakeAuthority,
-    TAccountMplCoreAsset,
     TAccountMplCoreCollection,
+    TAccountMplCoreAsset,
     TAccountStakeTokenMint,
     TAccountStakeTokenAccount,
     TAccountPoolWallet,
@@ -317,8 +317,8 @@ export type CloseNftStakeInput<
   TAccountStakePool extends string = string,
   TAccountNftStake extends string = string,
   TAccountStakeAuthority extends string = string,
-  TAccountMplCoreAsset extends string = string,
   TAccountMplCoreCollection extends string = string,
+  TAccountMplCoreAsset extends string = string,
   TAccountStakeTokenMint extends string = string,
   TAccountStakeTokenAccount extends string = string,
   TAccountPoolWallet extends string = string,
@@ -330,8 +330,8 @@ export type CloseNftStakeInput<
   stakePool: Address<TAccountStakePool>;
   nftStake: Address<TAccountNftStake>;
   stakeAuthority: TransactionSigner<TAccountStakeAuthority>;
-  mplCoreAsset: Address<TAccountMplCoreAsset>;
   mplCoreCollection: Address<TAccountMplCoreCollection>;
+  mplCoreAsset: Address<TAccountMplCoreAsset>;
   stakeTokenMint: Address<TAccountStakeTokenMint>;
   stakeTokenAccount: Address<TAccountStakeTokenAccount>;
   poolWallet: Address<TAccountPoolWallet>;
@@ -345,8 +345,8 @@ export function getCloseNftStakeInstruction<
   TAccountStakePool extends string,
   TAccountNftStake extends string,
   TAccountStakeAuthority extends string,
-  TAccountMplCoreAsset extends string,
   TAccountMplCoreCollection extends string,
+  TAccountMplCoreAsset extends string,
   TAccountStakeTokenMint extends string,
   TAccountStakeTokenAccount extends string,
   TAccountPoolWallet extends string,
@@ -360,8 +360,8 @@ export function getCloseNftStakeInstruction<
     TAccountStakePool,
     TAccountNftStake,
     TAccountStakeAuthority,
-    TAccountMplCoreAsset,
     TAccountMplCoreCollection,
+    TAccountMplCoreAsset,
     TAccountStakeTokenMint,
     TAccountStakeTokenAccount,
     TAccountPoolWallet,
@@ -376,8 +376,8 @@ export function getCloseNftStakeInstruction<
   TAccountStakePool,
   TAccountNftStake,
   TAccountStakeAuthority,
-  TAccountMplCoreAsset,
   TAccountMplCoreCollection,
+  TAccountMplCoreAsset,
   TAccountStakeTokenMint,
   TAccountStakeTokenAccount,
   TAccountPoolWallet,
@@ -395,11 +395,11 @@ export function getCloseNftStakeInstruction<
     stakePool: { value: input.stakePool ?? null, isWritable: false },
     nftStake: { value: input.nftStake ?? null, isWritable: true },
     stakeAuthority: { value: input.stakeAuthority ?? null, isWritable: false },
-    mplCoreAsset: { value: input.mplCoreAsset ?? null, isWritable: true },
     mplCoreCollection: {
       value: input.mplCoreCollection ?? null,
       isWritable: true,
     },
+    mplCoreAsset: { value: input.mplCoreAsset ?? null, isWritable: true },
     stakeTokenMint: { value: input.stakeTokenMint ?? null, isWritable: false },
     stakeTokenAccount: {
       value: input.stakeTokenAccount ?? null,
@@ -436,8 +436,8 @@ export function getCloseNftStakeInstruction<
       getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.nftStake),
       getAccountMeta(accounts.stakeAuthority),
-      getAccountMeta(accounts.mplCoreAsset),
       getAccountMeta(accounts.mplCoreCollection),
+      getAccountMeta(accounts.mplCoreAsset),
       getAccountMeta(accounts.stakeTokenMint),
       getAccountMeta(accounts.stakeTokenAccount),
       getAccountMeta(accounts.poolWallet),
@@ -453,8 +453,8 @@ export function getCloseNftStakeInstruction<
     TAccountStakePool,
     TAccountNftStake,
     TAccountStakeAuthority,
-    TAccountMplCoreAsset,
     TAccountMplCoreCollection,
+    TAccountMplCoreAsset,
     TAccountStakeTokenMint,
     TAccountStakeTokenAccount,
     TAccountPoolWallet,
@@ -476,8 +476,8 @@ export type ParsedCloseNftStakeInstruction<
     stakePool: TAccountMetas[0];
     nftStake: TAccountMetas[1];
     stakeAuthority: TAccountMetas[2];
-    mplCoreAsset: TAccountMetas[3];
-    mplCoreCollection: TAccountMetas[4];
+    mplCoreCollection: TAccountMetas[3];
+    mplCoreAsset: TAccountMetas[4];
     stakeTokenMint: TAccountMetas[5];
     stakeTokenAccount: TAccountMetas[6];
     poolWallet: TAccountMetas[7];
@@ -513,8 +513,8 @@ export function parseCloseNftStakeInstruction<
       stakePool: getNextAccount(),
       nftStake: getNextAccount(),
       stakeAuthority: getNextAccount(),
-      mplCoreAsset: getNextAccount(),
       mplCoreCollection: getNextAccount(),
+      mplCoreAsset: getNextAccount(),
       stakeTokenMint: getNextAccount(),
       stakeTokenAccount: getNextAccount(),
       poolWallet: getNextAccount(),

@@ -34,8 +34,8 @@ pub fn process_request_withdraw(ctx: Context<RequestWithdraw>, amount: u64) -> R
 
     require_gt!(amount, 0, ErrorCode::InvalidAmount);
     require_gte!(user_stake.amount, amount, ErrorCode::InvalidAmount);
-    require_gte!(nft_stake.token_amount, amount, ErrorCode::InvalidAmount);
-    require_gte!(stake_pool.total_staking, amount, ErrorCode::InvalidAmount);
+    require_gte!(nft_stake.amount, amount, ErrorCode::InvalidAmount);
+    require_gte!(stake_pool.total_amount, amount, ErrorCode::InvalidAmount);
 
     let withdraw_request = &mut ctx.accounts.withdraw_request;
     withdraw_request.stake_pool = stake_pool.key();
@@ -43,10 +43,11 @@ pub fn process_request_withdraw(ctx: Context<RequestWithdraw>, amount: u64) -> R
     withdraw_request.amount = amount;
     withdraw_request.timestamp = now;
 
-    stake_pool.total_staking -= amount;
+    stake_pool.total_amount -= amount;
     stake_pool.requested_withdrawal += amount;
-    nft_stake.token_amount -= amount;
+    nft_stake.amount -= amount;
     user_stake.amount -= amount;
+    user_stake.requested_withdrawal += amount;
 
     Ok(())
 }

@@ -45,7 +45,7 @@ pub fn process_create_stake_pool(
     let stake_pool = &mut ctx.accounts.stake_pool;
     stake_pool.authority = ctx.accounts.authority.key();
     stake_pool.stake_token_account = ctx.accounts.stake_token_account.key();
-    stake_pool.total_staking = 0;
+    stake_pool.total_amount = 0;
     stake_pool.config = StakePoolConfig {
         collection: ctx.accounts.collection.key(),
         stake_token_mint: ctx.accounts.stake_token_mint.key(),

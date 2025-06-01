@@ -16,13 +16,21 @@ pub struct RedeemWithdraw<'info> {
     pub nft_stake: Account<'info, NftStakeAccount>,
     #[account(address = user_stake_account.user @ ErrorCode::InvalidAuthority)]
     pub user: Signer<'info>,
-    #[account(mut, seeds = [stake_pool.key().as_ref(), USER_STAKE_SEED, user.key.as_ref()], bump)]
+    #[account(mut, seeds = [nft_stake.key().as_ref(), USER_STAKE_SEED, user.key.as_ref()], bump)]
     pub user_stake_account: Account<'info, UserStakeAccount>,
     #[account(mut, close = payer)]
     pub withdraw_request: Account<'info, WithdrawRequestAccount>,
-    #[account(address = stake_pool.config.stake_token_mint @ ErrorCode::InvalidStakeToken)]
+    #[account(
+        address = stake_pool.config.stake_token_mint @ ErrorCode::InvalidStakeToken,
+        mint::token_program = token_program
+    )]
     pub stake_token_mint: InterfaceAccount<'info, Mint>,
-    #[account(mut, address = stake_pool.stake_token_account @ ErrorCode::InvalidStakeToken)]
+    #[account(mut,
+        address = stake_pool.stake_token_account @ ErrorCode::InvalidStakeToken,
+        token::mint = stake_token_mint,
+        token::authority = pool_wallet,
+        token::token_program = token_program
+    )]
     pub stake_token_account: InterfaceAccount<'info, TokenAccount>,
     #[account(
         mut,
@@ -61,7 +69,7 @@ pub fn process_redeem_withdraw(ctx: Context<RedeemWithdraw>) -> Result<()> {
     let clock = Clock::get()?;
     let now = clock.unix_timestamp as u64;
 
-    require_gt!(
+    require_gte!(
         now,
         withdraw_request.timestamp + stake_pool.config.withdraw_pending,
         ErrorCode::NotReadyYet
@@ -70,12 +78,12 @@ pub fn process_redeem_withdraw(ctx: Context<RedeemWithdraw>) -> Result<()> {
     let amount = withdraw_request.amount;
 
     require_gte!(
-        ctx.accounts.nft_stake.token_amount,
+        ctx.accounts.nft_stake.amount,
         amount,
         ErrorCode::InvalidAmount
     );
 
-    ctx.accounts.nft_stake.token_amount -= amount;
+    ctx.accounts.nft_stake.amount -= amount;
     withdraw_request.amount -= amount;
     stake_pool.requested_withdrawal -= amount;
     user_stake.requested_withdrawal -= amount;

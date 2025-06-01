@@ -8,20 +8,20 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 #[derive(Accounts)]
 pub struct CloseNftStake<'info> {
-    pub stake_pool: Box<Account<'info, StakePoolAccount>>,
+    pub stake_pool: Account<'info, StakePoolAccount>,
     #[account(mut, close = payer, has_one = stake_pool)]
-    pub nft_stake: Box<Account<'info, NftStakeAccount>>,
+    pub nft_stake: Account<'info, NftStakeAccount>,
     pub stake_authority: Signer<'info>,
+    /// CHECK:
+    #[account(mut, address = stake_pool.config.collection @ ErrorCode::InvalidCollection)]
+    pub mpl_core_collection: UncheckedAccount<'info>,
     /// CHECK:
     #[account(mut)]
     pub mpl_core_asset: UncheckedAccount<'info>,
-    /// CHECK:
-    #[account(mut)]
-    pub mpl_core_collection: UncheckedAccount<'info>,
     #[account(address = stake_pool.config.stake_token_mint @ ErrorCode::InvalidStakeToken)]
-    pub stake_token_mint: Box<InterfaceAccount<'info, Mint>>,
+    pub stake_token_mint: InterfaceAccount<'info, Mint>,
     #[account(address = stake_pool.stake_token_account @ ErrorCode::InvalidStakeToken)]
-    pub stake_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub stake_token_account: InterfaceAccount<'info, TokenAccount>,
     #[account(seeds = [stake_pool.key().as_ref(), POOL_WALLET_SEED], bump)]
     pub pool_wallet: SystemAccount<'info>,
     #[account(mut)]
@@ -37,8 +37,7 @@ pub fn process_close_nft_stake(ctx: Context<CloseNftStake>) -> Result<()> {
     msg!("close nft stake with mpl core");
 
     let nft_stake = &ctx.accounts.nft_stake;
-    // TODO: maybe goes to unallocated staking
-    if nft_stake.token_amount > 0 {
+    if nft_stake.amount > 0 {
         return Err(ErrorCode::StakeNonEmpty.into());
     }
     if nft_stake.stake_authority != ctx.accounts.stake_authority.key() {

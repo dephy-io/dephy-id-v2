@@ -259,7 +259,7 @@ export async function getRedeemWithdrawTokenInstructionAsync<
     accounts.userStakeAccount.value = await getProgramDerivedAddress({
       programAddress,
       seeds: [
-        getAddressEncoder().encode(expectAddress(accounts.stakePool.value)),
+        getAddressEncoder().encode(expectAddress(accounts.nftStake.value)),
         getBytesEncoder().encode(
           new Uint8Array([85, 83, 69, 82, 95, 83, 84, 65, 75, 69])
         ),

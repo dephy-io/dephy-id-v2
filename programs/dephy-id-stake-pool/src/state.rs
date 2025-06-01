@@ -13,7 +13,7 @@ pub struct NftStakeAccount {
     pub stake_authority: Pubkey,
     pub deposit_authority: Pubkey,
     pub nft_token_account: Pubkey,
-    pub token_amount: u64,
+    pub amount: u64,
 }
 
 #[account]
@@ -23,7 +23,7 @@ pub struct StakePoolAccount {
     pub announced_config: Option<Pubkey>,
     pub config: StakePoolConfig,
     pub stake_token_account: Pubkey,
-    pub total_staking: u64,
+    pub total_amount: u64,
     pub requested_withdrawal: u64,
 }
 

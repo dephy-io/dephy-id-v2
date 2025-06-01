@@ -53,7 +53,7 @@ export type NftStakeAccount = {
   stakeAuthority: Address;
   depositAuthority: Address;
   nftTokenAccount: Address;
-  tokenAmount: bigint;
+  amount: bigint;
 };
 
 export type NftStakeAccountArgs = {
@@ -61,7 +61,7 @@ export type NftStakeAccountArgs = {
   stakeAuthority: Address;
   depositAuthority: Address;
   nftTokenAccount: Address;
-  tokenAmount: number | bigint;
+  amount: number | bigint;
 };
 
 export function getNftStakeAccountEncoder(): Encoder<NftStakeAccountArgs> {
@@ -72,7 +72,7 @@ export function getNftStakeAccountEncoder(): Encoder<NftStakeAccountArgs> {
       ['stakeAuthority', getAddressEncoder()],
       ['depositAuthority', getAddressEncoder()],
       ['nftTokenAccount', getAddressEncoder()],
-      ['tokenAmount', getU64Encoder()],
+      ['amount', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: NFT_STAKE_ACCOUNT_DISCRIMINATOR })
   );
@@ -85,7 +85,7 @@ export function getNftStakeAccountDecoder(): Decoder<NftStakeAccount> {
     ['stakeAuthority', getAddressDecoder()],
     ['depositAuthority', getAddressDecoder()],
     ['nftTokenAccount', getAddressDecoder()],
-    ['tokenAmount', getU64Decoder()],
+    ['amount', getU64Decoder()],
   ]);
 }
 

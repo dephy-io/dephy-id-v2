@@ -14,6 +14,8 @@ pub struct NftStakeAccount {
     pub deposit_authority: Pubkey,
     pub nft_token_account: Pubkey,
     pub amount: u64,
+    pub requested_withdrawal: u64,
+    pub active: bool,
 }
 
 #[account]

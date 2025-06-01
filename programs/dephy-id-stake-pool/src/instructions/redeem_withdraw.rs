@@ -51,6 +51,7 @@ pub fn process_redeem_withdraw(ctx: Context<RedeemWithdraw>) -> Result<()> {
     msg!("redeem withdraw");
 
     let stake_pool = &mut ctx.accounts.stake_pool;
+    let nft_stake = &mut ctx.accounts.nft_stake;
     let user_stake = &mut ctx.accounts.user_stake_account;
     let withdraw_request = &mut ctx.accounts.withdraw_request;
 
@@ -77,15 +78,10 @@ pub fn process_redeem_withdraw(ctx: Context<RedeemWithdraw>) -> Result<()> {
 
     let amount = withdraw_request.amount;
 
-    require_gte!(
-        ctx.accounts.nft_stake.amount,
-        amount,
-        ErrorCode::InvalidAmount
-    );
-
-    ctx.accounts.nft_stake.amount -= amount;
     withdraw_request.amount -= amount;
+
     stake_pool.requested_withdrawal -= amount;
+    nft_stake.requested_withdrawal -= amount;
     user_stake.requested_withdrawal -= amount;
 
     // transfer tokens

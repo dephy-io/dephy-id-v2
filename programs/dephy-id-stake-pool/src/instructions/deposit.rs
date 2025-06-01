@@ -55,6 +55,7 @@ pub fn process_deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
         ErrorCode::InvalidAuthority
     );
 
+    require!(nft_stake.active, ErrorCode::NftStakeNotActive);
     require_gt!(amount, 0, ErrorCode::InvalidAmount);
     require_gte!(config.max_stake_amount, amount, ErrorCode::InvalidAmount);
 

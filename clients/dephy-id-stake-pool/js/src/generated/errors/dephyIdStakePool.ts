@@ -32,6 +32,10 @@ export const DEPHY_ID_STAKE_POOL_ERROR__STAKE_NON_EMPTY = 0x1776; // 6006
 export const DEPHY_ID_STAKE_POOL_ERROR__INVALID_AMOUNT = 0x1777; // 6007
 /** NotReadyYet: Not ready yet */
 export const DEPHY_ID_STAKE_POOL_ERROR__NOT_READY_YET = 0x1778; // 6008
+/** NftStakeNotActive: Nft stake is not active */
+export const DEPHY_ID_STAKE_POOL_ERROR__NFT_STAKE_NOT_ACTIVE = 0x1779; // 6009
+/** NftStakeIsActive: Nft stake is active */
+export const DEPHY_ID_STAKE_POOL_ERROR__NFT_STAKE_IS_ACTIVE = 0x177a; // 6010
 
 export type DephyIdStakePoolError =
   | typeof DEPHY_ID_STAKE_POOL_ERROR__INVALID_ACCOUNT
@@ -41,6 +45,8 @@ export type DephyIdStakePoolError =
   | typeof DEPHY_ID_STAKE_POOL_ERROR__INVALID_CONFIG
   | typeof DEPHY_ID_STAKE_POOL_ERROR__INVALID_MPL_CORE_PROGRAM
   | typeof DEPHY_ID_STAKE_POOL_ERROR__INVALID_STAKE_TOKEN
+  | typeof DEPHY_ID_STAKE_POOL_ERROR__NFT_STAKE_IS_ACTIVE
+  | typeof DEPHY_ID_STAKE_POOL_ERROR__NFT_STAKE_NOT_ACTIVE
   | typeof DEPHY_ID_STAKE_POOL_ERROR__NOT_READY_YET
   | typeof DEPHY_ID_STAKE_POOL_ERROR__STAKE_NON_EMPTY;
 
@@ -56,6 +62,8 @@ if (process.env.NODE_ENV !== 'production') {
     [DEPHY_ID_STAKE_POOL_ERROR__INVALID_CONFIG]: `The config is invalid`,
     [DEPHY_ID_STAKE_POOL_ERROR__INVALID_MPL_CORE_PROGRAM]: `Invalid mpl core program`,
     [DEPHY_ID_STAKE_POOL_ERROR__INVALID_STAKE_TOKEN]: `The stake token is invalid`,
+    [DEPHY_ID_STAKE_POOL_ERROR__NFT_STAKE_IS_ACTIVE]: `Nft stake is active`,
+    [DEPHY_ID_STAKE_POOL_ERROR__NFT_STAKE_NOT_ACTIVE]: `Nft stake is not active`,
     [DEPHY_ID_STAKE_POOL_ERROR__NOT_READY_YET]: `Not ready yet`,
     [DEPHY_ID_STAKE_POOL_ERROR__STAKE_NON_EMPTY]: `Stake not empty`,
   };

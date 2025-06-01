@@ -46,6 +46,7 @@ pub fn process_request_withdraw(ctx: Context<RequestWithdraw>, amount: u64) -> R
     stake_pool.total_amount -= amount;
     stake_pool.requested_withdrawal += amount;
     nft_stake.amount -= amount;
+    nft_stake.requested_withdrawal += amount;
     user_stake.amount -= amount;
     user_stake.requested_withdrawal += amount;
 

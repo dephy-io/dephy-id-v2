@@ -17,6 +17,8 @@ import {
   fixEncoderSize,
   getAddressDecoder,
   getAddressEncoder,
+  getBooleanDecoder,
+  getBooleanEncoder,
   getBytesDecoder,
   getBytesEncoder,
   getStructDecoder,
@@ -54,6 +56,8 @@ export type NftStakeAccount = {
   depositAuthority: Address;
   nftTokenAccount: Address;
   amount: bigint;
+  requestedWithdrawal: bigint;
+  active: boolean;
 };
 
 export type NftStakeAccountArgs = {
@@ -62,6 +66,8 @@ export type NftStakeAccountArgs = {
   depositAuthority: Address;
   nftTokenAccount: Address;
   amount: number | bigint;
+  requestedWithdrawal: number | bigint;
+  active: boolean;
 };
 
 export function getNftStakeAccountEncoder(): Encoder<NftStakeAccountArgs> {
@@ -73,6 +79,8 @@ export function getNftStakeAccountEncoder(): Encoder<NftStakeAccountArgs> {
       ['depositAuthority', getAddressEncoder()],
       ['nftTokenAccount', getAddressEncoder()],
       ['amount', getU64Encoder()],
+      ['requestedWithdrawal', getU64Encoder()],
+      ['active', getBooleanEncoder()],
     ]),
     (value) => ({ ...value, discriminator: NFT_STAKE_ACCOUNT_DISCRIMINATOR })
   );
@@ -86,6 +94,8 @@ export function getNftStakeAccountDecoder(): Decoder<NftStakeAccount> {
     ['depositAuthority', getAddressDecoder()],
     ['nftTokenAccount', getAddressDecoder()],
     ['amount', getU64Decoder()],
+    ['requestedWithdrawal', getU64Decoder()],
+    ['active', getBooleanDecoder()],
   ]);
 }
 
@@ -160,5 +170,5 @@ export async function fetchAllMaybeNftStakeAccount(
 }
 
 export function getNftStakeAccountSize(): number {
-  return 144;
+  return 153;
 }

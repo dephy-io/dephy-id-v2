@@ -13,3 +13,4 @@ export * from './depositToken';
 export * from './initialize';
 export * from './redeemWithdrawToken';
 export * from './requestWithdrawToken';
+export * from './unstakeNft';

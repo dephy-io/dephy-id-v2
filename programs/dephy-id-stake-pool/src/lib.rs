@@ -48,6 +48,10 @@ pub mod dephy_id_stake_pool {
         process_create_nft_stake(ctx)
     }
 
+    pub fn unstake_nft(ctx: Context<UnstakeNft>) -> Result<()> {
+        process_unstake_nft(ctx)
+    }
+
     pub fn close_nft_stake(ctx: Context<CloseNftStake>) -> Result<()> {
         process_close_nft_stake(ctx)
     }

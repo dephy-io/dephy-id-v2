@@ -20,4 +20,8 @@ pub enum ErrorCode {
     InvalidAmount,
     #[msg("Not ready yet")]
     NotReadyYet,
+    #[msg("Nft stake is not active")]
+    NftStakeNotActive,
+    #[msg("Nft stake is active")]
+    NftStakeIsActive,
 }

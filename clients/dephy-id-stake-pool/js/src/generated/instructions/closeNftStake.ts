@@ -52,8 +52,8 @@ export function getCloseNftStakeDiscriminatorBytes() {
 
 export type CloseNftStakeInstruction<
   TProgram extends string = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
-  TAccountStakePool extends string | IAccountMeta<string> = string,
   TAccountNftStake extends string | IAccountMeta<string> = string,
+  TAccountStakePool extends string | IAccountMeta<string> = string,
   TAccountStakeAuthority extends string | IAccountMeta<string> = string,
   TAccountPoolWallet extends string | IAccountMeta<string> = string,
   TAccountPayer extends string | IAccountMeta<string> = string,
@@ -65,12 +65,12 @@ export type CloseNftStakeInstruction<
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
     [
-      TAccountStakePool extends string
-        ? ReadonlyAccount<TAccountStakePool>
-        : TAccountStakePool,
       TAccountNftStake extends string
         ? WritableAccount<TAccountNftStake>
         : TAccountNftStake,
+      TAccountStakePool extends string
+        ? ReadonlyAccount<TAccountStakePool>
+        : TAccountStakePool,
       TAccountStakeAuthority extends string
         ? ReadonlySignerAccount<TAccountStakeAuthority> &
             IAccountSignerMeta<TAccountStakeAuthority>
@@ -119,15 +119,15 @@ export function getCloseNftStakeInstructionDataCodec(): Codec<
 }
 
 export type CloseNftStakeAsyncInput<
-  TAccountStakePool extends string = string,
   TAccountNftStake extends string = string,
+  TAccountStakePool extends string = string,
   TAccountStakeAuthority extends string = string,
   TAccountPoolWallet extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
-  stakePool: Address<TAccountStakePool>;
   nftStake: Address<TAccountNftStake>;
+  stakePool: Address<TAccountStakePool>;
   stakeAuthority: TransactionSigner<TAccountStakeAuthority>;
   poolWallet?: Address<TAccountPoolWallet>;
   payer: TransactionSigner<TAccountPayer>;
@@ -135,8 +135,8 @@ export type CloseNftStakeAsyncInput<
 };
 
 export async function getCloseNftStakeInstructionAsync<
-  TAccountStakePool extends string,
   TAccountNftStake extends string,
+  TAccountStakePool extends string,
   TAccountStakeAuthority extends string,
   TAccountPoolWallet extends string,
   TAccountPayer extends string,
@@ -144,8 +144,8 @@ export async function getCloseNftStakeInstructionAsync<
   TProgramAddress extends Address = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
 >(
   input: CloseNftStakeAsyncInput<
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountStakeAuthority,
     TAccountPoolWallet,
     TAccountPayer,
@@ -155,8 +155,8 @@ export async function getCloseNftStakeInstructionAsync<
 ): Promise<
   CloseNftStakeInstruction<
     TProgramAddress,
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountStakeAuthority,
     TAccountPoolWallet,
     TAccountPayer,
@@ -169,8 +169,8 @@ export async function getCloseNftStakeInstructionAsync<
 
   // Original accounts.
   const originalAccounts = {
-    stakePool: { value: input.stakePool ?? null, isWritable: false },
     nftStake: { value: input.nftStake ?? null, isWritable: true },
+    stakePool: { value: input.stakePool ?? null, isWritable: false },
     stakeAuthority: { value: input.stakeAuthority ?? null, isWritable: false },
     poolWallet: { value: input.poolWallet ?? null, isWritable: false },
     payer: { value: input.payer ?? null, isWritable: true },
@@ -201,8 +201,8 @@ export async function getCloseNftStakeInstructionAsync<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.nftStake),
+      getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.stakeAuthority),
       getAccountMeta(accounts.poolWallet),
       getAccountMeta(accounts.payer),
@@ -212,8 +212,8 @@ export async function getCloseNftStakeInstructionAsync<
     data: getCloseNftStakeInstructionDataEncoder().encode({}),
   } as CloseNftStakeInstruction<
     TProgramAddress,
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountStakeAuthority,
     TAccountPoolWallet,
     TAccountPayer,
@@ -224,15 +224,15 @@ export async function getCloseNftStakeInstructionAsync<
 }
 
 export type CloseNftStakeInput<
-  TAccountStakePool extends string = string,
   TAccountNftStake extends string = string,
+  TAccountStakePool extends string = string,
   TAccountStakeAuthority extends string = string,
   TAccountPoolWallet extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
-  stakePool: Address<TAccountStakePool>;
   nftStake: Address<TAccountNftStake>;
+  stakePool: Address<TAccountStakePool>;
   stakeAuthority: TransactionSigner<TAccountStakeAuthority>;
   poolWallet: Address<TAccountPoolWallet>;
   payer: TransactionSigner<TAccountPayer>;
@@ -240,8 +240,8 @@ export type CloseNftStakeInput<
 };
 
 export function getCloseNftStakeInstruction<
-  TAccountStakePool extends string,
   TAccountNftStake extends string,
+  TAccountStakePool extends string,
   TAccountStakeAuthority extends string,
   TAccountPoolWallet extends string,
   TAccountPayer extends string,
@@ -249,8 +249,8 @@ export function getCloseNftStakeInstruction<
   TProgramAddress extends Address = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
 >(
   input: CloseNftStakeInput<
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountStakeAuthority,
     TAccountPoolWallet,
     TAccountPayer,
@@ -259,8 +259,8 @@ export function getCloseNftStakeInstruction<
   config?: { programAddress?: TProgramAddress }
 ): CloseNftStakeInstruction<
   TProgramAddress,
-  TAccountStakePool,
   TAccountNftStake,
+  TAccountStakePool,
   TAccountStakeAuthority,
   TAccountPoolWallet,
   TAccountPayer,
@@ -272,8 +272,8 @@ export function getCloseNftStakeInstruction<
 
   // Original accounts.
   const originalAccounts = {
-    stakePool: { value: input.stakePool ?? null, isWritable: false },
     nftStake: { value: input.nftStake ?? null, isWritable: true },
+    stakePool: { value: input.stakePool ?? null, isWritable: false },
     stakeAuthority: { value: input.stakeAuthority ?? null, isWritable: false },
     poolWallet: { value: input.poolWallet ?? null, isWritable: false },
     payer: { value: input.payer ?? null, isWritable: true },
@@ -293,8 +293,8 @@ export function getCloseNftStakeInstruction<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.nftStake),
+      getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.stakeAuthority),
       getAccountMeta(accounts.poolWallet),
       getAccountMeta(accounts.payer),
@@ -304,8 +304,8 @@ export function getCloseNftStakeInstruction<
     data: getCloseNftStakeInstructionDataEncoder().encode({}),
   } as CloseNftStakeInstruction<
     TProgramAddress,
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountStakeAuthority,
     TAccountPoolWallet,
     TAccountPayer,
@@ -321,8 +321,8 @@ export type ParsedCloseNftStakeInstruction<
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    stakePool: TAccountMetas[0];
-    nftStake: TAccountMetas[1];
+    nftStake: TAccountMetas[0];
+    stakePool: TAccountMetas[1];
     stakeAuthority: TAccountMetas[2];
     poolWallet: TAccountMetas[3];
     payer: TAccountMetas[4];
@@ -352,8 +352,8 @@ export function parseCloseNftStakeInstruction<
   return {
     programAddress: instruction.programAddress,
     accounts: {
-      stakePool: getNextAccount(),
       nftStake: getNextAccount(),
+      stakePool: getNextAccount(),
       stakeAuthority: getNextAccount(),
       poolWallet: getNextAccount(),
       payer: getNextAccount(),

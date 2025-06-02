@@ -54,8 +54,8 @@ export function getDepositTokenDiscriminatorBytes() {
 
 export type DepositTokenInstruction<
   TProgram extends string = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
-  TAccountStakePool extends string | IAccountMeta<string> = string,
   TAccountNftStake extends string | IAccountMeta<string> = string,
+  TAccountStakePool extends string | IAccountMeta<string> = string,
   TAccountUser extends string | IAccountMeta<string> = string,
   TAccountUserStakeAccount extends string | IAccountMeta<string> = string,
   TAccountStakeTokenMint extends string | IAccountMeta<string> = string,
@@ -74,12 +74,12 @@ export type DepositTokenInstruction<
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
     [
-      TAccountStakePool extends string
-        ? WritableAccount<TAccountStakePool>
-        : TAccountStakePool,
       TAccountNftStake extends string
         ? WritableAccount<TAccountNftStake>
         : TAccountNftStake,
+      TAccountStakePool extends string
+        ? WritableAccount<TAccountStakePool>
+        : TAccountStakePool,
       TAccountUser extends string
         ? ReadonlySignerAccount<TAccountUser> & IAccountSignerMeta<TAccountUser>
         : TAccountUser,
@@ -147,8 +147,8 @@ export function getDepositTokenInstructionDataCodec(): Codec<
 }
 
 export type DepositTokenAsyncInput<
-  TAccountStakePool extends string = string,
   TAccountNftStake extends string = string,
+  TAccountStakePool extends string = string,
   TAccountUser extends string = string,
   TAccountUserStakeAccount extends string = string,
   TAccountStakeTokenMint extends string = string,
@@ -159,8 +159,8 @@ export type DepositTokenAsyncInput<
   TAccountTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
-  stakePool: Address<TAccountStakePool>;
   nftStake: Address<TAccountNftStake>;
+  stakePool: Address<TAccountStakePool>;
   user: TransactionSigner<TAccountUser>;
   userStakeAccount?: Address<TAccountUserStakeAccount>;
   stakeTokenMint: Address<TAccountStakeTokenMint>;
@@ -174,8 +174,8 @@ export type DepositTokenAsyncInput<
 };
 
 export async function getDepositTokenInstructionAsync<
-  TAccountStakePool extends string,
   TAccountNftStake extends string,
+  TAccountStakePool extends string,
   TAccountUser extends string,
   TAccountUserStakeAccount extends string,
   TAccountStakeTokenMint extends string,
@@ -188,8 +188,8 @@ export async function getDepositTokenInstructionAsync<
   TProgramAddress extends Address = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
 >(
   input: DepositTokenAsyncInput<
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountUser,
     TAccountUserStakeAccount,
     TAccountStakeTokenMint,
@@ -204,8 +204,8 @@ export async function getDepositTokenInstructionAsync<
 ): Promise<
   DepositTokenInstruction<
     TProgramAddress,
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountUser,
     TAccountUserStakeAccount,
     TAccountStakeTokenMint,
@@ -223,8 +223,8 @@ export async function getDepositTokenInstructionAsync<
 
   // Original accounts.
   const originalAccounts = {
-    stakePool: { value: input.stakePool ?? null, isWritable: true },
     nftStake: { value: input.nftStake ?? null, isWritable: true },
+    stakePool: { value: input.stakePool ?? null, isWritable: true },
     user: { value: input.user ?? null, isWritable: false },
     userStakeAccount: {
       value: input.userStakeAccount ?? null,
@@ -288,8 +288,8 @@ export async function getDepositTokenInstructionAsync<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.nftStake),
+      getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.user),
       getAccountMeta(accounts.userStakeAccount),
       getAccountMeta(accounts.stakeTokenMint),
@@ -306,8 +306,8 @@ export async function getDepositTokenInstructionAsync<
     ),
   } as DepositTokenInstruction<
     TProgramAddress,
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountUser,
     TAccountUserStakeAccount,
     TAccountStakeTokenMint,
@@ -323,8 +323,8 @@ export async function getDepositTokenInstructionAsync<
 }
 
 export type DepositTokenInput<
-  TAccountStakePool extends string = string,
   TAccountNftStake extends string = string,
+  TAccountStakePool extends string = string,
   TAccountUser extends string = string,
   TAccountUserStakeAccount extends string = string,
   TAccountStakeTokenMint extends string = string,
@@ -335,8 +335,8 @@ export type DepositTokenInput<
   TAccountTokenProgram extends string = string,
   TAccountSystemProgram extends string = string,
 > = {
-  stakePool: Address<TAccountStakePool>;
   nftStake: Address<TAccountNftStake>;
+  stakePool: Address<TAccountStakePool>;
   user: TransactionSigner<TAccountUser>;
   userStakeAccount: Address<TAccountUserStakeAccount>;
   stakeTokenMint: Address<TAccountStakeTokenMint>;
@@ -350,8 +350,8 @@ export type DepositTokenInput<
 };
 
 export function getDepositTokenInstruction<
-  TAccountStakePool extends string,
   TAccountNftStake extends string,
+  TAccountStakePool extends string,
   TAccountUser extends string,
   TAccountUserStakeAccount extends string,
   TAccountStakeTokenMint extends string,
@@ -364,8 +364,8 @@ export function getDepositTokenInstruction<
   TProgramAddress extends Address = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
 >(
   input: DepositTokenInput<
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountUser,
     TAccountUserStakeAccount,
     TAccountStakeTokenMint,
@@ -379,8 +379,8 @@ export function getDepositTokenInstruction<
   config?: { programAddress?: TProgramAddress }
 ): DepositTokenInstruction<
   TProgramAddress,
-  TAccountStakePool,
   TAccountNftStake,
+  TAccountStakePool,
   TAccountUser,
   TAccountUserStakeAccount,
   TAccountStakeTokenMint,
@@ -397,8 +397,8 @@ export function getDepositTokenInstruction<
 
   // Original accounts.
   const originalAccounts = {
-    stakePool: { value: input.stakePool ?? null, isWritable: true },
     nftStake: { value: input.nftStake ?? null, isWritable: true },
+    stakePool: { value: input.stakePool ?? null, isWritable: true },
     user: { value: input.user ?? null, isWritable: false },
     userStakeAccount: {
       value: input.userStakeAccount ?? null,
@@ -439,8 +439,8 @@ export function getDepositTokenInstruction<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.nftStake),
+      getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.user),
       getAccountMeta(accounts.userStakeAccount),
       getAccountMeta(accounts.stakeTokenMint),
@@ -457,8 +457,8 @@ export function getDepositTokenInstruction<
     ),
   } as DepositTokenInstruction<
     TProgramAddress,
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountUser,
     TAccountUserStakeAccount,
     TAccountStakeTokenMint,
@@ -479,8 +479,8 @@ export type ParsedDepositTokenInstruction<
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    stakePool: TAccountMetas[0];
-    nftStake: TAccountMetas[1];
+    nftStake: TAccountMetas[0];
+    stakePool: TAccountMetas[1];
     user: TAccountMetas[2];
     userStakeAccount: TAccountMetas[3];
     stakeTokenMint: TAccountMetas[4];
@@ -515,8 +515,8 @@ export function parseDepositTokenInstruction<
   return {
     programAddress: instruction.programAddress,
     accounts: {
-      stakePool: getNextAccount(),
       nftStake: getNextAccount(),
+      stakePool: getNextAccount(),
       user: getNextAccount(),
       userStakeAccount: getNextAccount(),
       stakeTokenMint: getNextAccount(),

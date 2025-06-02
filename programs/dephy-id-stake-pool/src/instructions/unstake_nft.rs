@@ -7,9 +7,11 @@ use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct UnstakeNft<'info> {
-    pub stake_pool: Account<'info, StakePoolAccount>,
-    #[account(mut, has_one = stake_pool)]
+    #[account(mut)]
     pub nft_stake: Account<'info, NftStakeAccount>,
+    #[account(address = nft_stake.stake_pool @ ErrorCode::InvalidAccount)]
+    pub stake_pool: Account<'info, StakePoolAccount>,
+    #[account(address = nft_stake.stake_authority @ ErrorCode::InvalidAuthority)]
     pub stake_authority: Signer<'info>,
     /// CHECK:
     #[account(mut, address = stake_pool.config.collection @ ErrorCode::InvalidCollection)]
@@ -31,12 +33,6 @@ pub fn process_unstake_nft(ctx: Context<UnstakeNft>) -> Result<()> {
     msg!("unstake nft");
 
     let nft_stake = &mut ctx.accounts.nft_stake;
-
-    require_keys_eq!(
-        nft_stake.stake_authority,
-        ctx.accounts.stake_authority.key(),
-        ErrorCode::InvalidAuthority
-    );
 
     require!(nft_stake.active, ErrorCode::NftStakeNotActive);
 

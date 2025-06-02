@@ -5,8 +5,8 @@ import { das } from '@metaplex-foundation/mpl-core-das';
 import { publicKey } from '@metaplex-foundation/umi';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import {
-  address, Base58EncodedBytes, createSolanaClient, createTransaction, getAddressEncoder, getSignatureFromTransaction,
-  IInstruction, isSolanaError, KeyPairSigner, ReadonlyUint8Array, signTransactionMessageWithSigners
+  address, Base58EncodedBytes, getAddressEncoder,
+  ReadonlyUint8Array
 } from "gill";
 import { loadKeypairSignerFromFile } from "gill/node";
 
@@ -15,38 +15,13 @@ import {
   getAssetAccountDecoder,
   MPL_CORE_PROGRAM_ADDRESS
 } from '../deps/mpl-core/js/src/index.js';
+import { createSolanaContext } from './common.js';
 
 
-let feePayer: KeyPairSigner;
-let rpc: ReturnType<typeof createSolanaClient>['rpc'];
-let sendAndConfirmTransaction: ReturnType<typeof createSolanaClient>['sendAndConfirmTransaction'];
-
-const sendAndConfirmIxs = async (instructions: IInstruction[]) => {
-  const latestBlockhash = (await rpc.getLatestBlockhash().send()).value
-
-  const transaction = createTransaction({
-    feePayer,
-    instructions,
-    latestBlockhash,
-    version: 0
-  })
-
-  try {
-    const signedTx = await signTransactionMessageWithSigners(transaction)
-    await sendAndConfirmTransaction(signedTx, { commitment: 'confirmed' })
-
-    return getSignatureFromTransaction(signedTx)
-  } catch (error) {
-    if (isSolanaError(error)) {
-      console.error(error.context)
-    }
-
-    throw error
-  }
-}
+let ctx: Awaited<ReturnType<typeof createSolanaContext>>
 
 const cli = new Command()
-  .name('dephy-id')
+  .name('dephy-id-cli')
   .version('0.1.0')
   .description('CLI for dephy-id')
   .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
@@ -54,14 +29,10 @@ const cli = new Command()
   .hook('preAction', async (cmd) => {
     const { keypair, url: urlOrMoniker } = cmd.opts();
 
-    const client = createSolanaClient({
+    ctx = await createSolanaContext({
+      keypair,
       urlOrMoniker,
-    });
-
-    rpc = client.rpc;
-    sendAndConfirmTransaction = client.sendAndConfirmTransaction;
-
-    feePayer = await loadKeypairSignerFromFile(keypair);
+    })
   });
 
 
@@ -70,10 +41,10 @@ cli
   .description('Initialize DePHY program')
   .option('-a, --authority <path>', 'Path to authority keypair file')
   .action(async (options) => {
-    const authority = options.authority ? await loadKeypairSignerFromFile(options.authority) : feePayer;
+    const authority = options.authority ? await loadKeypairSignerFromFile(options.authority) : ctx.feePayer;
 
-    const signature = await sendAndConfirmIxs([
-      await dephyId.getInitializeInstructionAsync({ authority, payer: feePayer })
+    const signature = await ctx.sendAndConfirmIxs([
+      await dephyId.getInitializeInstructionAsync({ authority, payer: ctx.feePayer })
     ]);
 
     console.log(`Program initialized with authority ${authority.address}`);
@@ -86,16 +57,16 @@ cli
   .description('Create a new product asset')
   .option('-v, --vendor <path>', 'Path to vendor keypair file')
   .action(async (name, uri, options) => {
-    const vendor = options.vendor ? await loadKeypairSignerFromFile(options.vendor) : feePayer;
+    const vendor = options.vendor ? await loadKeypairSignerFromFile(options.vendor) : ctx.feePayer;
     const productAssetPda = await dephyId.findProductAssetPda({
       productName: name,
       vendor: vendor.address
     });
 
-    const signature = await sendAndConfirmIxs([
+    const signature = await ctx.sendAndConfirmIxs([
       dephyId.getCreateProductInstruction({
         name,
-        payer: feePayer,
+        payer: ctx.feePayer,
         productAsset: productAssetPda[0],
         uri,
         vendor
@@ -115,7 +86,7 @@ cli
   .requiredOption('-s, --seed <seed>', 'Device seed')
   .addOption(new Option('-t, --seed-type <seedType>', 'Device seed type').choices(['base58']).default('base58'))
   .action(async (name, uri, options) => {
-    const vendor = options.vendor ? await loadKeypairSignerFromFile(options.vendor) : feePayer;
+    const vendor = options.vendor ? await loadKeypairSignerFromFile(options.vendor) : ctx.feePayer;
     const productAsset = address(options.product);
 
     let deviceSeed: ReadonlyUint8Array
@@ -133,11 +104,11 @@ cli
       productAsset
     });
 
-    const signature = await sendAndConfirmIxs([
+    const signature = await ctx.sendAndConfirmIxs([
       await dephyId.getCreateDeviceInstructionAsync({
         name,
         owner: vendor.address,
-        payer: feePayer,
+        payer: ctx.feePayer,
         productAsset,
         seed: deviceSeed,
         uri,
@@ -174,7 +145,7 @@ cli
 
 
 const listDevicesNative = async (product: string) => {
-  const rawAccounts = await rpc
+  const rawAccounts = await ctx.rpc
     .getProgramAccounts(
       MPL_CORE_PROGRAM_ADDRESS, {
       encoding: 'base64',

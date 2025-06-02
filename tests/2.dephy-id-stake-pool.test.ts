@@ -49,6 +49,7 @@ describe("dephy-id-stake-pool", () => {
   }
 
   let authority: KeyPairSigner
+  let stakePoolAuthority: KeyPairSigner
   let vendor: KeyPairSigner
   let productAssetAddress: Address
   let adminAddress: Address
@@ -155,6 +156,7 @@ describe("dephy-id-stake-pool", () => {
   let stakeTokenAddress: Address
   const withdrawPending = 1n
   it('create stake pool', async () => {
+    stakePoolAuthority = await generateKeyPairSigner()
     const stakePoolKeypair = await generateKeyPairSigner()
     stakePoolAddress = stakePoolKeypair.address
 
@@ -162,12 +164,12 @@ describe("dephy-id-stake-pool", () => {
       await dephyIdStakePool.getCreateStakePoolInstructionAsync({
         stakePool: stakePoolKeypair,
         authority,
+        stakePoolAuthority: stakePoolAuthority.address,
         stakeTokenMint: stDephyTokenAddress,
         payer,
         stakeTokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
         collection: productAssetAddress,
         maxStakeAmount: 20000_000_000n,
-        admin: adminAddress,
         withdrawPending,
       })
     ])
@@ -176,7 +178,7 @@ describe("dephy-id-stake-pool", () => {
     stakeTokenAddress = stakeTokenPda[0]
 
     const stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(rpc, stakePoolAddress)
-    assert.equal(stakePoolAccount.data.authority, authority.address, 'authority')
+    assert.equal(stakePoolAccount.data.authority, stakePoolAuthority.address, 'stakePoolAuthority')
     assert.equal(stakePoolAccount.data.config.collection, productAssetAddress, 'collection')
     assert.equal(stakePoolAccount.data.config.stakeTokenMint, stDephyTokenAddress, 'stakeTokenMint')
     assert.equal(stakePoolAccount.data.config.maxStakeAmount, 20000_000_000n, 'maxStakeAmount')

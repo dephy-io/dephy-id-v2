@@ -50,8 +50,8 @@ export function getUnstakeNftDiscriminatorBytes() {
 
 export type UnstakeNftInstruction<
   TProgram extends string = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
-  TAccountStakePool extends string | IAccountMeta<string> = string,
   TAccountNftStake extends string | IAccountMeta<string> = string,
+  TAccountStakePool extends string | IAccountMeta<string> = string,
   TAccountStakeAuthority extends string | IAccountMeta<string> = string,
   TAccountMplCoreCollection extends string | IAccountMeta<string> = string,
   TAccountMplCoreAsset extends string | IAccountMeta<string> = string,
@@ -68,12 +68,12 @@ export type UnstakeNftInstruction<
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
     [
-      TAccountStakePool extends string
-        ? ReadonlyAccount<TAccountStakePool>
-        : TAccountStakePool,
       TAccountNftStake extends string
         ? WritableAccount<TAccountNftStake>
         : TAccountNftStake,
+      TAccountStakePool extends string
+        ? ReadonlyAccount<TAccountStakePool>
+        : TAccountStakePool,
       TAccountStakeAuthority extends string
         ? ReadonlySignerAccount<TAccountStakeAuthority> &
             IAccountSignerMeta<TAccountStakeAuthority>
@@ -129,8 +129,8 @@ export function getUnstakeNftInstructionDataCodec(): Codec<
 }
 
 export type UnstakeNftAsyncInput<
-  TAccountStakePool extends string = string,
   TAccountNftStake extends string = string,
+  TAccountStakePool extends string = string,
   TAccountStakeAuthority extends string = string,
   TAccountMplCoreCollection extends string = string,
   TAccountMplCoreAsset extends string = string,
@@ -139,8 +139,8 @@ export type UnstakeNftAsyncInput<
   TAccountSystemProgram extends string = string,
   TAccountMplCoreProgram extends string = string,
 > = {
-  stakePool: Address<TAccountStakePool>;
   nftStake: Address<TAccountNftStake>;
+  stakePool: Address<TAccountStakePool>;
   stakeAuthority: TransactionSigner<TAccountStakeAuthority>;
   mplCoreCollection: Address<TAccountMplCoreCollection>;
   mplCoreAsset: Address<TAccountMplCoreAsset>;
@@ -151,8 +151,8 @@ export type UnstakeNftAsyncInput<
 };
 
 export async function getUnstakeNftInstructionAsync<
-  TAccountStakePool extends string,
   TAccountNftStake extends string,
+  TAccountStakePool extends string,
   TAccountStakeAuthority extends string,
   TAccountMplCoreCollection extends string,
   TAccountMplCoreAsset extends string,
@@ -163,8 +163,8 @@ export async function getUnstakeNftInstructionAsync<
   TProgramAddress extends Address = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
 >(
   input: UnstakeNftAsyncInput<
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountStakeAuthority,
     TAccountMplCoreCollection,
     TAccountMplCoreAsset,
@@ -177,8 +177,8 @@ export async function getUnstakeNftInstructionAsync<
 ): Promise<
   UnstakeNftInstruction<
     TProgramAddress,
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountStakeAuthority,
     TAccountMplCoreCollection,
     TAccountMplCoreAsset,
@@ -194,8 +194,8 @@ export async function getUnstakeNftInstructionAsync<
 
   // Original accounts.
   const originalAccounts = {
-    stakePool: { value: input.stakePool ?? null, isWritable: false },
     nftStake: { value: input.nftStake ?? null, isWritable: true },
+    stakePool: { value: input.stakePool ?? null, isWritable: false },
     stakeAuthority: { value: input.stakeAuthority ?? null, isWritable: false },
     mplCoreCollection: {
       value: input.mplCoreCollection ?? null,
@@ -236,8 +236,8 @@ export async function getUnstakeNftInstructionAsync<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.nftStake),
+      getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.stakeAuthority),
       getAccountMeta(accounts.mplCoreCollection),
       getAccountMeta(accounts.mplCoreAsset),
@@ -250,8 +250,8 @@ export async function getUnstakeNftInstructionAsync<
     data: getUnstakeNftInstructionDataEncoder().encode({}),
   } as UnstakeNftInstruction<
     TProgramAddress,
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountStakeAuthority,
     TAccountMplCoreCollection,
     TAccountMplCoreAsset,
@@ -265,8 +265,8 @@ export async function getUnstakeNftInstructionAsync<
 }
 
 export type UnstakeNftInput<
-  TAccountStakePool extends string = string,
   TAccountNftStake extends string = string,
+  TAccountStakePool extends string = string,
   TAccountStakeAuthority extends string = string,
   TAccountMplCoreCollection extends string = string,
   TAccountMplCoreAsset extends string = string,
@@ -275,8 +275,8 @@ export type UnstakeNftInput<
   TAccountSystemProgram extends string = string,
   TAccountMplCoreProgram extends string = string,
 > = {
-  stakePool: Address<TAccountStakePool>;
   nftStake: Address<TAccountNftStake>;
+  stakePool: Address<TAccountStakePool>;
   stakeAuthority: TransactionSigner<TAccountStakeAuthority>;
   mplCoreCollection: Address<TAccountMplCoreCollection>;
   mplCoreAsset: Address<TAccountMplCoreAsset>;
@@ -287,8 +287,8 @@ export type UnstakeNftInput<
 };
 
 export function getUnstakeNftInstruction<
-  TAccountStakePool extends string,
   TAccountNftStake extends string,
+  TAccountStakePool extends string,
   TAccountStakeAuthority extends string,
   TAccountMplCoreCollection extends string,
   TAccountMplCoreAsset extends string,
@@ -299,8 +299,8 @@ export function getUnstakeNftInstruction<
   TProgramAddress extends Address = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
 >(
   input: UnstakeNftInput<
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountStakeAuthority,
     TAccountMplCoreCollection,
     TAccountMplCoreAsset,
@@ -312,8 +312,8 @@ export function getUnstakeNftInstruction<
   config?: { programAddress?: TProgramAddress }
 ): UnstakeNftInstruction<
   TProgramAddress,
-  TAccountStakePool,
   TAccountNftStake,
+  TAccountStakePool,
   TAccountStakeAuthority,
   TAccountMplCoreCollection,
   TAccountMplCoreAsset,
@@ -328,8 +328,8 @@ export function getUnstakeNftInstruction<
 
   // Original accounts.
   const originalAccounts = {
-    stakePool: { value: input.stakePool ?? null, isWritable: false },
     nftStake: { value: input.nftStake ?? null, isWritable: true },
+    stakePool: { value: input.stakePool ?? null, isWritable: false },
     stakeAuthority: { value: input.stakeAuthority ?? null, isWritable: false },
     mplCoreCollection: {
       value: input.mplCoreCollection ?? null,
@@ -359,8 +359,8 @@ export function getUnstakeNftInstruction<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.nftStake),
+      getAccountMeta(accounts.stakePool),
       getAccountMeta(accounts.stakeAuthority),
       getAccountMeta(accounts.mplCoreCollection),
       getAccountMeta(accounts.mplCoreAsset),
@@ -373,8 +373,8 @@ export function getUnstakeNftInstruction<
     data: getUnstakeNftInstructionDataEncoder().encode({}),
   } as UnstakeNftInstruction<
     TProgramAddress,
-    TAccountStakePool,
     TAccountNftStake,
+    TAccountStakePool,
     TAccountStakeAuthority,
     TAccountMplCoreCollection,
     TAccountMplCoreAsset,
@@ -393,8 +393,8 @@ export type ParsedUnstakeNftInstruction<
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    stakePool: TAccountMetas[0];
-    nftStake: TAccountMetas[1];
+    nftStake: TAccountMetas[0];
+    stakePool: TAccountMetas[1];
     stakeAuthority: TAccountMetas[2];
     mplCoreCollection: TAccountMetas[3];
     mplCoreAsset: TAccountMetas[4];
@@ -427,8 +427,8 @@ export function parseUnstakeNftInstruction<
   return {
     programAddress: instruction.programAddress,
     accounts: {
-      stakePool: getNextAccount(),
       nftStake: getNextAccount(),
+      stakePool: getNextAccount(),
       stakeAuthority: getNextAccount(),
       mplCoreCollection: getNextAccount(),
       mplCoreAsset: getNextAccount(),

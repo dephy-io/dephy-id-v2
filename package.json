@@ -19,7 +19,8 @@
   },
   "license": "ISC",
   "scripts": {
-    "cli": "bun -b scripts/cli.ts",
+    "dephy-id-cli": "bun -b cli/dephy-id-cli.ts",
+    "stake-pool-cli": "bun -b cli/stake-pool-cli.ts",
     "generate-dephy-id": "bunx @codama/cli -c codama/dephy-id.js run js",
     "generate-dephy-id-stake-pool": "bunx @codama/cli -c codama/dephy-id-stake-pool.js run js",
     "build-and-test": "anchor build && bun generate-dephy-id-stake-pool && anchor test --skip-build"

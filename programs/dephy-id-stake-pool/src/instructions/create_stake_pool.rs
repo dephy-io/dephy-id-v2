@@ -1,5 +1,5 @@
 use crate::{
-    constants::{POOL_WALLET_SEED, STAKE_TOKEN_SEED},
+    constants::{ADMIN_SEED, POOL_WALLET_SEED, STAKE_TOKEN_SEED},
     error::ErrorCode,
     state::{AdminAccount, StakePoolAccount, StakePoolConfig, StakePoolConfigArgs},
 };
@@ -8,11 +8,14 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 #[derive(Accounts)]
 pub struct CreateStakePool<'info> {
+    #[account(seeds = [ADMIN_SEED], bump)]
     pub admin: Account<'info, AdminAccount>,
     #[account(init, payer = payer, space = 8 + StakePoolAccount::INIT_SPACE)]
     pub stake_pool: Account<'info, StakePoolAccount>,
     #[account(address = admin.authority @ ErrorCode::InvalidAuthority)]
     pub authority: Signer<'info>,
+    /// CHECK:
+    pub stake_pool_authority: UncheckedAccount<'info>,
     /// CHECK:
     pub collection: UncheckedAccount<'info>,
     #[account(mint::token_program = stake_token_program)]
@@ -43,7 +46,7 @@ pub fn process_create_stake_pool(
     require_gt!(args.max_stake_amount, 0, ErrorCode::InvalidConfig);
 
     let stake_pool = &mut ctx.accounts.stake_pool;
-    stake_pool.authority = ctx.accounts.authority.key();
+    stake_pool.authority = ctx.accounts.stake_pool_authority.key();
     stake_pool.stake_token_account = ctx.accounts.stake_token_account.key();
     stake_pool.total_amount = 0;
     stake_pool.config = StakePoolConfig {

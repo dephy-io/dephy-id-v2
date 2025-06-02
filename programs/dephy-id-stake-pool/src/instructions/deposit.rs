@@ -11,9 +11,10 @@ use anchor_spl::token_interface::{
 #[derive(Accounts)]
 pub struct Deposit<'info> {
     #[account(mut)]
-    pub stake_pool: Account<'info, StakePoolAccount>,
-    #[account(mut)]
     pub nft_stake: Account<'info, NftStakeAccount>,
+    #[account(mut, address = nft_stake.stake_pool @ ErrorCode::InvalidAccount)]
+    pub stake_pool: Account<'info, StakePoolAccount>,
+    #[account(address = nft_stake.deposit_authority @ ErrorCode::InvalidAuthority)]
     pub user: Signer<'info>,
     #[account(
         init_if_needed, payer = payer,
@@ -48,12 +49,6 @@ pub fn process_deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
     let config = &stake_pool.config;
     let nft_stake = &mut ctx.accounts.nft_stake;
     let user_stake = &mut ctx.accounts.user_stake_account;
-
-    require_keys_eq!(
-        ctx.accounts.user.key(),
-        nft_stake.deposit_authority,
-        ErrorCode::InvalidAuthority
-    );
 
     require!(nft_stake.active, ErrorCode::NftStakeNotActive);
     require_gt!(amount, 0, ErrorCode::InvalidAmount);

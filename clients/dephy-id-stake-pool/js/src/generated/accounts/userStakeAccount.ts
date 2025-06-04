@@ -54,7 +54,6 @@ export type UserStakeAccount = {
   user: Address;
   amount: bigint;
   lastDepositTimestamp: bigint;
-  requestedWithdrawal: bigint;
 };
 
 export type UserStakeAccountArgs = {
@@ -63,7 +62,6 @@ export type UserStakeAccountArgs = {
   user: Address;
   amount: number | bigint;
   lastDepositTimestamp: number | bigint;
-  requestedWithdrawal: number | bigint;
 };
 
 export function getUserStakeAccountEncoder(): Encoder<UserStakeAccountArgs> {
@@ -75,7 +73,6 @@ export function getUserStakeAccountEncoder(): Encoder<UserStakeAccountArgs> {
       ['user', getAddressEncoder()],
       ['amount', getU64Encoder()],
       ['lastDepositTimestamp', getU64Encoder()],
-      ['requestedWithdrawal', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: USER_STAKE_ACCOUNT_DISCRIMINATOR })
   );
@@ -89,7 +86,6 @@ export function getUserStakeAccountDecoder(): Decoder<UserStakeAccount> {
     ['user', getAddressDecoder()],
     ['amount', getU64Decoder()],
     ['lastDepositTimestamp', getU64Decoder()],
-    ['requestedWithdrawal', getU64Decoder()],
   ]);
 }
 
@@ -167,5 +163,5 @@ export async function fetchAllMaybeUserStakeAccount(
 }
 
 export function getUserStakeAccountSize(): number {
-  return 128;
+  return 120;
 }

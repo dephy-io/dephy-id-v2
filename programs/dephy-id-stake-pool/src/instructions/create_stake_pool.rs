@@ -53,7 +53,6 @@ pub fn process_create_stake_pool(
         collection: ctx.accounts.collection.key(),
         stake_token_mint: ctx.accounts.stake_token_mint.key(),
         max_stake_amount: args.max_stake_amount,
-        withdraw_pending: args.withdraw_pending,
     };
 
     Ok(())

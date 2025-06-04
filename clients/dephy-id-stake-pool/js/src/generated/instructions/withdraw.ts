@@ -42,27 +42,31 @@ import {
   type ResolvedAccount,
 } from '../shared';
 
-export const REQUEST_WITHDRAW_TOKEN_DISCRIMINATOR = new Uint8Array([
-  49, 150, 198, 22, 253, 95, 59, 136,
+export const WITHDRAW_DISCRIMINATOR = new Uint8Array([
+  183, 18, 70, 156, 148, 109, 161, 34,
 ]);
 
-export function getRequestWithdrawTokenDiscriminatorBytes() {
-  return fixEncoderSize(getBytesEncoder(), 8).encode(
-    REQUEST_WITHDRAW_TOKEN_DISCRIMINATOR
-  );
+export function getWithdrawDiscriminatorBytes() {
+  return fixEncoderSize(getBytesEncoder(), 8).encode(WITHDRAW_DISCRIMINATOR);
 }
 
-export type RequestWithdrawTokenInstruction<
+export type WithdrawInstruction<
   TProgram extends string = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
   TAccountStakePool extends string | IAccountMeta<string> = string,
   TAccountNftStake extends string | IAccountMeta<string> = string,
   TAccountUser extends string | IAccountMeta<string> = string,
   TAccountUserStakeAccount extends string | IAccountMeta<string> = string,
-  TAccountWithdrawRequest extends string | IAccountMeta<string> = string,
+  TAccountStakeTokenMint extends string | IAccountMeta<string> = string,
+  TAccountStakeTokenAccount extends string | IAccountMeta<string> = string,
+  TAccountUserStakeTokenAccount extends string | IAccountMeta<string> = string,
+  TAccountPoolWallet extends string | IAccountMeta<string> = string,
   TAccountPayer extends string | IAccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
     | IAccountMeta<string> = '11111111111111111111111111111111',
+  TAccountTokenProgram extends
+    | string
+    | IAccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
   TRemainingAccounts extends readonly IAccountMeta<string>[] = [],
 > = IInstruction<TProgram> &
   IInstructionWithData<Uint8Array> &
@@ -80,10 +84,18 @@ export type RequestWithdrawTokenInstruction<
       TAccountUserStakeAccount extends string
         ? WritableAccount<TAccountUserStakeAccount>
         : TAccountUserStakeAccount,
-      TAccountWithdrawRequest extends string
-        ? WritableSignerAccount<TAccountWithdrawRequest> &
-            IAccountSignerMeta<TAccountWithdrawRequest>
-        : TAccountWithdrawRequest,
+      TAccountStakeTokenMint extends string
+        ? ReadonlyAccount<TAccountStakeTokenMint>
+        : TAccountStakeTokenMint,
+      TAccountStakeTokenAccount extends string
+        ? WritableAccount<TAccountStakeTokenAccount>
+        : TAccountStakeTokenAccount,
+      TAccountUserStakeTokenAccount extends string
+        ? WritableAccount<TAccountUserStakeTokenAccount>
+        : TAccountUserStakeTokenAccount,
+      TAccountPoolWallet extends string
+        ? ReadonlyAccount<TAccountPoolWallet>
+        : TAccountPoolWallet,
       TAccountPayer extends string
         ? WritableSignerAccount<TAccountPayer> &
             IAccountSignerMeta<TAccountPayer>
@@ -91,98 +103,116 @@ export type RequestWithdrawTokenInstruction<
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
+      TAccountTokenProgram extends string
+        ? ReadonlyAccount<TAccountTokenProgram>
+        : TAccountTokenProgram,
       ...TRemainingAccounts,
     ]
   >;
 
-export type RequestWithdrawTokenInstructionData = {
+export type WithdrawInstructionData = {
   discriminator: ReadonlyUint8Array;
   amount: bigint;
 };
 
-export type RequestWithdrawTokenInstructionDataArgs = {
-  amount: number | bigint;
-};
+export type WithdrawInstructionDataArgs = { amount: number | bigint };
 
-export function getRequestWithdrawTokenInstructionDataEncoder(): Encoder<RequestWithdrawTokenInstructionDataArgs> {
+export function getWithdrawInstructionDataEncoder(): Encoder<WithdrawInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['amount', getU64Encoder()],
     ]),
-    (value) => ({
-      ...value,
-      discriminator: REQUEST_WITHDRAW_TOKEN_DISCRIMINATOR,
-    })
+    (value) => ({ ...value, discriminator: WITHDRAW_DISCRIMINATOR })
   );
 }
 
-export function getRequestWithdrawTokenInstructionDataDecoder(): Decoder<RequestWithdrawTokenInstructionData> {
+export function getWithdrawInstructionDataDecoder(): Decoder<WithdrawInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['amount', getU64Decoder()],
   ]);
 }
 
-export function getRequestWithdrawTokenInstructionDataCodec(): Codec<
-  RequestWithdrawTokenInstructionDataArgs,
-  RequestWithdrawTokenInstructionData
+export function getWithdrawInstructionDataCodec(): Codec<
+  WithdrawInstructionDataArgs,
+  WithdrawInstructionData
 > {
   return combineCodec(
-    getRequestWithdrawTokenInstructionDataEncoder(),
-    getRequestWithdrawTokenInstructionDataDecoder()
+    getWithdrawInstructionDataEncoder(),
+    getWithdrawInstructionDataDecoder()
   );
 }
 
-export type RequestWithdrawTokenAsyncInput<
+export type WithdrawAsyncInput<
   TAccountStakePool extends string = string,
   TAccountNftStake extends string = string,
   TAccountUser extends string = string,
   TAccountUserStakeAccount extends string = string,
-  TAccountWithdrawRequest extends string = string,
+  TAccountStakeTokenMint extends string = string,
+  TAccountStakeTokenAccount extends string = string,
+  TAccountUserStakeTokenAccount extends string = string,
+  TAccountPoolWallet extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
+  TAccountTokenProgram extends string = string,
 > = {
   stakePool: Address<TAccountStakePool>;
   nftStake: Address<TAccountNftStake>;
   user: TransactionSigner<TAccountUser>;
   userStakeAccount?: Address<TAccountUserStakeAccount>;
-  withdrawRequest: TransactionSigner<TAccountWithdrawRequest>;
+  stakeTokenMint: Address<TAccountStakeTokenMint>;
+  stakeTokenAccount: Address<TAccountStakeTokenAccount>;
+  userStakeTokenAccount: Address<TAccountUserStakeTokenAccount>;
+  poolWallet?: Address<TAccountPoolWallet>;
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
-  amount: RequestWithdrawTokenInstructionDataArgs['amount'];
+  tokenProgram?: Address<TAccountTokenProgram>;
+  amount: WithdrawInstructionDataArgs['amount'];
 };
 
-export async function getRequestWithdrawTokenInstructionAsync<
+export async function getWithdrawInstructionAsync<
   TAccountStakePool extends string,
   TAccountNftStake extends string,
   TAccountUser extends string,
   TAccountUserStakeAccount extends string,
-  TAccountWithdrawRequest extends string,
+  TAccountStakeTokenMint extends string,
+  TAccountStakeTokenAccount extends string,
+  TAccountUserStakeTokenAccount extends string,
+  TAccountPoolWallet extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
+  TAccountTokenProgram extends string,
   TProgramAddress extends Address = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
 >(
-  input: RequestWithdrawTokenAsyncInput<
+  input: WithdrawAsyncInput<
     TAccountStakePool,
     TAccountNftStake,
     TAccountUser,
     TAccountUserStakeAccount,
-    TAccountWithdrawRequest,
+    TAccountStakeTokenMint,
+    TAccountStakeTokenAccount,
+    TAccountUserStakeTokenAccount,
+    TAccountPoolWallet,
     TAccountPayer,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountTokenProgram
   >,
   config?: { programAddress?: TProgramAddress }
 ): Promise<
-  RequestWithdrawTokenInstruction<
+  WithdrawInstruction<
     TProgramAddress,
     TAccountStakePool,
     TAccountNftStake,
     TAccountUser,
     TAccountUserStakeAccount,
-    TAccountWithdrawRequest,
+    TAccountStakeTokenMint,
+    TAccountStakeTokenAccount,
+    TAccountUserStakeTokenAccount,
+    TAccountPoolWallet,
     TAccountPayer,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountTokenProgram
   >
 > {
   // Program address.
@@ -198,9 +228,19 @@ export async function getRequestWithdrawTokenInstructionAsync<
       value: input.userStakeAccount ?? null,
       isWritable: true,
     },
-    withdrawRequest: { value: input.withdrawRequest ?? null, isWritable: true },
+    stakeTokenMint: { value: input.stakeTokenMint ?? null, isWritable: false },
+    stakeTokenAccount: {
+      value: input.stakeTokenAccount ?? null,
+      isWritable: true,
+    },
+    userStakeTokenAccount: {
+      value: input.userStakeTokenAccount ?? null,
+      isWritable: true,
+    },
+    poolWallet: { value: input.poolWallet ?? null, isWritable: false },
     payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -223,9 +263,24 @@ export async function getRequestWithdrawTokenInstructionAsync<
       ],
     });
   }
+  if (!accounts.poolWallet.value) {
+    accounts.poolWallet.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getAddressEncoder().encode(expectAddress(accounts.stakePool.value)),
+        getBytesEncoder().encode(
+          new Uint8Array([80, 79, 79, 76, 95, 87, 65, 76, 76, 69, 84])
+        ),
+      ],
+    });
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+  if (!accounts.tokenProgram.value) {
+    accounts.tokenProgram.value =
+      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
   }
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
@@ -235,76 +290,104 @@ export async function getRequestWithdrawTokenInstructionAsync<
       getAccountMeta(accounts.nftStake),
       getAccountMeta(accounts.user),
       getAccountMeta(accounts.userStakeAccount),
-      getAccountMeta(accounts.withdrawRequest),
+      getAccountMeta(accounts.stakeTokenMint),
+      getAccountMeta(accounts.stakeTokenAccount),
+      getAccountMeta(accounts.userStakeTokenAccount),
+      getAccountMeta(accounts.poolWallet),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.tokenProgram),
     ],
     programAddress,
-    data: getRequestWithdrawTokenInstructionDataEncoder().encode(
-      args as RequestWithdrawTokenInstructionDataArgs
+    data: getWithdrawInstructionDataEncoder().encode(
+      args as WithdrawInstructionDataArgs
     ),
-  } as RequestWithdrawTokenInstruction<
+  } as WithdrawInstruction<
     TProgramAddress,
     TAccountStakePool,
     TAccountNftStake,
     TAccountUser,
     TAccountUserStakeAccount,
-    TAccountWithdrawRequest,
+    TAccountStakeTokenMint,
+    TAccountStakeTokenAccount,
+    TAccountUserStakeTokenAccount,
+    TAccountPoolWallet,
     TAccountPayer,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountTokenProgram
   >;
 
   return instruction;
 }
 
-export type RequestWithdrawTokenInput<
+export type WithdrawInput<
   TAccountStakePool extends string = string,
   TAccountNftStake extends string = string,
   TAccountUser extends string = string,
   TAccountUserStakeAccount extends string = string,
-  TAccountWithdrawRequest extends string = string,
+  TAccountStakeTokenMint extends string = string,
+  TAccountStakeTokenAccount extends string = string,
+  TAccountUserStakeTokenAccount extends string = string,
+  TAccountPoolWallet extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
+  TAccountTokenProgram extends string = string,
 > = {
   stakePool: Address<TAccountStakePool>;
   nftStake: Address<TAccountNftStake>;
   user: TransactionSigner<TAccountUser>;
   userStakeAccount: Address<TAccountUserStakeAccount>;
-  withdrawRequest: TransactionSigner<TAccountWithdrawRequest>;
+  stakeTokenMint: Address<TAccountStakeTokenMint>;
+  stakeTokenAccount: Address<TAccountStakeTokenAccount>;
+  userStakeTokenAccount: Address<TAccountUserStakeTokenAccount>;
+  poolWallet: Address<TAccountPoolWallet>;
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
-  amount: RequestWithdrawTokenInstructionDataArgs['amount'];
+  tokenProgram?: Address<TAccountTokenProgram>;
+  amount: WithdrawInstructionDataArgs['amount'];
 };
 
-export function getRequestWithdrawTokenInstruction<
+export function getWithdrawInstruction<
   TAccountStakePool extends string,
   TAccountNftStake extends string,
   TAccountUser extends string,
   TAccountUserStakeAccount extends string,
-  TAccountWithdrawRequest extends string,
+  TAccountStakeTokenMint extends string,
+  TAccountStakeTokenAccount extends string,
+  TAccountUserStakeTokenAccount extends string,
+  TAccountPoolWallet extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
+  TAccountTokenProgram extends string,
   TProgramAddress extends Address = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
 >(
-  input: RequestWithdrawTokenInput<
+  input: WithdrawInput<
     TAccountStakePool,
     TAccountNftStake,
     TAccountUser,
     TAccountUserStakeAccount,
-    TAccountWithdrawRequest,
+    TAccountStakeTokenMint,
+    TAccountStakeTokenAccount,
+    TAccountUserStakeTokenAccount,
+    TAccountPoolWallet,
     TAccountPayer,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountTokenProgram
   >,
   config?: { programAddress?: TProgramAddress }
-): RequestWithdrawTokenInstruction<
+): WithdrawInstruction<
   TProgramAddress,
   TAccountStakePool,
   TAccountNftStake,
   TAccountUser,
   TAccountUserStakeAccount,
-  TAccountWithdrawRequest,
+  TAccountStakeTokenMint,
+  TAccountStakeTokenAccount,
+  TAccountUserStakeTokenAccount,
+  TAccountPoolWallet,
   TAccountPayer,
-  TAccountSystemProgram
+  TAccountSystemProgram,
+  TAccountTokenProgram
 > {
   // Program address.
   const programAddress =
@@ -319,9 +402,19 @@ export function getRequestWithdrawTokenInstruction<
       value: input.userStakeAccount ?? null,
       isWritable: true,
     },
-    withdrawRequest: { value: input.withdrawRequest ?? null, isWritable: true },
+    stakeTokenMint: { value: input.stakeTokenMint ?? null, isWritable: false },
+    stakeTokenAccount: {
+      value: input.stakeTokenAccount ?? null,
+      isWritable: true,
+    },
+    userStakeTokenAccount: {
+      value: input.userStakeTokenAccount ?? null,
+      isWritable: true,
+    },
+    poolWallet: { value: input.poolWallet ?? null, isWritable: false },
     payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -336,6 +429,10 @@ export function getRequestWithdrawTokenInstruction<
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
   }
+  if (!accounts.tokenProgram.value) {
+    accounts.tokenProgram.value =
+      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  }
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
@@ -344,29 +441,37 @@ export function getRequestWithdrawTokenInstruction<
       getAccountMeta(accounts.nftStake),
       getAccountMeta(accounts.user),
       getAccountMeta(accounts.userStakeAccount),
-      getAccountMeta(accounts.withdrawRequest),
+      getAccountMeta(accounts.stakeTokenMint),
+      getAccountMeta(accounts.stakeTokenAccount),
+      getAccountMeta(accounts.userStakeTokenAccount),
+      getAccountMeta(accounts.poolWallet),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.tokenProgram),
     ],
     programAddress,
-    data: getRequestWithdrawTokenInstructionDataEncoder().encode(
-      args as RequestWithdrawTokenInstructionDataArgs
+    data: getWithdrawInstructionDataEncoder().encode(
+      args as WithdrawInstructionDataArgs
     ),
-  } as RequestWithdrawTokenInstruction<
+  } as WithdrawInstruction<
     TProgramAddress,
     TAccountStakePool,
     TAccountNftStake,
     TAccountUser,
     TAccountUserStakeAccount,
-    TAccountWithdrawRequest,
+    TAccountStakeTokenMint,
+    TAccountStakeTokenAccount,
+    TAccountUserStakeTokenAccount,
+    TAccountPoolWallet,
     TAccountPayer,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountTokenProgram
   >;
 
   return instruction;
 }
 
-export type ParsedRequestWithdrawTokenInstruction<
+export type ParsedWithdrawInstruction<
   TProgram extends string = typeof DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
   TAccountMetas extends readonly IAccountMeta[] = readonly IAccountMeta[],
 > = {
@@ -376,22 +481,26 @@ export type ParsedRequestWithdrawTokenInstruction<
     nftStake: TAccountMetas[1];
     user: TAccountMetas[2];
     userStakeAccount: TAccountMetas[3];
-    withdrawRequest: TAccountMetas[4];
-    payer: TAccountMetas[5];
-    systemProgram: TAccountMetas[6];
+    stakeTokenMint: TAccountMetas[4];
+    stakeTokenAccount: TAccountMetas[5];
+    userStakeTokenAccount: TAccountMetas[6];
+    poolWallet: TAccountMetas[7];
+    payer: TAccountMetas[8];
+    systemProgram: TAccountMetas[9];
+    tokenProgram: TAccountMetas[10];
   };
-  data: RequestWithdrawTokenInstructionData;
+  data: WithdrawInstructionData;
 };
 
-export function parseRequestWithdrawTokenInstruction<
+export function parseWithdrawInstruction<
   TProgram extends string,
   TAccountMetas extends readonly IAccountMeta[],
 >(
   instruction: IInstruction<TProgram> &
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
-): ParsedRequestWithdrawTokenInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 7) {
+): ParsedWithdrawInstruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 11) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -408,12 +517,14 @@ export function parseRequestWithdrawTokenInstruction<
       nftStake: getNextAccount(),
       user: getNextAccount(),
       userStakeAccount: getNextAccount(),
-      withdrawRequest: getNextAccount(),
+      stakeTokenMint: getNextAccount(),
+      stakeTokenAccount: getNextAccount(),
+      userStakeTokenAccount: getNextAccount(),
+      poolWallet: getNextAccount(),
       payer: getNextAccount(),
       systemProgram: getNextAccount(),
+      tokenProgram: getNextAccount(),
     },
-    data: getRequestWithdrawTokenInstructionDataDecoder().decode(
-      instruction.data
-    ),
+    data: getWithdrawInstructionDataDecoder().decode(instruction.data),
   };
 }

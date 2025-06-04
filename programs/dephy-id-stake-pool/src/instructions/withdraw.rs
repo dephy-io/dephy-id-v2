@@ -1,7 +1,7 @@
 use crate::{
     constants::{POOL_WALLET_SEED, USER_STAKE_SEED},
     error::ErrorCode,
-    state::{NftStakeAccount, StakePoolAccount, UserStakeAccount, WithdrawRequestAccount},
+    state::{NftStakeAccount, StakePoolAccount, UserStakeAccount},
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
@@ -9,17 +9,15 @@ use anchor_spl::token_interface::{
 };
 
 #[derive(Accounts)]
-pub struct RedeemWithdraw<'info> {
+pub struct Withdraw<'info> {
     #[account(mut, address = user_stake_account.stake_pool @ ErrorCode::InvalidAccount)]
     pub stake_pool: Account<'info, StakePoolAccount>,
-    #[account(mut)]
+    #[account(mut, address = user_stake_account.nft_stake @ ErrorCode::InvalidAccount)]
     pub nft_stake: Account<'info, NftStakeAccount>,
     #[account(address = user_stake_account.user @ ErrorCode::InvalidAuthority)]
     pub user: Signer<'info>,
     #[account(mut, seeds = [nft_stake.key().as_ref(), USER_STAKE_SEED, user.key.as_ref()], bump)]
     pub user_stake_account: Account<'info, UserStakeAccount>,
-    #[account(mut, close = payer)]
-    pub withdraw_request: Account<'info, WithdrawRequestAccount>,
     #[account(
         address = stake_pool.config.stake_token_mint @ ErrorCode::InvalidStakeToken,
         mint::token_program = token_program
@@ -47,42 +45,21 @@ pub struct RedeemWithdraw<'info> {
     pub token_program: Interface<'info, TokenInterface>,
 }
 
-pub fn process_redeem_withdraw(ctx: Context<RedeemWithdraw>) -> Result<()> {
-    msg!("redeem withdraw");
+pub fn process_withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+    msg!("withdraw {}", amount);
 
     let stake_pool = &mut ctx.accounts.stake_pool;
     let nft_stake = &mut ctx.accounts.nft_stake;
     let user_stake = &mut ctx.accounts.user_stake_account;
-    let withdraw_request = &mut ctx.accounts.withdraw_request;
 
-    require_keys_eq!(
-        withdraw_request.stake_pool,
-        stake_pool.key(),
-        ErrorCode::InvalidAccount
-    );
+    require_gt!(amount, 0, ErrorCode::InvalidAmount);
+    require_gte!(user_stake.amount, amount, ErrorCode::InvalidAmount);
+    require_gte!(nft_stake.amount, amount, ErrorCode::InvalidAmount);
+    require_gte!(stake_pool.total_amount, amount, ErrorCode::InvalidAmount);
 
-    require_keys_eq!(
-        withdraw_request.user,
-        ctx.accounts.user.key(),
-        ErrorCode::InvalidAuthority
-    );
-
-    let clock = Clock::get()?;
-    let now = clock.unix_timestamp as u64;
-
-    require_gte!(
-        now,
-        withdraw_request.timestamp + stake_pool.config.withdraw_pending,
-        ErrorCode::NotReadyYet
-    );
-
-    let amount = withdraw_request.amount;
-
-    withdraw_request.amount -= amount;
-
-    stake_pool.requested_withdrawal -= amount;
-    nft_stake.requested_withdrawal -= amount;
-    user_stake.requested_withdrawal -= amount;
+    stake_pool.total_amount -= amount;
+    nft_stake.amount -= amount;
+    user_stake.amount -= amount;
 
     // transfer tokens
     transfer_checked(
@@ -103,10 +80,6 @@ pub fn process_redeem_withdraw(ctx: Context<RedeemWithdraw>) -> Result<()> {
         amount,
         ctx.accounts.stake_token_mint.decimals,
     )?;
-
-    if withdraw_request.amount == 0 {
-        withdraw_request.close(ctx.accounts.payer.to_account_info())?;
-    }
 
     Ok(())
 }

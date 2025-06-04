@@ -24,14 +24,12 @@ export type StakePoolConfig = {
   collection: Address;
   stakeTokenMint: Address;
   maxStakeAmount: bigint;
-  withdrawPending: bigint;
 };
 
 export type StakePoolConfigArgs = {
   collection: Address;
   stakeTokenMint: Address;
   maxStakeAmount: number | bigint;
-  withdrawPending: number | bigint;
 };
 
 export function getStakePoolConfigEncoder(): Encoder<StakePoolConfigArgs> {
@@ -39,7 +37,6 @@ export function getStakePoolConfigEncoder(): Encoder<StakePoolConfigArgs> {
     ['collection', getAddressEncoder()],
     ['stakeTokenMint', getAddressEncoder()],
     ['maxStakeAmount', getU64Encoder()],
-    ['withdrawPending', getU64Encoder()],
   ]);
 }
 
@@ -48,7 +45,6 @@ export function getStakePoolConfigDecoder(): Decoder<StakePoolConfig> {
     ['collection', getAddressDecoder()],
     ['stakeTokenMint', getAddressDecoder()],
     ['maxStakeAmount', getU64Decoder()],
-    ['withdrawPending', getU64Decoder()],
   ]);
 }
 

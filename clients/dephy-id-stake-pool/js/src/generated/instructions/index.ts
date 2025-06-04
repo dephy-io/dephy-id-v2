@@ -11,6 +11,5 @@ export * from './createNftStake';
 export * from './createStakePool';
 export * from './depositToken';
 export * from './initialize';
-export * from './redeemWithdrawToken';
-export * from './requestWithdrawToken';
 export * from './unstakeNft';
+export * from './withdraw';

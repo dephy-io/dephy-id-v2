@@ -27,7 +27,6 @@ pub fn process_close_nft_stake(ctx: Context<CloseNftStake>) -> Result<()> {
 
     require!(!nft_stake.active, ErrorCode::NftStakeIsActive);
     require_eq!(nft_stake.amount, 0, ErrorCode::StakeNonEmpty);
-    require_eq!(nft_stake.requested_withdrawal, 0, ErrorCode::StakeNonEmpty);
 
     Ok(())
 }

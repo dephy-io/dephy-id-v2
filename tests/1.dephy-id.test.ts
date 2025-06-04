@@ -46,15 +46,25 @@ describe("dephy-id", () => {
     }
   }
 
-  before('prepare payer', async () => {
+  before(async () => {
+    console.info('NOTE: wait for slot 0, may take >10s')
+
     await airdrop({
       commitment: "confirmed",
       lamports: lamports(1_000_000_000n),
       recipientAddress: payer.address,
     })
 
-    console.info('NOTE: The first tx may take >10s to confirm')
+    let ready = false
+    while (!ready) {
+      const slot = await rpc.getSlot({ commitment: 'finalized' }).send()
+      ready = slot > 0n
+      if (!ready) {
+        await Bun.sleep(400)
+      }
+    }
   })
+
 
   let authority: KeyPairSigner
   it("initialize", async () => {

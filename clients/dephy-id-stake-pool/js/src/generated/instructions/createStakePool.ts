@@ -115,12 +115,10 @@ export type CreateStakePoolInstruction<
 export type CreateStakePoolInstructionData = {
   discriminator: ReadonlyUint8Array;
   maxStakeAmount: bigint;
-  withdrawPending: bigint;
 };
 
 export type CreateStakePoolInstructionDataArgs = {
   maxStakeAmount: number | bigint;
-  withdrawPending: number | bigint;
 };
 
 export function getCreateStakePoolInstructionDataEncoder(): Encoder<CreateStakePoolInstructionDataArgs> {
@@ -128,7 +126,6 @@ export function getCreateStakePoolInstructionDataEncoder(): Encoder<CreateStakeP
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['maxStakeAmount', getU64Encoder()],
-      ['withdrawPending', getU64Encoder()],
     ]),
     (value) => ({ ...value, discriminator: CREATE_STAKE_POOL_DISCRIMINATOR })
   );
@@ -138,7 +135,6 @@ export function getCreateStakePoolInstructionDataDecoder(): Decoder<CreateStakeP
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['maxStakeAmount', getU64Decoder()],
-    ['withdrawPending', getU64Decoder()],
   ]);
 }
 
@@ -177,7 +173,6 @@ export type CreateStakePoolAsyncInput<
   systemProgram?: Address<TAccountSystemProgram>;
   stakeTokenProgram: Address<TAccountStakeTokenProgram>;
   maxStakeAmount: CreateStakePoolInstructionDataArgs['maxStakeAmount'];
-  withdrawPending: CreateStakePoolInstructionDataArgs['withdrawPending'];
 };
 
 export async function getCreateStakePoolInstructionAsync<
@@ -355,7 +350,6 @@ export type CreateStakePoolInput<
   systemProgram?: Address<TAccountSystemProgram>;
   stakeTokenProgram: Address<TAccountStakeTokenProgram>;
   maxStakeAmount: CreateStakePoolInstructionDataArgs['maxStakeAmount'];
-  withdrawPending: CreateStakePoolInstructionDataArgs['withdrawPending'];
 };
 
 export function getCreateStakePoolInstruction<

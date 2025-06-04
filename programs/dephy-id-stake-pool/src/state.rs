@@ -14,7 +14,6 @@ pub struct NftStakeAccount {
     pub deposit_authority: Pubkey,
     pub nft_token_account: Pubkey,
     pub amount: u64,
-    pub requested_withdrawal: u64,
     pub active: bool,
 }
 
@@ -26,7 +25,6 @@ pub struct StakePoolAccount {
     pub config: StakePoolConfig,
     pub stake_token_account: Pubkey,
     pub total_amount: u64,
-    pub requested_withdrawal: u64,
 }
 
 #[derive(Debug, Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
@@ -34,13 +32,11 @@ pub struct StakePoolConfig {
     pub collection: Pubkey,
     pub stake_token_mint: Pubkey,
     pub max_stake_amount: u64,
-    pub withdraw_pending: u64,
 }
 
 #[derive(Debug, Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
 pub struct StakePoolConfigArgs {
     pub max_stake_amount: u64,
-    pub withdraw_pending: u64,
 }
 
 #[account]
@@ -60,15 +56,4 @@ pub struct UserStakeAccount {
     pub user: Pubkey,
     pub amount: u64,
     pub last_deposit_timestamp: u64,
-    pub requested_withdrawal: u64,
-}
-
-#[account]
-#[derive(Debug, InitSpace)]
-pub struct WithdrawRequestAccount {
-    pub stake_pool: Pubkey,
-    pub nft_stake: Pubkey,
-    pub user: Pubkey,
-    pub amount: u64,
-    pub timestamp: u64,
 }

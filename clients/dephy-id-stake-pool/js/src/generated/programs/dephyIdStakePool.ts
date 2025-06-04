@@ -19,9 +19,8 @@ import {
   type ParsedCreateStakePoolInstruction,
   type ParsedDepositTokenInstruction,
   type ParsedInitializeInstruction,
-  type ParsedRedeemWithdrawTokenInstruction,
-  type ParsedRequestWithdrawTokenInstruction,
   type ParsedUnstakeNftInstruction,
+  type ParsedWithdrawInstruction,
 } from '../instructions';
 
 export const DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS =
@@ -32,7 +31,6 @@ export enum DephyIdStakePoolAccount {
   NftStakeAccount,
   StakePoolAccount,
   UserStakeAccount,
-  WithdrawRequestAccount,
 }
 
 export function identifyDephyIdStakePoolAccount(
@@ -83,17 +81,6 @@ export function identifyDephyIdStakePoolAccount(
   ) {
     return DephyIdStakePoolAccount.UserStakeAccount;
   }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([128, 63, 205, 31, 202, 42, 218, 83])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolAccount.WithdrawRequestAccount;
-  }
   throw new Error(
     'The provided account could not be identified as a dephyIdStakePool account.'
   );
@@ -105,9 +92,8 @@ export enum DephyIdStakePoolInstruction {
   CreateStakePool,
   DepositToken,
   Initialize,
-  RedeemWithdrawToken,
-  RequestWithdrawToken,
   UnstakeNft,
+  Withdraw,
 }
 
 export function identifyDephyIdStakePoolInstruction(
@@ -173,34 +159,23 @@ export function identifyDephyIdStakePoolInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([94, 46, 239, 193, 99, 233, 243, 19])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolInstruction.RedeemWithdrawToken;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
-        new Uint8Array([49, 150, 198, 22, 253, 95, 59, 136])
-      ),
-      0
-    )
-  ) {
-    return DephyIdStakePoolInstruction.RequestWithdrawToken;
-  }
-  if (
-    containsBytes(
-      data,
-      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([17, 182, 24, 211, 101, 138, 50, 163])
       ),
       0
     )
   ) {
     return DephyIdStakePoolInstruction.UnstakeNft;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([183, 18, 70, 156, 148, 109, 161, 34])
+      ),
+      0
+    )
+  ) {
+    return DephyIdStakePoolInstruction.Withdraw;
   }
   throw new Error(
     'The provided instruction could not be identified as a dephyIdStakePool instruction.'
@@ -226,11 +201,8 @@ export type ParsedDephyIdStakePoolInstruction<
       instructionType: DephyIdStakePoolInstruction.Initialize;
     } & ParsedInitializeInstruction<TProgram>)
   | ({
-      instructionType: DephyIdStakePoolInstruction.RedeemWithdrawToken;
-    } & ParsedRedeemWithdrawTokenInstruction<TProgram>)
-  | ({
-      instructionType: DephyIdStakePoolInstruction.RequestWithdrawToken;
-    } & ParsedRequestWithdrawTokenInstruction<TProgram>)
-  | ({
       instructionType: DephyIdStakePoolInstruction.UnstakeNft;
-    } & ParsedUnstakeNftInstruction<TProgram>);
+    } & ParsedUnstakeNftInstruction<TProgram>)
+  | ({
+      instructionType: DephyIdStakePoolInstruction.Withdraw;
+    } & ParsedWithdrawInstruction<TProgram>);

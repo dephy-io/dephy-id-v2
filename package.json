@@ -31,6 +31,7 @@
     ".",
     "clients/dephy-id/js",
     "clients/dephy-id-stake-pool/js",
-    "deps/mpl-core/js"
+    "deps/mpl-core/js",
+    "app"
   ]
 }

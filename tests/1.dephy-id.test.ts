@@ -92,7 +92,7 @@ describe("dephy-id", () => {
     productAsset = productAssetPda[0]
 
     await sendAndConfirmIxs([
-      dephyId.getCreateProductInstruction({
+      await dephyId.getCreateProductInstructionAsync({
         name: productName,
         payer,
         productAsset,

@@ -41,6 +41,12 @@ export const instructions = updateInstructionsVisitor({
   createProduct: {
     accounts: {
       payer: { defaultValue: payerValueNode() },
+      productAsset: {
+        defaultValue: pdaValueNode('productAsset', [
+          pdaSeedValueNode('vendor', accountValueNode('vendor')),
+          pdaSeedValueNode('product_name', argumentValueNode('name')),
+        ])
+      },
     },
   },
   createDevice: {

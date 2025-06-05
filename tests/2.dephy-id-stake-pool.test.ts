@@ -72,7 +72,7 @@ describe("dephy-id-stake-pool", () => {
     productAssetAddress = (await dephyId.findProductAssetPda({ productName, vendor: vendor.address }))[0]
 
     await sendAndConfirmIxs([
-      dephyId.getCreateProductInstruction({
+      await dephyId.getCreateProductInstructionAsync({
         vendor,
         payer,
         name: productName,

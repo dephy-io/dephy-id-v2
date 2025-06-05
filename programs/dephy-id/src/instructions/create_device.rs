@@ -18,9 +18,9 @@ pub struct CreateDevice<'info> {
     /// CHECK: the address is checked in the instruction handler
     #[account(mut, owner = mpl_core::ID @ ErrorCode::InvalidMplCoreProgram)]
     pub product_asset: UncheckedAccount<'info>,
-    /// CHECK: This will be created by mpl-core as an asset of the product
+    /// This will be created by mpl-core as an asset of the product
     #[account(mut, seeds = [DEVICE_SEED_PREFIX, product_asset.key().as_ref(), &args.seed], bump)]
-    pub device_asset: UncheckedAccount<'info>,
+    pub device_asset: SystemAccount<'info>,
     /// CHECK: The owner of the device asset don't need to sign
     pub owner: UncheckedAccount<'info>,
     #[account(mut)]

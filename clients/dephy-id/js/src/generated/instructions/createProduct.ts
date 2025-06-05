@@ -12,8 +12,10 @@ import {
   combineCodec,
   fixDecoderSize,
   fixEncoderSize,
+  getAddressEncoder,
   getBytesDecoder,
   getBytesEncoder,
+  getProgramDerivedAddress,
   getStructDecoder,
   getStructEncoder,
   getU32Decoder,
@@ -37,8 +39,14 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
+import { findProductAssetPda } from '../pdas';
 import { DEPHY_ID_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import {
+  expectAddress,
+  expectSome,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
 
 export const CREATE_PRODUCT_DISCRIMINATOR = new Uint8Array([
   183, 155, 202, 119, 43, 114, 174, 225,
@@ -54,6 +62,7 @@ export type CreateProductInstruction<
   TProgram extends string = typeof DEPHY_ID_PROGRAM_ADDRESS,
   TAccountVendor extends string | IAccountMeta<string> = string,
   TAccountProductAsset extends string | IAccountMeta<string> = string,
+  TAccountProductAccount extends string | IAccountMeta<string> = string,
   TAccountPayer extends string | IAccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
@@ -73,6 +82,9 @@ export type CreateProductInstruction<
       TAccountProductAsset extends string
         ? WritableAccount<TAccountProductAsset>
         : TAccountProductAsset,
+      TAccountProductAccount extends string
+        ? WritableAccount<TAccountProductAccount>
+        : TAccountProductAccount,
       TAccountPayer extends string
         ? WritableSignerAccount<TAccountPayer> &
             IAccountSignerMeta<TAccountPayer>
@@ -124,16 +136,139 @@ export function getCreateProductInstructionDataCodec(): Codec<
   );
 }
 
-export type CreateProductInput<
+export type CreateProductAsyncInput<
   TAccountVendor extends string = string,
   TAccountProductAsset extends string = string,
+  TAccountProductAccount extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountMplCore extends string = string,
 > = {
   /** The authority of the product */
   vendor: TransactionSigner<TAccountVendor>;
+  /** This will be created by mpl-core as a collection */
+  productAsset?: Address<TAccountProductAsset>;
+  productAccount?: Address<TAccountProductAccount>;
+  payer: TransactionSigner<TAccountPayer>;
+  systemProgram?: Address<TAccountSystemProgram>;
+  mplCore?: Address<TAccountMplCore>;
+  name: CreateProductInstructionDataArgs['name'];
+  uri: CreateProductInstructionDataArgs['uri'];
+};
+
+export async function getCreateProductInstructionAsync<
+  TAccountVendor extends string,
+  TAccountProductAsset extends string,
+  TAccountProductAccount extends string,
+  TAccountPayer extends string,
+  TAccountSystemProgram extends string,
+  TAccountMplCore extends string,
+  TProgramAddress extends Address = typeof DEPHY_ID_PROGRAM_ADDRESS,
+>(
+  input: CreateProductAsyncInput<
+    TAccountVendor,
+    TAccountProductAsset,
+    TAccountProductAccount,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountMplCore
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  CreateProductInstruction<
+    TProgramAddress,
+    TAccountVendor,
+    TAccountProductAsset,
+    TAccountProductAccount,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountMplCore
+  >
+> {
+  // Program address.
+  const programAddress = config?.programAddress ?? DEPHY_ID_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    vendor: { value: input.vendor ?? null, isWritable: false },
+    productAsset: { value: input.productAsset ?? null, isWritable: true },
+    productAccount: { value: input.productAccount ?? null, isWritable: true },
+    payer: { value: input.payer ?? null, isWritable: true },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    mplCore: { value: input.mplCore ?? null, isWritable: false },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Original args.
+  const args = { ...input };
+
+  // Resolve default values.
+  if (!accounts.productAsset.value) {
+    accounts.productAsset.value = await findProductAssetPda({
+      vendor: expectAddress(accounts.vendor.value),
+      productName: expectSome(args.name),
+    });
+  }
+  if (!accounts.productAccount.value) {
+    accounts.productAccount.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getAddressEncoder().encode(expectAddress(accounts.productAsset.value)),
+      ],
+    });
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+  if (!accounts.mplCore.value) {
+    accounts.mplCore.value =
+      'CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d' as Address<'CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d'>;
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.vendor),
+      getAccountMeta(accounts.productAsset),
+      getAccountMeta(accounts.productAccount),
+      getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.mplCore),
+    ],
+    programAddress,
+    data: getCreateProductInstructionDataEncoder().encode(
+      args as CreateProductInstructionDataArgs
+    ),
+  } as CreateProductInstruction<
+    TProgramAddress,
+    TAccountVendor,
+    TAccountProductAsset,
+    TAccountProductAccount,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountMplCore
+  >;
+
+  return instruction;
+}
+
+export type CreateProductInput<
+  TAccountVendor extends string = string,
+  TAccountProductAsset extends string = string,
+  TAccountProductAccount extends string = string,
+  TAccountPayer extends string = string,
+  TAccountSystemProgram extends string = string,
+  TAccountMplCore extends string = string,
+> = {
+  /** The authority of the product */
+  vendor: TransactionSigner<TAccountVendor>;
+  /** This will be created by mpl-core as a collection */
   productAsset: Address<TAccountProductAsset>;
+  productAccount: Address<TAccountProductAccount>;
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   mplCore?: Address<TAccountMplCore>;
@@ -144,6 +279,7 @@ export type CreateProductInput<
 export function getCreateProductInstruction<
   TAccountVendor extends string,
   TAccountProductAsset extends string,
+  TAccountProductAccount extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
   TAccountMplCore extends string,
@@ -152,6 +288,7 @@ export function getCreateProductInstruction<
   input: CreateProductInput<
     TAccountVendor,
     TAccountProductAsset,
+    TAccountProductAccount,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountMplCore
@@ -161,6 +298,7 @@ export function getCreateProductInstruction<
   TProgramAddress,
   TAccountVendor,
   TAccountProductAsset,
+  TAccountProductAccount,
   TAccountPayer,
   TAccountSystemProgram,
   TAccountMplCore
@@ -172,6 +310,7 @@ export function getCreateProductInstruction<
   const originalAccounts = {
     vendor: { value: input.vendor ?? null, isWritable: false },
     productAsset: { value: input.productAsset ?? null, isWritable: true },
+    productAccount: { value: input.productAccount ?? null, isWritable: true },
     payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     mplCore: { value: input.mplCore ?? null, isWritable: false },
@@ -199,6 +338,7 @@ export function getCreateProductInstruction<
     accounts: [
       getAccountMeta(accounts.vendor),
       getAccountMeta(accounts.productAsset),
+      getAccountMeta(accounts.productAccount),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.mplCore),
@@ -211,6 +351,7 @@ export function getCreateProductInstruction<
     TProgramAddress,
     TAccountVendor,
     TAccountProductAsset,
+    TAccountProductAccount,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountMplCore
@@ -227,10 +368,12 @@ export type ParsedCreateProductInstruction<
   accounts: {
     /** The authority of the product */
     vendor: TAccountMetas[0];
+    /** This will be created by mpl-core as a collection */
     productAsset: TAccountMetas[1];
-    payer: TAccountMetas[2];
-    systemProgram: TAccountMetas[3];
-    mplCore: TAccountMetas[4];
+    productAccount: TAccountMetas[2];
+    payer: TAccountMetas[3];
+    systemProgram: TAccountMetas[4];
+    mplCore: TAccountMetas[5];
   };
   data: CreateProductInstructionData;
 };
@@ -243,7 +386,7 @@ export function parseCreateProductInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedCreateProductInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 5) {
+  if (instruction.accounts.length < 6) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -258,6 +401,7 @@ export function parseCreateProductInstruction<
     accounts: {
       vendor: getNextAccount(),
       productAsset: getNextAccount(),
+      productAccount: getNextAccount(),
       payer: getNextAccount(),
       systemProgram: getNextAccount(),
       mplCore: getNextAccount(),

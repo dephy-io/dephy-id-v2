@@ -172,6 +172,7 @@ export type CreateDeviceAsyncInput<
   /** The authority of the product */
   vendor: TransactionSigner<TAccountVendor>;
   productAsset: Address<TAccountProductAsset>;
+  /** This will be created by mpl-core as an asset of the product */
   deviceAsset?: Address<TAccountDeviceAsset>;
   owner: Address<TAccountOwner>;
   payer: TransactionSigner<TAccountPayer>;
@@ -293,6 +294,7 @@ export type CreateDeviceInput<
   /** The authority of the product */
   vendor: TransactionSigner<TAccountVendor>;
   productAsset: Address<TAccountProductAsset>;
+  /** This will be created by mpl-core as an asset of the product */
   deviceAsset: Address<TAccountDeviceAsset>;
   owner: Address<TAccountOwner>;
   payer: TransactionSigner<TAccountPayer>;
@@ -403,6 +405,7 @@ export type ParsedCreateDeviceInstruction<
     /** The authority of the product */
     vendor: TAccountMetas[0];
     productAsset: TAccountMetas[1];
+    /** This will be created by mpl-core as an asset of the product */
     deviceAsset: TAccountMetas[2];
     owner: TAccountMetas[3];
     payer: TAccountMetas[4];

@@ -59,6 +59,7 @@ function BalanceSol({ balance }: { balance: Lamports }) {
 export function AccountTransactions({ address }: { address: Address }) {
   const query = useGetSignatures({ address })
   const [showAll, setShowAll] = useState(false)
+  const { cluster } = useWalletUiCluster()
 
   const items = useMemo(() => {
     if (showAll) return query.data
@@ -98,10 +99,10 @@ export function AccountTransactions({ address }: { address: Address }) {
                 {items?.map((item) => (
                   <TableRow key={item.signature}>
                     <TableHead className="font-mono">
-                      <ExplorerLink transaction={item.signature} label={ellipsify(item.signature, 8)} />
+                      <ExplorerLink cluster={cluster.cluster} transaction={item.signature} label={ellipsify(item.signature, 8)} />
                     </TableHead>
                     <TableCell className="font-mono text-right">
-                      <ExplorerLink block={item.slot.toString()} label={item.slot.toString()} />
+                      <ExplorerLink cluster={cluster.cluster} block={item.slot.toString()} label={item.slot.toString()} />
                     </TableCell>
                     <TableCell>{new Date(Number(item.blockTime ?? '0') * 1000).toISOString()}</TableCell>
                     <TableCell className="text-right">

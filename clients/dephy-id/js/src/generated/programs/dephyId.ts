@@ -24,6 +24,7 @@ export const DEPHY_ID_PROGRAM_ADDRESS =
 
 export enum DephyIdAccount {
   DephyAccount,
+  ProductAccount,
 }
 
 export function identifyDephyIdAccount(
@@ -40,6 +41,17 @@ export function identifyDephyIdAccount(
     )
   ) {
     return DephyIdAccount.DephyAccount;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([244, 140, 143, 108, 240, 97, 155, 231])
+      ),
+      0
+    )
+  ) {
+    return DephyIdAccount.ProductAccount;
   }
   throw new Error(
     'The provided account could not be identified as a dephyId account.'

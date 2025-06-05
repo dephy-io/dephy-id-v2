@@ -16,7 +16,9 @@
     "mocha": "^11.5.0",
     "prettier": "^3.5.3",
     "ts-mocha": "^11.1.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "dephy-id-client": "workspace:*",
+    "dephy-id-stake-pool-client": "workspace:*"
   },
   "license": "ISC",
   "scripts": {
@@ -24,7 +26,8 @@
     "stake-pool-cli": "bun -b cli/stake-pool-cli.ts",
     "generate-dephy-id": "bunx @codama/cli -c codama/dephy-id.js run js",
     "generate-dephy-id-stake-pool": "bunx @codama/cli -c codama/dephy-id-stake-pool.js run js",
-    "build-and-test": "anchor build && bun generate-dephy-id-stake-pool && anchor test --skip-build"
+    "generate-all": "bun generate-dephy-id && bun generate-dephy-id-stake-pool",
+    "build-and-test": "anchor build && bun generate-all && anchor test --skip-build"
   },
   "type": "module",
   "workspaces": [

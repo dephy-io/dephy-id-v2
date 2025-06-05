@@ -5,3 +5,10 @@ use anchor_lang::prelude::*;
 pub struct DephyAccount {
     pub authority: Pubkey,
 }
+
+#[account()]
+#[derive(InitSpace)]
+pub struct ProductAccount {
+    pub vendor: Pubkey,
+    pub collection: Pubkey,
+}

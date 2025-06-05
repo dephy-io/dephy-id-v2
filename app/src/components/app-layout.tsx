@@ -6,7 +6,13 @@ import { ClusterChecker } from 'src/components/cluster/cluster-ui'
 import { AccountChecker } from 'src/components/account/account-ui'
 import { Toaster } from './ui/sonner';
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000,
+    }
+  }
+})
 
 const config = createWalletUiConfig({
   clusters: [

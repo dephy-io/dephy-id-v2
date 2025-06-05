@@ -7,3 +7,4 @@
  */
 
 export * from './dephyAccount';
+export * from './productAccount';

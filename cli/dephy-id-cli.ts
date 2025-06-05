@@ -5,7 +5,11 @@ import { das } from '@metaplex-foundation/mpl-core-das';
 import { publicKey } from '@metaplex-foundation/umi';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import {
-  address, Base58EncodedBytes, getAddressEncoder,
+  address, Base58EncodedBytes, Base64EncodedBytes, getAddressEncoder,
+  getBase58Decoder,
+  getBase58Encoder,
+  getBase64Decoder,
+  getBase64Encoder,
   ReadonlyUint8Array
 } from "gill";
 import { loadKeypairSignerFromFile } from "gill/node";
@@ -13,6 +17,7 @@ import { loadKeypairSignerFromFile } from "gill/node";
 import * as dephyId from '../clients/dephy-id/js/src/index.js';
 import {
   getAssetAccountDecoder,
+  getCollectionAccountDecoder,
   MPL_CORE_PROGRAM_ADDRESS
 } from '../deps/mpl-core/js/src/index.js';
 import { createSolanaContext } from './common.js';
@@ -58,22 +63,21 @@ cli
   .option('-v, --vendor <path>', 'Path to vendor keypair file')
   .action(async (name, uri, options) => {
     const vendor = options.vendor ? await loadKeypairSignerFromFile(options.vendor) : ctx.feePayer;
-    const productAssetPda = await dephyId.findProductAssetPda({
+    const [productAssetAddress] = await dephyId.findProductAssetPda({
       productName: name,
       vendor: vendor.address
     });
 
     const signature = await ctx.sendAndConfirmIxs([
-      dephyId.getCreateProductInstruction({
+      await dephyId.getCreateProductInstructionAsync({
         name,
         payer: ctx.feePayer,
-        productAsset: productAssetPda[0],
         uri,
         vendor
       })
     ]);
 
-    console.log(`Product ${name} created at ${productAssetPda[0]}`);
+    console.log(`Product ${name} created at ${productAssetAddress}`);
     console.log(`Transaction: ${signature}`);
   });
 
@@ -143,6 +147,47 @@ cli
     console.dir(asset, { depth: null })
   })
 
+
+cli
+  .command('list-products')
+  .description('Get all products')
+  .option('--vendor <vendor>', 'Vendor address')
+  .action(async (options) => {
+    const discriminator = getBase58Decoder().decode(dephyId.PRODUCT_ACCOUNT_DISCRIMINATOR)
+
+    let filters: Parameters<typeof ctx.rpc.getProgramAccounts>[1]['filters'] = [{
+      memcmp: {
+        offset: 0n,
+        encoding: 'base58',
+        bytes: discriminator as unknown as Base58EncodedBytes
+      }
+    }]
+
+    if (options.vendor) {
+      filters.push({
+        memcmp: {
+          offset: 8n,
+          encoding: 'base58',
+          bytes: address(options.vendor) as unknown as Base58EncodedBytes
+        }
+      })
+    }
+
+    const rawAccounts = await ctx.rpc
+      .getProgramAccounts(
+        dephyId.DEPHY_ID_PROGRAM_ADDRESS, {
+        encoding: 'base64',
+        filters,
+      })
+      .send()
+
+    const products = rawAccounts.map(({ account, pubkey }) => {
+      const data = getBase64Encoder().encode(account.data[0])
+      const decodedAccount = dephyId.getProductAccountDecoder().decode(data)
+      return { address: pubkey, ...decodedAccount }
+    })
+    console.dir(products, { depth: null })
+  })
 
 const listDevicesNative = async (product: string) => {
   const rawAccounts = await ctx.rpc

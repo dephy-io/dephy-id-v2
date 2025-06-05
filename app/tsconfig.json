@@ -27,6 +27,12 @@
     "paths": {
       "~/*": [
         "src/*"
+      ],
+      "dephy-id-client": [
+        "../clients/dephy-id/js/src"
+      ],
+      "dephy-id-stake-pool-client": [
+        "../clients/dephy-id-stake-pool/js/src"
       ]
     },
     "esModuleInterop": true,

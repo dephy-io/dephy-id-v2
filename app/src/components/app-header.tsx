@@ -5,6 +5,8 @@ import "@wallet-ui/tailwind/index.css";
 const links = [
   { label: 'Home', path: '/' },
   { label: 'Account', path: '/account' },
+  { label: 'DePHY ID', path: '/dephy-id' },
+  { label: 'Stake Pool', path: '/stake-pool' },
 ]
 
 export function AppHeader() {

@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-use crate::{error::ErrorCode, DEVICE_SEED_PREFIX, PRODUCT_SEED_PREFIX};
+use crate::{error::ErrorCode, ProductAccount, DEVICE_SEED_PREFIX};
 
 #[derive(Clone, AnchorSerialize, AnchorDeserialize)]
 pub struct CreateDeviceArgs {
@@ -14,10 +14,13 @@ pub struct CreateDeviceArgs {
 #[instruction(args: CreateDeviceArgs)]
 pub struct CreateDevice<'info> {
     /// The authority of the product
-    pub vendor: Signer<'info>,
+    #[account(address = product_account.mint_authority @ ErrorCode::InvalidVendor)]
+    pub mint_authority: Signer<'info>,
     /// CHECK: the address is checked in the instruction handler
-    #[account(mut, owner = mpl_core::ID @ ErrorCode::InvalidMplCoreProgram)]
+    #[account(mut, owner = mpl_core::ID @ ErrorCode::InvalidMplCoreProgram, address = product_account.collection @ ErrorCode::ProductAddressMismatch)]
     pub product_asset: UncheckedAccount<'info>,
+    #[account(seeds = [product_asset.key().as_ref()], bump)]
+    pub product_account: Account<'info, ProductAccount>,
     /// This will be created by mpl-core as an asset of the product
     #[account(mut, seeds = [DEVICE_SEED_PREFIX, product_asset.key().as_ref(), &args.seed], bump)]
     pub device_asset: SystemAccount<'info>,
@@ -39,21 +42,8 @@ pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) 
         }
     }
 
-    let product = mpl_core::Collection::deserialize(&ctx.accounts.product_asset.data.borrow())
+    mpl_core::Collection::deserialize(&ctx.accounts.product_asset.data.borrow())
         .map_err(|_| ErrorCode::InvalidProductAccount)?;
-
-    let (expected_product_pubkey, product_bump) = Pubkey::find_program_address(
-        &[
-            PRODUCT_SEED_PREFIX,
-            ctx.accounts.vendor.key().as_ref(),
-            product.base.name.as_ref(),
-        ],
-        ctx.program_id,
-    );
-
-    if expected_product_pubkey != ctx.accounts.product_asset.key() {
-        return Err(ErrorCode::ProductAddressMismatch.into());
-    }
 
     let device_seed = Pubkey::new_from_array(args.seed);
     let attributes = vec![mpl_core::types::Attribute {
@@ -68,7 +58,7 @@ pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) 
             system_program: &ctx.accounts.system_program,
             asset: &ctx.accounts.device_asset,
             collection: Some(&ctx.accounts.product_asset),
-            authority: Some(&ctx.accounts.product_asset),
+            authority: Some(&ctx.accounts.product_account.to_account_info()),
             owner: Some(&ctx.accounts.owner),
             update_authority: None,
             log_wrapper: None,
@@ -94,10 +84,8 @@ pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) 
             &[ctx.bumps.device_asset],
         ],
         &[
-            PRODUCT_SEED_PREFIX,
-            ctx.accounts.vendor.key().as_ref(),
-            product.base.name.as_ref(),
-            &[product_bump],
+            ctx.accounts.product_asset.key().as_ref(),
+            &[ctx.bumps.product_account],
         ],
     ])?;
 
@@ -107,7 +95,7 @@ pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) 
             asset: &ctx.accounts.device_asset,
             collection: Some(&ctx.accounts.product_asset),
             payer: &ctx.accounts.payer,
-            authority: Some(&ctx.accounts.product_asset),
+            authority: Some(&ctx.accounts.product_account.to_account_info()),
             buffer: None,
             system_program: &ctx.accounts.system_program,
             log_wrapper: None,
@@ -120,10 +108,8 @@ pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) 
         },
     )
     .invoke_signed(&[&[
-        PRODUCT_SEED_PREFIX,
-        ctx.accounts.vendor.key().as_ref(),
-        product.base.name.as_ref(),
-        &[product_bump],
+        ctx.accounts.product_asset.key().as_ref(),
+        &[ctx.bumps.product_account],
     ]])?;
 
     Ok(())

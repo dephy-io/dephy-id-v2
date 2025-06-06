@@ -56,11 +56,11 @@ pub mod dephy_id_stake_pool {
         process_close_nft_stake(ctx)
     }
 
-    pub fn deposit_token(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+    pub fn deposit_token(ctx: Context<Deposit>, amount: Option<u64>) -> Result<()> {
         process_deposit(ctx, amount)
     }
 
-    pub fn withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+    pub fn withdraw(ctx: Context<Withdraw>, amount: Option<u64>) -> Result<()> {
         process_withdraw(ctx, amount)
     }
 }

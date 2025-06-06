@@ -31,7 +31,7 @@ pub fn handle_create_product(ctx: Context<CreateProduct>, args: CreateProductArg
         &ctx.accounts.mpl_core,
         mpl_core::instructions::CreateCollectionV2CpiAccounts {
             collection: &ctx.accounts.product_asset,
-            update_authority: Some(&ctx.accounts.product_asset),
+            update_authority: Some(&ctx.accounts.product_account.to_account_info()),
             payer: &ctx.accounts.payer,
             system_program: &ctx.accounts.system_program,
         },
@@ -69,7 +69,7 @@ pub fn handle_create_product(ctx: Context<CreateProduct>, args: CreateProductArg
         mpl_core::instructions::WriteCollectionExternalPluginAdapterDataV1CpiAccounts {
             collection: &ctx.accounts.product_asset,
             payer: &ctx.accounts.payer,
-            authority: Some(&ctx.accounts.product_asset),
+            authority: Some(&ctx.accounts.product_account.to_account_info()),
             buffer: None,
             system_program: &ctx.accounts.system_program,
             log_wrapper: None,
@@ -82,15 +82,14 @@ pub fn handle_create_product(ctx: Context<CreateProduct>, args: CreateProductArg
         },
     )
     .invoke_signed(&[&[
-        PRODUCT_SEED_PREFIX,
-        ctx.accounts.vendor.key().as_ref(),
-        args.name.as_ref(),
-        &[ctx.bumps.product_asset],
+        &ctx.accounts.product_asset.key().as_ref(),
+        &[ctx.bumps.product_account],
     ]])?;
 
     let product_account = &mut ctx.accounts.product_account;
     product_account.vendor = ctx.accounts.vendor.key();
     product_account.collection = ctx.accounts.product_asset.key();
+    product_account.mint_authority = ctx.accounts.vendor.key();
 
     Ok(())
 }

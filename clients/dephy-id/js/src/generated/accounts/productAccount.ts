@@ -49,9 +49,14 @@ export type ProductAccount = {
   discriminator: ReadonlyUint8Array;
   vendor: Address;
   collection: Address;
+  mintAuthority: Address;
 };
 
-export type ProductAccountArgs = { vendor: Address; collection: Address };
+export type ProductAccountArgs = {
+  vendor: Address;
+  collection: Address;
+  mintAuthority: Address;
+};
 
 export function getProductAccountEncoder(): Encoder<ProductAccountArgs> {
   return transformEncoder(
@@ -59,6 +64,7 @@ export function getProductAccountEncoder(): Encoder<ProductAccountArgs> {
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['vendor', getAddressEncoder()],
       ['collection', getAddressEncoder()],
+      ['mintAuthority', getAddressEncoder()],
     ]),
     (value) => ({ ...value, discriminator: PRODUCT_ACCOUNT_DISCRIMINATOR })
   );
@@ -69,6 +75,7 @@ export function getProductAccountDecoder(): Decoder<ProductAccount> {
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['vendor', getAddressDecoder()],
     ['collection', getAddressDecoder()],
+    ['mintAuthority', getAddressDecoder()],
   ]);
 }
 
@@ -141,5 +148,5 @@ export async function fetchAllMaybeProductAccount(
 }
 
 export function getProductAccountSize(): number {
-  return 72;
+  return 104;
 }

@@ -13,6 +13,8 @@ import {
   getAddressEncoder,
   getBytesDecoder,
   getBytesEncoder,
+  getOptionDecoder,
+  getOptionEncoder,
   getProgramDerivedAddress,
   getStructDecoder,
   getStructEncoder,
@@ -28,6 +30,8 @@ import {
   type IInstruction,
   type IInstructionWithAccounts,
   type IInstructionWithData,
+  type Option,
+  type OptionOrNullable,
   type ReadonlyAccount,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
@@ -112,16 +116,18 @@ export type WithdrawInstruction<
 
 export type WithdrawInstructionData = {
   discriminator: ReadonlyUint8Array;
-  amount: bigint;
+  amount: Option<bigint>;
 };
 
-export type WithdrawInstructionDataArgs = { amount: number | bigint };
+export type WithdrawInstructionDataArgs = {
+  amount: OptionOrNullable<number | bigint>;
+};
 
 export function getWithdrawInstructionDataEncoder(): Encoder<WithdrawInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
-      ['amount', getU64Encoder()],
+      ['amount', getOptionEncoder(getU64Encoder())],
     ]),
     (value) => ({ ...value, discriminator: WITHDRAW_DISCRIMINATOR })
   );
@@ -130,7 +136,7 @@ export function getWithdrawInstructionDataEncoder(): Encoder<WithdrawInstruction
 export function getWithdrawInstructionDataDecoder(): Decoder<WithdrawInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
-    ['amount', getU64Decoder()],
+    ['amount', getOptionDecoder(getU64Decoder())],
   ]);
 }
 

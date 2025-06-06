@@ -57,7 +57,7 @@ describe("dephy-id-stake-pool", () => {
   let did1Address: Address
   let tokenOwner1: KeyPairSigner
   let userTokenAddress1: Address
-  const startingAmount = 10000_000_000n
+  const startingAmount = 2000_000_000n
 
 
   before(async () => {
@@ -91,7 +91,7 @@ describe("dephy-id-stake-pool", () => {
 
     await sendAndConfirmIxs([
       await dephyId.getCreateDeviceInstructionAsync({
-        vendor,
+        mintAuthority: vendor,
         payer,
         productAsset: productAssetAddress,
         owner: didOwner1.address,
@@ -250,7 +250,6 @@ describe("dephy-id-stake-pool", () => {
     assert.equal(userTokenAccount.data.amount, startingAmount - depositAmount)
   })
 
-
   it('close an active nft stake will fail', async () => {
     await assert.rejects(async () => {
       await sendAndConfirmIxs([
@@ -294,6 +293,38 @@ describe("dephy-id-stake-pool", () => {
   })
 
 
+  it('deposit all', async () => {
+    await sendAndConfirmIxs([
+      await dephyIdStakePool.getDepositTokenInstructionAsync({
+        stakePool: stakePoolAddress,
+        nftStake: nftStake.address,
+        user: tokenOwner1,
+        payer,
+        amount: null,
+        stakeTokenMint: stDephyTokenAddress,
+        stakeTokenAccount: stakeTokenAddress,
+        userStakeTokenAccount: userTokenAddress1,
+        tokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
+      })
+    ])
+
+    const stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(rpc, stakePoolAddress)
+    assert.equal(stakePoolAccount.data.totalAmount, startingAmount, 'totalAmount')
+
+    const userStakeAccount = await dephyIdStakePool.fetchUserStakeAccount(rpc, userStakeAddress)
+    assert.equal(userStakeAccount.data.stakePool, stakePoolAddress, 'stakePool')
+    assert.equal(userStakeAccount.data.nftStake, nftStake.address, 'nftStake')
+    assert.equal(userStakeAccount.data.user, tokenOwner1.address, 'user')
+    assert.equal(userStakeAccount.data.amount, startingAmount, 'amount')
+
+    const stakeTokenAccount = await splToken.fetchToken(rpc, stakeTokenAddress)
+    assert.equal(stakeTokenAccount.data.amount, startingAmount)
+
+    const userTokenAccount = await splToken.fetchToken(rpc, userTokenAddress1)
+    assert.equal(userTokenAccount.data.amount, 0n)
+  })
+
+
   it('unstake nft', async () => {
     await sendAndConfirmIxs([
       await dephyIdStakePool.getUnstakeNftInstructionAsync({
@@ -323,9 +354,7 @@ describe("dephy-id-stake-pool", () => {
     })
   })
 
-  let withdrawAmount2: bigint
-  it('withdraw after unstake', async () => {
-    withdrawAmount2 = depositAmount - withdrawAmount1
+  it('withdraw all after unstake', async () => {
     let stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(rpc, stakePoolAddress)
 
     await sendAndConfirmIxs([
@@ -334,7 +363,7 @@ describe("dephy-id-stake-pool", () => {
         nftStake: nftStake.address,
         user: tokenOwner1,
         payer,
-        amount: withdrawAmount2,
+        amount: null,
         stakeTokenMint: stakePoolAccount.data.config.stakeTokenMint,
         stakeTokenAccount: stakePoolAccount.data.stakeTokenAccount,
         userStakeTokenAccount: userTokenAddress1,

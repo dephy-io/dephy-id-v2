@@ -11,4 +11,5 @@ pub struct DephyAccount {
 pub struct ProductAccount {
     pub vendor: Pubkey,
     pub collection: Pubkey,
+    pub mint_authority: Pubkey,
 }

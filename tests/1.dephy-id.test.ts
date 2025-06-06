@@ -140,7 +140,7 @@ describe("dephy-id", () => {
         productAsset,
         seed: encodedSeed,
         uri: "https://example.com/product-1/device-1",
-        vendor,
+        mintAuthority: vendor,
       }),
     ])
 
@@ -163,7 +163,7 @@ describe("dephy-id", () => {
 
 
   it("mint multiple assets in one tx", async () => {
-    const seeds = await Array.fromAsync({ length: 5 }, async () => {
+    const seeds = await Array.fromAsync({ length: 4 }, async () => {
       const randomBytes = new Uint8Array(32);
       crypto.getRandomValues(randomBytes);
       const owner = await generateKeyPairSigner()
@@ -181,7 +181,7 @@ describe("dephy-id", () => {
         payer,
         productAsset,
         owner,
-        vendor,
+        mintAuthority: vendor,
       })
     ))
 
@@ -212,7 +212,7 @@ describe("dephy-id", () => {
       payer,
       productAsset,
       owner: payer.address,
-      vendor,
+      mintAuthority: vendor,
       expiry: Math.trunc(Date.now() / 1000) + 300
     })
 

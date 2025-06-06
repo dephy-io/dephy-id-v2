@@ -45,12 +45,18 @@ pub struct Withdraw<'info> {
     pub token_program: Interface<'info, TokenInterface>,
 }
 
-pub fn process_withdraw(ctx: Context<Withdraw>, amount: u64) -> Result<()> {
+pub fn process_withdraw(ctx: Context<Withdraw>, maybe_amount: Option<u64>) -> Result<()> {
+    let user_stake = &mut ctx.accounts.user_stake_account;
+
+    let amount = match maybe_amount {
+        Some(amount) => amount,
+        None => user_stake.amount,
+    };
+
     msg!("withdraw {}", amount);
 
     let stake_pool = &mut ctx.accounts.stake_pool;
     let nft_stake = &mut ctx.accounts.nft_stake;
-    let user_stake = &mut ctx.accounts.user_stake_account;
 
     require_gt!(amount, 0, ErrorCode::InvalidAmount);
     require_gte!(user_stake.amount, amount, ErrorCode::InvalidAmount);

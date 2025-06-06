@@ -12,10 +12,12 @@ import {
   combineCodec,
   fixDecoderSize,
   fixEncoderSize,
+  getAddressEncoder,
   getBytesDecoder,
   getBytesEncoder,
   getOptionDecoder,
   getOptionEncoder,
+  getProgramDerivedAddress,
   getStructDecoder,
   getStructEncoder,
   getU32Decoder,
@@ -65,8 +67,9 @@ export function getCreateDeviceDiscriminatorBytes() {
 
 export type CreateDeviceInstruction<
   TProgram extends string = typeof DEPHY_ID_PROGRAM_ADDRESS,
-  TAccountVendor extends string | IAccountMeta<string> = string,
+  TAccountMintAuthority extends string | IAccountMeta<string> = string,
   TAccountProductAsset extends string | IAccountMeta<string> = string,
+  TAccountProductAccount extends string | IAccountMeta<string> = string,
   TAccountDeviceAsset extends string | IAccountMeta<string> = string,
   TAccountOwner extends string | IAccountMeta<string> = string,
   TAccountPayer extends string | IAccountMeta<string> = string,
@@ -81,13 +84,16 @@ export type CreateDeviceInstruction<
   IInstructionWithData<Uint8Array> &
   IInstructionWithAccounts<
     [
-      TAccountVendor extends string
-        ? ReadonlySignerAccount<TAccountVendor> &
-            IAccountSignerMeta<TAccountVendor>
-        : TAccountVendor,
+      TAccountMintAuthority extends string
+        ? ReadonlySignerAccount<TAccountMintAuthority> &
+            IAccountSignerMeta<TAccountMintAuthority>
+        : TAccountMintAuthority,
       TAccountProductAsset extends string
         ? WritableAccount<TAccountProductAsset>
         : TAccountProductAsset,
+      TAccountProductAccount extends string
+        ? ReadonlyAccount<TAccountProductAccount>
+        : TAccountProductAccount,
       TAccountDeviceAsset extends string
         ? WritableAccount<TAccountDeviceAsset>
         : TAccountDeviceAsset,
@@ -161,8 +167,9 @@ export function getCreateDeviceInstructionDataCodec(): Codec<
 }
 
 export type CreateDeviceAsyncInput<
-  TAccountVendor extends string = string,
+  TAccountMintAuthority extends string = string,
   TAccountProductAsset extends string = string,
+  TAccountProductAccount extends string = string,
   TAccountDeviceAsset extends string = string,
   TAccountOwner extends string = string,
   TAccountPayer extends string = string,
@@ -170,8 +177,9 @@ export type CreateDeviceAsyncInput<
   TAccountMplCore extends string = string,
 > = {
   /** The authority of the product */
-  vendor: TransactionSigner<TAccountVendor>;
+  mintAuthority: TransactionSigner<TAccountMintAuthority>;
   productAsset: Address<TAccountProductAsset>;
+  productAccount?: Address<TAccountProductAccount>;
   /** This will be created by mpl-core as an asset of the product */
   deviceAsset?: Address<TAccountDeviceAsset>;
   owner: Address<TAccountOwner>;
@@ -185,8 +193,9 @@ export type CreateDeviceAsyncInput<
 };
 
 export async function getCreateDeviceInstructionAsync<
-  TAccountVendor extends string,
+  TAccountMintAuthority extends string,
   TAccountProductAsset extends string,
+  TAccountProductAccount extends string,
   TAccountDeviceAsset extends string,
   TAccountOwner extends string,
   TAccountPayer extends string,
@@ -195,8 +204,9 @@ export async function getCreateDeviceInstructionAsync<
   TProgramAddress extends Address = typeof DEPHY_ID_PROGRAM_ADDRESS,
 >(
   input: CreateDeviceAsyncInput<
-    TAccountVendor,
+    TAccountMintAuthority,
     TAccountProductAsset,
+    TAccountProductAccount,
     TAccountDeviceAsset,
     TAccountOwner,
     TAccountPayer,
@@ -207,8 +217,9 @@ export async function getCreateDeviceInstructionAsync<
 ): Promise<
   CreateDeviceInstruction<
     TProgramAddress,
-    TAccountVendor,
+    TAccountMintAuthority,
     TAccountProductAsset,
+    TAccountProductAccount,
     TAccountDeviceAsset,
     TAccountOwner,
     TAccountPayer,
@@ -221,8 +232,9 @@ export async function getCreateDeviceInstructionAsync<
 
   // Original accounts.
   const originalAccounts = {
-    vendor: { value: input.vendor ?? null, isWritable: false },
+    mintAuthority: { value: input.mintAuthority ?? null, isWritable: false },
     productAsset: { value: input.productAsset ?? null, isWritable: true },
+    productAccount: { value: input.productAccount ?? null, isWritable: false },
     deviceAsset: { value: input.deviceAsset ?? null, isWritable: true },
     owner: { value: input.owner ?? null, isWritable: false },
     payer: { value: input.payer ?? null, isWritable: true },
@@ -238,6 +250,14 @@ export async function getCreateDeviceInstructionAsync<
   const args = { ...input };
 
   // Resolve default values.
+  if (!accounts.productAccount.value) {
+    accounts.productAccount.value = await getProgramDerivedAddress({
+      programAddress,
+      seeds: [
+        getAddressEncoder().encode(expectAddress(accounts.productAsset.value)),
+      ],
+    });
+  }
   if (!accounts.deviceAsset.value) {
     accounts.deviceAsset.value = await findDeviceAssetPda({
       productAsset: expectAddress(accounts.productAsset.value),
@@ -256,8 +276,9 @@ export async function getCreateDeviceInstructionAsync<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.vendor),
+      getAccountMeta(accounts.mintAuthority),
       getAccountMeta(accounts.productAsset),
+      getAccountMeta(accounts.productAccount),
       getAccountMeta(accounts.deviceAsset),
       getAccountMeta(accounts.owner),
       getAccountMeta(accounts.payer),
@@ -270,8 +291,9 @@ export async function getCreateDeviceInstructionAsync<
     ),
   } as CreateDeviceInstruction<
     TProgramAddress,
-    TAccountVendor,
+    TAccountMintAuthority,
     TAccountProductAsset,
+    TAccountProductAccount,
     TAccountDeviceAsset,
     TAccountOwner,
     TAccountPayer,
@@ -283,8 +305,9 @@ export async function getCreateDeviceInstructionAsync<
 }
 
 export type CreateDeviceInput<
-  TAccountVendor extends string = string,
+  TAccountMintAuthority extends string = string,
   TAccountProductAsset extends string = string,
+  TAccountProductAccount extends string = string,
   TAccountDeviceAsset extends string = string,
   TAccountOwner extends string = string,
   TAccountPayer extends string = string,
@@ -292,8 +315,9 @@ export type CreateDeviceInput<
   TAccountMplCore extends string = string,
 > = {
   /** The authority of the product */
-  vendor: TransactionSigner<TAccountVendor>;
+  mintAuthority: TransactionSigner<TAccountMintAuthority>;
   productAsset: Address<TAccountProductAsset>;
+  productAccount: Address<TAccountProductAccount>;
   /** This will be created by mpl-core as an asset of the product */
   deviceAsset: Address<TAccountDeviceAsset>;
   owner: Address<TAccountOwner>;
@@ -307,8 +331,9 @@ export type CreateDeviceInput<
 };
 
 export function getCreateDeviceInstruction<
-  TAccountVendor extends string,
+  TAccountMintAuthority extends string,
   TAccountProductAsset extends string,
+  TAccountProductAccount extends string,
   TAccountDeviceAsset extends string,
   TAccountOwner extends string,
   TAccountPayer extends string,
@@ -317,8 +342,9 @@ export function getCreateDeviceInstruction<
   TProgramAddress extends Address = typeof DEPHY_ID_PROGRAM_ADDRESS,
 >(
   input: CreateDeviceInput<
-    TAccountVendor,
+    TAccountMintAuthority,
     TAccountProductAsset,
+    TAccountProductAccount,
     TAccountDeviceAsset,
     TAccountOwner,
     TAccountPayer,
@@ -328,8 +354,9 @@ export function getCreateDeviceInstruction<
   config?: { programAddress?: TProgramAddress }
 ): CreateDeviceInstruction<
   TProgramAddress,
-  TAccountVendor,
+  TAccountMintAuthority,
   TAccountProductAsset,
+  TAccountProductAccount,
   TAccountDeviceAsset,
   TAccountOwner,
   TAccountPayer,
@@ -341,8 +368,9 @@ export function getCreateDeviceInstruction<
 
   // Original accounts.
   const originalAccounts = {
-    vendor: { value: input.vendor ?? null, isWritable: false },
+    mintAuthority: { value: input.mintAuthority ?? null, isWritable: false },
     productAsset: { value: input.productAsset ?? null, isWritable: true },
+    productAccount: { value: input.productAccount ?? null, isWritable: false },
     deviceAsset: { value: input.deviceAsset ?? null, isWritable: true },
     owner: { value: input.owner ?? null, isWritable: false },
     payer: { value: input.payer ?? null, isWritable: true },
@@ -370,8 +398,9 @@ export function getCreateDeviceInstruction<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.vendor),
+      getAccountMeta(accounts.mintAuthority),
       getAccountMeta(accounts.productAsset),
+      getAccountMeta(accounts.productAccount),
       getAccountMeta(accounts.deviceAsset),
       getAccountMeta(accounts.owner),
       getAccountMeta(accounts.payer),
@@ -384,8 +413,9 @@ export function getCreateDeviceInstruction<
     ),
   } as CreateDeviceInstruction<
     TProgramAddress,
-    TAccountVendor,
+    TAccountMintAuthority,
     TAccountProductAsset,
+    TAccountProductAccount,
     TAccountDeviceAsset,
     TAccountOwner,
     TAccountPayer,
@@ -403,14 +433,15 @@ export type ParsedCreateDeviceInstruction<
   programAddress: Address<TProgram>;
   accounts: {
     /** The authority of the product */
-    vendor: TAccountMetas[0];
+    mintAuthority: TAccountMetas[0];
     productAsset: TAccountMetas[1];
+    productAccount: TAccountMetas[2];
     /** This will be created by mpl-core as an asset of the product */
-    deviceAsset: TAccountMetas[2];
-    owner: TAccountMetas[3];
-    payer: TAccountMetas[4];
-    systemProgram: TAccountMetas[5];
-    mplCore: TAccountMetas[6];
+    deviceAsset: TAccountMetas[3];
+    owner: TAccountMetas[4];
+    payer: TAccountMetas[5];
+    systemProgram: TAccountMetas[6];
+    mplCore: TAccountMetas[7];
   };
   data: CreateDeviceInstructionData;
 };
@@ -423,7 +454,7 @@ export function parseCreateDeviceInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedCreateDeviceInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 7) {
+  if (instruction.accounts.length < 8) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -436,8 +467,9 @@ export function parseCreateDeviceInstruction<
   return {
     programAddress: instruction.programAddress,
     accounts: {
-      vendor: getNextAccount(),
+      mintAuthority: getNextAccount(),
       productAsset: getNextAccount(),
+      productAccount: getNextAccount(),
       deviceAsset: getNextAccount(),
       owner: getNextAccount(),
       payer: getNextAccount(),

@@ -41,9 +41,13 @@ pub struct Deposit<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn process_deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
+pub fn process_deposit(ctx: Context<Deposit>, maybe_amount: Option<u64>) -> Result<()> {
+    let amount = match maybe_amount {
+        Some(amount) => amount,
+        None => ctx.accounts.user_stake_token_account.amount,
+    };
+
     msg!("deposit {}", amount);
-    // TODO: check
 
     let stake_pool = &mut ctx.accounts.stake_pool;
     let config = &stake_pool.config;
@@ -52,7 +56,11 @@ pub fn process_deposit(ctx: Context<Deposit>, amount: u64) -> Result<()> {
 
     require!(nft_stake.active, ErrorCode::NftStakeNotActive);
     require_gt!(amount, 0, ErrorCode::InvalidAmount);
-    require_gte!(config.max_stake_amount, amount, ErrorCode::InvalidAmount);
+    require_gte!(
+        config.max_stake_amount,
+        nft_stake.amount + amount,
+        ErrorCode::InvalidAmount
+    );
 
     let clock = Clock::get()?;
     let now = clock.unix_timestamp as u64;

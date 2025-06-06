@@ -13,6 +13,8 @@ import {
   getAddressEncoder,
   getBytesDecoder,
   getBytesEncoder,
+  getOptionDecoder,
+  getOptionEncoder,
   getProgramDerivedAddress,
   getStructDecoder,
   getStructEncoder,
@@ -28,6 +30,8 @@ import {
   type IInstruction,
   type IInstructionWithAccounts,
   type IInstructionWithData,
+  type Option,
+  type OptionOrNullable,
   type ReadonlyAccount,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
@@ -114,16 +118,18 @@ export type DepositTokenInstruction<
 
 export type DepositTokenInstructionData = {
   discriminator: ReadonlyUint8Array;
-  amount: bigint;
+  amount: Option<bigint>;
 };
 
-export type DepositTokenInstructionDataArgs = { amount: number | bigint };
+export type DepositTokenInstructionDataArgs = {
+  amount: OptionOrNullable<number | bigint>;
+};
 
 export function getDepositTokenInstructionDataEncoder(): Encoder<DepositTokenInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
-      ['amount', getU64Encoder()],
+      ['amount', getOptionEncoder(getU64Encoder())],
     ]),
     (value) => ({ ...value, discriminator: DEPOSIT_TOKEN_DISCRIMINATOR })
   );
@@ -132,7 +138,7 @@ export function getDepositTokenInstructionDataEncoder(): Encoder<DepositTokenIns
 export function getDepositTokenInstructionDataDecoder(): Decoder<DepositTokenInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
-    ['amount', getU64Decoder()],
+    ['amount', getOptionDecoder(getU64Decoder())],
   ]);
 }
 

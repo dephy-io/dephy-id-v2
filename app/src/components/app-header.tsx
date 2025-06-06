@@ -21,7 +21,7 @@ export function AppHeader() {
       <div className="mx-auto flex justify-between items-center">
         <div className="flex items-baseline gap-4">
           <Link to="/" className="text-xl hover:text-neutral-500 dark:hover:text-white">
-            <span>Solana App Template</span>
+            <span>DePHY ID Demo UI</span>
           </Link>
           <div className="md:flex items-center">
             <ul className="flex gap-4 flex-nowrap items-center">

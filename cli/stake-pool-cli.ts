@@ -277,7 +277,7 @@ cli
       }
     })
 
-    console.log(stakePools)
+    console.dir(stakePools, { depth: null })
   })
 
 cli
@@ -320,7 +320,7 @@ cli
       }
     })
 
-    console.log(nftStakes)
+    console.dir(nftStakes, { depth: null })
   })
 
 cli
@@ -363,7 +363,7 @@ cli
       }
     })
 
-    console.log(userStakes)
+    console.dir(userStakes, { depth: null })
   })
 
 await cli.parseAsync()

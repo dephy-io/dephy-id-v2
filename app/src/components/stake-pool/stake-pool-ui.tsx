@@ -7,6 +7,7 @@ import * as splToken from "gill/programs/token"
 import { useWalletUi } from "@wallet-ui/react"
 import { useTokenAccounts } from "../account/account-data-access"
 
+
 export function Initialize() {
   const initialize = useInitialize()
   const adminAccount = useAdminAccount()
@@ -89,14 +90,12 @@ export function ListStakePools() {
   )
 }
 
-export function ShowStakePool() {
+export function ShowStakePool({ stakePool, mint }: {
+  stakePool: Account<dephyIdStakePool.StakePoolAccount>,
+  mint: Account<splToken.Mint>
+}) {
   const params = useParams() as { address: string }
   assertIsAddress(params.address)
-  const stakePool = useStakePool({ stakePoolAddress: params.address })
-
-  if (!stakePool.isFetched) {
-    return <div>Loading...</div>
-  }
 
   return (
     <div>
@@ -104,10 +103,10 @@ export function ShowStakePool() {
       <p>{params.address}</p>
       {stakePool.data ? (
         <div>
-          <p>Authority: {stakePool.data.data.authority}</p>
-          <p>Collection: {stakePool.data.data.config.collection}</p>
-          <p>Stake Token Mint: {stakePool.data.data.config.stakeTokenMint}</p>
-          <p>Max Stake Amount: {stakePool.data.data.config.maxStakeAmount}</p>
+          <p>Authority: {stakePool.data.authority}</p>
+          <p>Collection: {stakePool.data.config.collection}</p>
+          <p>Stake Token Mint: {stakePool.data.config.stakeTokenMint}</p>
+          <p>Max Stake Amount: {splToken.tokenAmountToUiAmount(stakePool.data.config.maxStakeAmount, mint.data!.decimals)}</p>
         </div>
       ) : (
         <div>Stake Pool not found</div>
@@ -165,7 +164,10 @@ export function ListNftStakes() {
 }
 
 
-export function ShowNftStake({ nftStake }: { nftStake: Account<dephyIdStakePool.NftStakeAccount> }) {
+export function ShowNftStake({ nftStake, mint }: {
+  nftStake: Account<dephyIdStakePool.NftStakeAccount>,
+  mint: Account<splToken.Mint>
+}) {
   const params = useParams() as { address: string }
   assertIsAddress(params.address)
 
@@ -179,7 +181,7 @@ export function ShowNftStake({ nftStake }: { nftStake: Account<dephyIdStakePool.
           <p>Nft Token Account: {nftStake.data.nftTokenAccount}</p>
           <p>Stake Authority: {nftStake.data.stakeAuthority}</p>
           <p>Deposit Authority: {nftStake.data.depositAuthority}</p>
-          <p>Stake Amount: {nftStake.data.amount}</p>
+          <p>Stake Amount: {splToken.tokenAmountToUiAmount(nftStake.data.amount, mint.data.decimals)}</p>
           <p>Active: {nftStake.data.active.toString()}</p>
         </div>
       ) : (
@@ -269,10 +271,8 @@ export function Withdraw({ userStake }: { userStake: Account<dephyIdStakePool.Us
   )
 }
 
-export function ListUserStakes() {
-  const params = useParams() as { address: string }
-  assertIsAddress(params.address)
-  const userStakes = useUserStakes({ nftStakeAddress: params.address })
+export function ListUserStakes({ nftStakeAddress, mint }: { nftStakeAddress: Address, mint: Account<splToken.Mint> }) {
+  const userStakes = useUserStakes({ nftStakeAddress })
 
   if (!userStakes.isFetched) {
     return <div>Loading...</div>
@@ -285,7 +285,7 @@ export function ListUserStakes() {
         {userStakes.data?.map((userStake) => (
           <li key={userStake.pubkey.toString()}>
             <Link to={`/user-stake/${userStake.pubkey}`}>{userStake.pubkey}</Link>
-            <span> {userStake.account.user}: {userStake.account.amount}</span>
+            <span> {userStake.account.user}: {splToken.tokenAmountToUiAmount(userStake.account.amount, mint.data.decimals)}</span>
           </li>
         ))}
       </ul>
@@ -293,7 +293,9 @@ export function ListUserStakes() {
   )
 }
 
-export function ShowUserStake({ userStake }: { userStake: Account<dephyIdStakePool.UserStakeAccount> }) {
+export function ShowUserStake({ userStake, mint }: {
+  userStake: Account<dephyIdStakePool.UserStakeAccount>, mint: Account<splToken.Mint>
+}) {
   const params = useParams() as { address: string }
   assertIsAddress(params.address)
 
@@ -304,7 +306,7 @@ export function ShowUserStake({ userStake }: { userStake: Account<dephyIdStakePo
       {userStake.data ? (
         <div>
           <p>User: {userStake.data.user}</p>
-          <p>Amount: {userStake.data.amount}</p>
+          <p>Amount: {splToken.tokenAmountToUiAmount(userStake.data.amount, mint.data.decimals)}</p>
         </div>
       ) : (
         <div>User Stake not found</div>

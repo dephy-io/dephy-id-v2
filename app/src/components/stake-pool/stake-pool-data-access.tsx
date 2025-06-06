@@ -3,7 +3,10 @@ import * as dephyIdStakePool from "dephy-id-stake-pool-client"
 import { useWalletUi, useWalletUiCluster } from "@wallet-ui/react"
 import { useSendAndConfirmIxs } from "~/lib/utils"
 import { useTransactionToast } from "../use-transaction-toast"
-import { assertAccountExists, generateKeyPairSigner, getBase58Decoder, getBase64Encoder, type Account, type Address, type Base58EncodedBytes, type TransactionSigner } from "gill";
+import {
+  generateKeyPairSigner, getBase58Decoder, getBase64Encoder,
+  type Account, type Address, type Base58EncodedBytes
+} from "gill";
 import * as splToken from 'gill/programs/token'
 import { fetchMint } from 'gill/programs/token'
 
@@ -120,15 +123,16 @@ export function useStakePools() {
   })
 }
 
-export function useStakePool({ stakePoolAddress }: { stakePoolAddress: Address }) {
+export function useStakePool({ stakePoolAddress }: { stakePoolAddress?: Address }) {
   const { client } = useWalletUi()
   const { cluster } = useWalletUiCluster()
 
   return useQuery({
     queryKey: ['stake-pool', 'stake-pool', { cluster, stakePoolAddress }],
     queryFn: async () => {
-      return dephyIdStakePool.fetchStakePoolAccount(client.rpc, stakePoolAddress)
+      return dephyIdStakePool.fetchStakePoolAccount(client.rpc, stakePoolAddress!)
     },
+    enabled: !!stakePoolAddress,
   })
 }
 

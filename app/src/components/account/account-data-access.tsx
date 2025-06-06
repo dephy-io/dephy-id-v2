@@ -2,6 +2,7 @@ import { useWalletUi, useWalletUiCluster } from "@wallet-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { airdropFactory, lamports, type Address } from "gill";
 import { useTransactionToast } from "../use-transaction-toast";
+import * as splToken from "gill/programs/token"
 
 export function useGetBalance({ address }: { address: Address }) {
   const { cluster } = useWalletUiCluster()
@@ -61,5 +62,16 @@ export function useTokenAccounts({ mint, owner }: { mint: Address, owner: Addres
   return useQuery({
     queryKey: ['get-token-accounts', { cluster, mint, owner }],
     queryFn: () => client.rpc.getTokenAccountsByOwner(owner, { mint }, { encoding: 'jsonParsed' }).send(),
+  })
+}
+
+export function useMint({ mintAddress }: { mintAddress?: Address }) {
+  const { cluster } = useWalletUiCluster()
+  const { client } = useWalletUi()
+
+  return useQuery({
+    queryKey: ['get-mint', { cluster, mintAddress }],
+    queryFn: () => splToken.fetchMint(client.rpc, mintAddress!),
+    enabled: !!mintAddress,
   })
 }

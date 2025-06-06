@@ -1,5 +1,4 @@
 import { useParams } from "react-router";
-import type { Route } from "./+types/account-detail";
 import { useMemo } from "react";
 import { assertIsAddress } from "gill";
 import { AccountBalance, AccountTransactions } from "src/components/account/account-ui";

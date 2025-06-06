@@ -83,7 +83,7 @@ const createDeviceIx = await dephyId.getCreateDeviceInstructionAsync({
   payer: feePayer,
   productAsset,
   seed: deviceSeed,
-  vendor,
+  mintAuthority: vendor,
 })
 
 // the tx to create asset
@@ -120,7 +120,7 @@ console.log(`Device asset created at: ${deviceAsset} with ${signature}`)
       payer: createNoopSigner(feePayer.address),  // user wallet address
       productAsset,
       owner,
-      vendor,
+      mintAuthority: vendor,
       expiry: Math.trunc(Date.now() / 1000) + 300,  // the tx will expire in 300s
     })
   ))

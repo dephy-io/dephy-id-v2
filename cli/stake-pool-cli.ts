@@ -1,7 +1,7 @@
 
 import { Command } from "@commander-js/extra-typings"
 import assert from 'assert'
-import { address, generateKeyPairSigner } from "gill"
+import { address, Base58EncodedBytes, Base64EncodedBytes, generateKeyPairSigner, getBase64Encoder } from "gill"
 import { loadKeypairSignerFromFile } from "gill/node"
 import * as splToken from 'gill/programs/token'
 
@@ -82,7 +82,6 @@ cli
         stakeTokenMint,
         payer: ctx.feePayer,
         maxStakeAmount: maxStakeAmountInSmallestUnits,
-        withdrawPending,
         stakeTokenProgram: stakeTokenMintAccount.programAddress,
       }),
     ])
@@ -187,48 +186,18 @@ cli
 
 
 cli
-  .command('request-withdraw')
-  .description('Request withdrawal of tokens from an NFT stake')
+  .command('withdraw')
+  .description('Withdraw tokens from an NFT stake')
   .requiredOption('--nft-stake <address>', 'Address of the NFT stake account')
-  .requiredOption('--amount <number>', 'Amount of tokens to request for withdrawal (ui amount)')
+  .requiredOption('--amount <number>', 'Amount of tokens to withdraw (ui amount)')
   .option('--user <path>', 'Path to the token owner\'s keypair file, defaults to fee payer')
+  .option('--user-token-account <address>', 'Address of the user\'s token account to receive redeemed tokens')
   .action(async (options) => {
     const nftStake = address(options.nftStake)
     const nftStakeAccount = await dephyIdStakePool.fetchNftStakeAccount(ctx.rpc, nftStake)
     const stakePoolAddress = nftStakeAccount.data.stakePool
     const user = options.user ? await loadKeypairSignerFromFile(options.user) : ctx.feePayer
     const amount = BigInt(options.amount)
-    const withdrawRequestSigner = await generateKeyPairSigner()
-
-    const signature = await ctx.sendAndConfirmIxs([
-      await dephyIdStakePool.getRequestWithdrawTokenInstructionAsync({
-        stakePool: stakePoolAddress,
-        nftStake,
-        user,
-        withdrawRequest: withdrawRequestSigner,
-        amount,
-        payer: ctx.feePayer,
-      }),
-    ])
-
-    console.log(`Withdrawal request for ${amount} tokens created at ${withdrawRequestSigner.address}`)
-    console.log(`From NFT stake ${nftStake} by user ${user.address}`)
-    console.log(`Transaction: ${signature}`)
-  })
-
-
-cli
-  .command('redeem-withdraw')
-  .description('Redeem withdrawn tokens after the pending period')
-  .requiredOption('--nft-stake <address>', 'Address of the NFT stake account')
-  .requiredOption('--withdraw-request <address>', 'Address of the withdraw request account')
-  .option('--user <path>', 'Path to the token owner\'s keypair file, defaults to fee payer')
-  .option('--user-token-account <address>', 'Address of the user\'s token account to receive redeemed tokens')
-  .action(async (options) => {
-    const nftStake = address(options.nftStake);
-    const user = options.user ? await loadKeypairSignerFromFile(options.user) : ctx.feePayer;
-    const withdrawRequest = address(options.withdrawRequest);
-    const nftStakeAccount = await dephyIdStakePool.fetchNftStakeAccount(ctx.rpc, nftStake);
     const stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(ctx.rpc, nftStakeAccount.data.stakePool);
     const stakeTokenMint = address(stakePoolAccount.data.config.stakeTokenMint);
     const stakeTokenMintAccount = await splToken.fetchMint(ctx.rpc, stakeTokenMint);
@@ -240,21 +209,20 @@ cli
     }))[0];
 
     const signature = await ctx.sendAndConfirmIxs([
-      await dephyIdStakePool.getRedeemWithdrawTokenInstructionAsync({
-        stakePool: stakePoolAccount.address,
+      await dephyIdStakePool.getWithdrawInstructionAsync({
+        stakePool: stakePoolAddress,
         nftStake,
         user,
-        stakeTokenAccount: stakePoolAccount.data.stakeTokenAccount,
-        withdrawRequest,
-        stakeTokenMint,
-        userStakeTokenAccount,
+        amount,
         payer: ctx.feePayer,
-        tokenProgram: stakeTokenMintAccount.programAddress,
+        stakeTokenMint,
+        stakeTokenAccount: stakePoolAccount.data.stakeTokenAccount,
+        userStakeTokenAccount,
       }),
-    ]);
+    ])
 
-    console.log(`Tokens redeemed from withdraw request ${withdrawRequest} to user token account ${userStakeTokenAccount}`);
-    console.log(`Transaction: ${signature}`);
+    console.log(`Withdraw ${amount} tokens from NFT stake ${nftStake} by user ${user.address}`)
+    console.log(`Transaction: ${signature}`)
   })
 
 
@@ -280,6 +248,122 @@ cli
 
     console.log(`NFT stake account ${nftStake} closed`);
     console.log(`Transaction: ${signature}`);
+  })
+
+cli
+  .command('list-stake-pools')
+  .description('List all stake pools')
+  .action(async () => {
+    const rawAccounts = await ctx.rpc.getProgramAccounts(dephyIdStakePool.DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS, {
+      encoding: 'base64',
+      filters: [
+        {
+          memcmp: {
+            encoding: 'base64',
+            offset: 0n,
+            bytes: dephyIdStakePool.STAKE_POOL_ACCOUNT_DISCRIMINATOR.toBase64() as unknown as Base64EncodedBytes,
+          },
+        },
+      ],
+    }).send()
+
+    const base64Encoder = getBase64Encoder()
+    const stakePoolDecoder = dephyIdStakePool.getStakePoolAccountDecoder()
+    const stakePools = rawAccounts.map(({ account, pubkey }) => {
+      const data = base64Encoder.encode(account.data[0])
+      return {
+        address: pubkey,
+        account: stakePoolDecoder.decode(data)
+      }
+    })
+
+    console.log(stakePools)
+  })
+
+cli
+  .command('list-nft-stakes')
+  .description('List all nft stakes')
+  .option('--stake-pool <address>', 'Address of the stake pool')
+  .action(async (options) => {
+    let filters: Parameters<typeof ctx.rpc.getProgramAccounts>[1]['filters'] = [
+      {
+        memcmp: {
+          encoding: 'base64',
+          offset: 0n,
+          bytes: dephyIdStakePool.NFT_STAKE_ACCOUNT_DISCRIMINATOR.toBase64() as unknown as Base64EncodedBytes,
+        },
+      },
+    ]
+
+    if (options.stakePool) {
+      filters.push({
+        memcmp: {
+          encoding: 'base58',
+          offset: 8n,
+          bytes: address(options.stakePool) as unknown as Base58EncodedBytes,
+        },
+      })
+    }
+
+    const rawAccounts = await ctx.rpc.getProgramAccounts(dephyIdStakePool.DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS, {
+      encoding: 'base64',
+      filters,
+    }).send()
+
+    const base64Encoder = getBase64Encoder()
+    const nftStakeDecoder = dephyIdStakePool.getNftStakeAccountDecoder()
+    const nftStakes = rawAccounts.map(({ account, pubkey }) => {
+      const data = base64Encoder.encode(account.data[0])
+      return {
+        address: pubkey,
+        account: nftStakeDecoder.decode(data)
+      }
+    })
+
+    console.log(nftStakes)
+  })
+
+cli
+  .command('list-user-stakes')
+  .description('List all nft stakes for a user')
+  .option('--nft-stake <address>', 'Address of the nft stake account')
+  .action(async (options) => {
+    let filters: Parameters<typeof ctx.rpc.getProgramAccounts>[1]['filters'] = [
+      {
+        memcmp: {
+          encoding: 'base64',
+          offset: 0n,
+          bytes: dephyIdStakePool.USER_STAKE_ACCOUNT_DISCRIMINATOR.toBase64() as unknown as Base64EncodedBytes,
+        },
+      },
+    ]
+
+    if (options.nftStake) {
+      filters.push({
+        memcmp: {
+          encoding: 'base58',
+          offset: 8n + 32n,
+          bytes: address(options.nftStake) as unknown as Base58EncodedBytes,
+        },
+      })
+    }
+
+    const rawAccounts = await ctx.rpc.getProgramAccounts(dephyIdStakePool.DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS, {
+      encoding: 'base64',
+      filters,
+    }).send()
+
+    const base64Encoder = getBase64Encoder()
+    const userStakeDecoder = dephyIdStakePool.getUserStakeAccountDecoder()
+    const userStakes = rawAccounts.map(({ account, pubkey }) => {
+      const data = base64Encoder.encode(account.data[0])
+      return {
+        address: pubkey,
+        account: userStakeDecoder.decode(data)
+      }
+    })
+
+    console.log(userStakes)
   })
 
 await cli.parseAsync()

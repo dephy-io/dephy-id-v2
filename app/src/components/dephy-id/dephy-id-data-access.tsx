@@ -130,7 +130,7 @@ export function useCreateDevice() {
           productAsset,
           owner,
           seed,
-          vendor: feePayer,
+          mintAuthority: feePayer,
           payer: feePayer,
         }),
       ])

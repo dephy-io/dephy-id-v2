@@ -302,3 +302,33 @@ export function useDeposit({ nftStake }: { nftStake: Account<dephyIdStakePool.Nf
     },
   })
 }
+
+export function useWithdraw({ userStake }: { userStake: Account<dephyIdStakePool.UserStakeAccount> }) {
+  const { client } = useWalletUi()
+  const { cluster } = useWalletUiCluster()
+  const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
+  const toastTransaction = useTransactionToast()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ userStakeTokenAccount, amount }: { userStakeTokenAccount: Address, amount: number }) => {
+      const stakePool = await dephyIdStakePool.fetchStakePoolAccount(client.rpc, userStake.data!.stakePool)
+      return sendAndConfirmIxs([
+        await dephyIdStakePool.getWithdrawInstructionAsync({
+          stakePool: userStake.data.stakePool,
+          nftStake: userStake.address,
+          user: feePayer,
+          stakeTokenMint: stakePool.data.config.stakeTokenMint,
+          stakeTokenAccount: stakePool.data.stakeTokenAccount,
+          userStakeTokenAccount,
+          payer: feePayer,
+          amount,
+        })
+      ])
+    },
+    onSuccess: async (signature) => {
+      toastTransaction(signature)
+      queryClient.invalidateQueries({ queryKey: ['stake-pool', 'nft-stakes', { cluster }] })
+    },
+  })
+}

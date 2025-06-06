@@ -1,6 +1,6 @@
 import { address, assertIsAddress, type Account, type Address } from "gill"
 import { Button } from "../ui/button"
-import { useInitialize, useAdminAccount, useCreateStakePool, useStakePools, useStakePool, useStakeDephyId, useNftStakes, useNftStake, useUserStakes, useDeposit } from "./stake-pool-data-access"
+import { useInitialize, useAdminAccount, useCreateStakePool, useStakePools, useStakePool, useStakeDephyId, useNftStakes, useNftStake, useUserStakes, useDeposit, useWithdraw } from "./stake-pool-data-access"
 import { Link, useParams } from "react-router"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
 import * as splToken from "gill/programs/token"
@@ -230,6 +230,45 @@ export function Deposit({ nftStake }: { nftStake: Account<dephyIdStakePool.NftSt
   )
 }
 
+export function Withdraw({ userStake }: { userStake: Account<dephyIdStakePool.UserStakeAccount> }) {
+  const withdraw = useWithdraw({ userStake })
+  const stakePool = useStakePool({ stakePoolAddress: userStake.data.stakePool })
+  const mint = stakePool.data!.data.config.stakeTokenMint
+  const owner = address(userStake.data.user)
+  const tokenAccounts = useTokenAccounts({ mint, owner })
+
+  if (!tokenAccounts.isFetched) {
+    return <div>Loading...</div>
+  }
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    const formData = new FormData(event.currentTarget)
+    const userStakeTokenAccount = address(formData.get('userStakeTokenAccount') as string)
+    const amount = Number(formData.get('amount') as string)
+
+    withdraw.mutateAsync({ userStakeTokenAccount, amount })
+  }
+
+  return (
+    <div>
+      <h2>Withdraw</h2>
+      <form onSubmit={handleSubmit}>
+        <select name="userStakeTokenAccount">
+          {tokenAccounts.data?.value.map((tokenAccount) => (
+            <option key={tokenAccount.pubkey} value={tokenAccount.pubkey}>
+              {tokenAccount.pubkey}: {tokenAccount.account.data.parsed.info.tokenAmount.uiAmountString}
+            </option>
+          ))}
+        </select>
+        <input type="number" name="amount" placeholder="Amount" />
+        <Button type="submit">Withdraw</Button>
+      </form>
+    </div>
+  )
+}
+
 export function ListUserStakes() {
   const params = useParams() as { address: string }
   assertIsAddress(params.address)
@@ -250,6 +289,26 @@ export function ListUserStakes() {
           </li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+export function ShowUserStake({ userStake }: { userStake: Account<dephyIdStakePool.UserStakeAccount> }) {
+  const params = useParams() as { address: string }
+  assertIsAddress(params.address)
+
+  return (
+    <div>
+      <h2>User Stake</h2>
+      <p>{params.address}</p>
+      {userStake.data ? (
+        <div>
+          <p>User: {userStake.data.user}</p>
+          <p>Amount: {userStake.data.amount}</p>
+        </div>
+      ) : (
+        <div>User Stake not found</div>
+      )}
     </div>
   )
 }

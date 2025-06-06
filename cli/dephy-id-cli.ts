@@ -116,11 +116,11 @@ cli
         productAsset,
         seed: deviceSeed,
         uri,
-        vendor
+        mintAuthority: vendor,
       })
     ]);
 
-    console.log(`Device ${name} registered at ${deviceAssetPda[0]}`);
+    console.log(`Device ${name} created at ${deviceAssetPda[0]}`);
     console.log(`Transaction: ${signature}`);
   });
 

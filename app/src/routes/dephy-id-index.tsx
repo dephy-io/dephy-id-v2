@@ -5,7 +5,11 @@ export default function DephyIdIndex() {
   const { account } = useWalletUi()
 
   if (!account) {
-    return <div>Connect an account to start</div>
+    return (
+      <div>
+        <h1>Connect an account to start</h1>
+      </div>
+    )
   }
 
   return (

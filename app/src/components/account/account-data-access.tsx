@@ -52,3 +52,14 @@ export function useGetSignatures({ address }: { address: Address }) {
     queryFn: () => client.rpc.getSignaturesForAddress(address).send(),
   })
 }
+
+
+export function useTokenAccounts({ mint, owner }: { mint: Address, owner: Address }) {
+  const { cluster } = useWalletUiCluster()
+  const { client } = useWalletUi()
+
+  return useQuery({
+    queryKey: ['get-token-accounts', { cluster, mint, owner }],
+    queryFn: () => client.rpc.getTokenAccountsByOwner(owner, { mint }, { encoding: 'jsonParsed' }).send(),
+  })
+}

@@ -25,7 +25,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <WalletUi config={config}>
-        <div className="flex flex-col min-h-screen">
+        <div className="flex flex-col min-h-screen font-mono">
           <AppHeader />
           <main className="flex-grow container mx-auto p-4">
             <ClusterChecker>

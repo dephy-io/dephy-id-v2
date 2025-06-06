@@ -36,9 +36,9 @@
         "@wallet-ui/tailwind": "^1.1.0-canary-20250602184812",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
-        "dephy-id-client": "workspace:",
-        "dephy-id-stake-pool-client": "workspace:",
-        "gill": "^0.10.0",
+        "dephy-id-client": "workspace:*",
+        "dephy-id-stake-pool-client": "workspace:*",
+        "gill": "^0.9.0",
         "isbot": "^5.1.28",
         "lucide-react": "^0.511.0",
         "next-themes": "^0.4.6",
@@ -1830,8 +1830,6 @@
 
     "compression/debug": ["debug@2.6.9", "", { "dependencies": { "ms": "2.0.0" } }, "sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA=="],
 
-    "dephy-id-app/gill": ["gill@0.10.0", "", { "dependencies": { "@solana-program/address-lookup-table": "^0.7.0", "@solana-program/compute-budget": "^0.8.0", "@solana-program/system": "^0.7.0", "@solana-program/token-2022": "^0.4.1", "@solana/assertions": "^2.1.1", "@solana/codecs": "^2.1.1", "@solana/kit": "^2.1.1", "@solana/transaction-confirmation": "^2.1.1" }, "peerDependencies": { "typescript": ">=5" } }, "sha512-kPu0CJxRQfYExpW5wEFfaRWCKz/gdlQKgLLR0jvNsv9nEVnM8Lime39Sk0BOyfAASHK2/O+5ZlMEXN4aBtPVbQ=="],
-
     "eslint/minimatch": ["minimatch@3.1.2", "", { "dependencies": { "brace-expansion": "^1.1.7" } }, "sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw=="],
 
     "eslint-plugin-sort-keys-fix/espree": ["espree@6.2.1", "", { "dependencies": { "acorn": "^7.1.1", "acorn-jsx": "^5.2.0", "eslint-visitor-keys": "^1.1.0" } }, "sha512-ysCxRQY3WaXJz9tdbWOwuWr5Y/XrPTGX9Kiz3yoUXwW0VZ4w30HTkQLaGx/+ttFjF8i+ACbArnB4ce68a9m5hw=="],
@@ -1973,8 +1971,6 @@
     "bun-types/@types/node/undici-types": ["undici-types@6.21.0", "", {}, "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ=="],
 
     "compression/debug/ms": ["ms@2.0.0", "", {}, "sha512-Tpp60P6IUJDTuOq/5Z8cdskzJujfwqfOTkrwIwj7IRISpnkJnT6SyJ4PCPnGMoFjC9ddhal5KVIYtAt97ix05A=="],
-
-    "dephy-id-app/gill/@solana-program/compute-budget": ["@solana-program/compute-budget@0.8.0", "", { "peerDependencies": { "@solana/kit": "^2.1.0" } }, "sha512-qPKxdxaEsFxebZ4K5RPuy7VQIm/tfJLa1+Nlt3KNA8EYQkz9Xm8htdoEaXVrer9kpgzzp9R3I3Bh6omwCM06tQ=="],
 
     "eslint-plugin-sort-keys-fix/espree/acorn": ["acorn@7.4.1", "", { "bin": { "acorn": "bin/acorn" } }, "sha512-nQyp0o1/mNdbTO1PO6kHkwSrmgZ0MT/jCCpNiwbUjGoRN4dlBhqJtoQuCnEOKzgTVwg0ZWiCoQy6SxMebQVh8A=="],
 

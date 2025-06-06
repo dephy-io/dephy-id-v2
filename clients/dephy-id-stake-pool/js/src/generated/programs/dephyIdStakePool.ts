@@ -24,7 +24,7 @@ import {
 } from '../instructions';
 
 export const DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS =
-  'DeSTKZaWUDGLAx4FFVzMtJPSDTgWi3sccj4MACs9vj6Y' as Address<'DeSTKZaWUDGLAx4FFVzMtJPSDTgWi3sccj4MACs9vj6Y'>;
+  'DSTKMXnJXgvViSkr6hciBaYsTpcduxZuF334WLrvEZmW' as Address<'DSTKMXnJXgvViSkr6hciBaYsTpcduxZuF334WLrvEZmW'>;
 
 export enum DephyIdStakePoolAccount {
   AdminAccount,
@@ -183,7 +183,7 @@ export function identifyDephyIdStakePoolInstruction(
 }
 
 export type ParsedDephyIdStakePoolInstruction<
-  TProgram extends string = 'DeSTKZaWUDGLAx4FFVzMtJPSDTgWi3sccj4MACs9vj6Y',
+  TProgram extends string = 'DSTKMXnJXgvViSkr6hciBaYsTpcduxZuF334WLrvEZmW',
 > =
   | ({
       instructionType: DephyIdStakePoolInstruction.CloseNftStake;

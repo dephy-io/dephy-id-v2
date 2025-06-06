@@ -20,7 +20,7 @@ import {
 } from '../instructions';
 
 export const DEPHY_ID_PROGRAM_ADDRESS =
-  '6RuNPDwj63gfBFEx7DFfoQPbxfkDHQt4ccf8d4eWAZDX' as Address<'6RuNPDwj63gfBFEx7DFfoQPbxfkDHQt4ccf8d4eWAZDX'>;
+  'D1DdkvuK3V8kzxD5CSsx7JorEo3hMLw4L7Bvujv3pTD6' as Address<'D1DdkvuK3V8kzxD5CSsx7JorEo3hMLw4L7Bvujv3pTD6'>;
 
 export enum DephyIdAccount {
   DephyAccount,
@@ -107,7 +107,7 @@ export function identifyDephyIdInstruction(
 }
 
 export type ParsedDephyIdInstruction<
-  TProgram extends string = '6RuNPDwj63gfBFEx7DFfoQPbxfkDHQt4ccf8d4eWAZDX',
+  TProgram extends string = 'D1DdkvuK3V8kzxD5CSsx7JorEo3hMLw4L7Bvujv3pTD6',
 > =
   | ({
       instructionType: DephyIdInstruction.CreateDevice;

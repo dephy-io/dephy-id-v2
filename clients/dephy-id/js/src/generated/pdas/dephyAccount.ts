@@ -17,7 +17,7 @@ export async function findDephyAccountPda(
   config: { programAddress?: Address | undefined } = {}
 ): Promise<ProgramDerivedAddress> {
   const {
-    programAddress = '6RuNPDwj63gfBFEx7DFfoQPbxfkDHQt4ccf8d4eWAZDX' as Address<'6RuNPDwj63gfBFEx7DFfoQPbxfkDHQt4ccf8d4eWAZDX'>,
+    programAddress = 'D1DdkvuK3V8kzxD5CSsx7JorEo3hMLw4L7Bvujv3pTD6' as Address<'D1DdkvuK3V8kzxD5CSsx7JorEo3hMLw4L7Bvujv3pTD6'>,
   } = config;
   return await getProgramDerivedAddress({
     programAddress,

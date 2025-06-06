@@ -2,7 +2,7 @@
 
 use anchor_lang::prelude::*;
 
-declare_id!("DeSTKZaWUDGLAx4FFVzMtJPSDTgWi3sccj4MACs9vj6Y");
+declare_id!("DSTKMXnJXgvViSkr6hciBaYsTpcduxZuF334WLrvEZmW");
 
 mod constants;
 mod error;

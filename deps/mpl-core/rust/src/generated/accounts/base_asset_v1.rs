@@ -48,7 +48,7 @@ impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for BaseAssetV1
 #[cfg(feature = "fetch")]
 pub fn fetch_base_asset_v1(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &Pubkey,
+    address: &solana_program::pubkey::Pubkey,
 ) -> Result<crate::shared::DecodedAccount<BaseAssetV1>, std::io::Error> {
     let accounts = fetch_all_base_asset_v1(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -57,10 +57,10 @@ pub fn fetch_base_asset_v1(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_base_asset_v1(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[Pubkey],
+    addresses: &[solana_program::pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::DecodedAccount<BaseAssetV1>>, std::io::Error> {
     let accounts = rpc
-        .get_multiple_accounts(&addresses)
+        .get_multiple_accounts(addresses)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
     let mut decoded_accounts: Vec<crate::shared::DecodedAccount<BaseAssetV1>> = Vec::new();
     for i in 0..addresses.len() {
@@ -82,7 +82,7 @@ pub fn fetch_all_base_asset_v1(
 #[cfg(feature = "fetch")]
 pub fn fetch_maybe_base_asset_v1(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &Pubkey,
+    address: &solana_program::pubkey::Pubkey,
 ) -> Result<crate::shared::MaybeAccount<BaseAssetV1>, std::io::Error> {
     let accounts = fetch_all_maybe_base_asset_v1(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -91,10 +91,10 @@ pub fn fetch_maybe_base_asset_v1(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_maybe_base_asset_v1(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[Pubkey],
+    addresses: &[solana_program::pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::MaybeAccount<BaseAssetV1>>, std::io::Error> {
     let accounts = rpc
-        .get_multiple_accounts(&addresses)
+        .get_multiple_accounts(addresses)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
     let mut decoded_accounts: Vec<crate::shared::MaybeAccount<BaseAssetV1>> = Vec::new();
     for i in 0..addresses.len() {

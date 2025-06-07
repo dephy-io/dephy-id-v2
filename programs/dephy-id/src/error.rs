@@ -6,6 +6,8 @@ pub enum ErrorCode {
     InvalidMplCoreProgram,
     #[msg("Product account is not a valid mpl-core collection")]
     InvalidProductAccount,
+    #[msg("Vendor address not match")]
+    InvalidVendor,
     #[msg("Product address not match")]
     ProductAddressMismatch,
     #[msg("Transaction expired")]

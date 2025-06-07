@@ -1,22 +1,24 @@
 import {
-  updateProgramsVisitor, addPdasVisitor, updateInstructionsVisitor,
-  constantPdaSeedNodeFromString, pdaValueNode,
-  variablePdaSeedNode,
-  publicKeyTypeNode,
-  bytesTypeNode,
-  bottomUpTransformerVisitor,
   accountNode,
-  structTypeNode,
-  structFieldTypeNode,
-  programNode,
-  ProgramNode,
-  updateAccountsVisitor,
-  updateDefinedTypesVisitor,
-  noneValueNode,
+  addPdasVisitor,
   arrayValueNode,
+  bottomUpTransformerVisitor,
+  bytesTypeNode,
+  constantPdaSeedNodeFromString,
   enumValueNode,
+  noneValueNode,
+  pdaValueNode,
+  type ProgramNode,
+  programNode,
+  publicKeyTypeNode,
   publicKeyValueNode,
   setAccountDiscriminatorFromFieldVisitor,
+  structFieldTypeNode,
+  structTypeNode,
+  updateAccountsVisitor,
+  updateDefinedTypesVisitor,
+  updateInstructionsVisitor,
+  updateProgramsVisitor, variablePdaSeedNode,
 } from 'codama';
 
 
@@ -205,7 +207,7 @@ export const instructions = updateInstructionsVisitor({
 })
 
 
-const key = (name) => ({ field: "key", value: enumValueNode("Key", name) });
+const key = (name: string) => ({ field: "key", value: enumValueNode("Key", name) });
 export const discriminators = setAccountDiscriminatorFromFieldVisitor({
   assetV1: key("AssetV1"),
   collectionV1: key("CollectionV1"),

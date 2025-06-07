@@ -72,11 +72,7 @@ pub fn process_unstake_nft(ctx: Context<UnstakeNft>) -> Result<()> {
             plugin_type: mpl_core::types::PluginType::FreezeDelegate,
         },
     )
-    .invoke_signed(&[&[
-        ctx.accounts.stake_pool.key().as_ref(),
-        POOL_WALLET_SEED,
-        &[ctx.bumps.pool_wallet],
-    ]])?;
+    .invoke()?;
 
     nft_stake.active = false;
 

@@ -12,6 +12,7 @@ import * as splToken from 'gill/programs/token'
 
 import * as dephyId from '../clients/dephy-id/js/src/index.js'
 import * as dephyIdStakePool from '../clients/dephy-id-stake-pool/js/src/index.js'
+import * as mplCore from '../deps/mpl-core/js/src/index.js'
 
 const payer = await generateKeyPairSigner()
 
@@ -51,7 +52,7 @@ describe("dephy-id-stake-pool", () => {
   let vendor: KeyPairSigner
   let productAssetAddress: Address
   let adminAddress: Address
-  let stDephyTokenAddress: Address
+  let stPhyMintAddress: Address
   let stakePoolAddress: Address
   let didOwner1: KeyPairSigner
   let did1Address: Address
@@ -81,8 +82,8 @@ describe("dephy-id-stake-pool", () => {
       }),
     ])
 
-    const stDephyTokenKeypair = await generateKeyPairSigner()
-    stDephyTokenAddress = stDephyTokenKeypair.address
+    const stPhyMintKeypair = await generateKeyPairSigner()
+    stPhyMintAddress = stPhyMintKeypair.address
 
     didOwner1 = await generateKeyPairSigner()
     const seed = new Uint8Array(32);
@@ -104,7 +105,7 @@ describe("dephy-id-stake-pool", () => {
     await sendAndConfirmIxs(
       splToken.getCreateTokenInstructions({
         feePayer: payer,
-        mint: stDephyTokenKeypair,
+        mint: stPhyMintKeypair,
         mintAuthority: vendor,
         decimals: 6,
         metadata: {
@@ -113,17 +114,17 @@ describe("dephy-id-stake-pool", () => {
           uri: '',
           isMutable: false
         },
-        metadataAddress: stDephyTokenAddress,
+        metadataAddress: stPhyMintAddress,
         tokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
       })
     )
 
     tokenOwner1 = await generateKeyPairSigner()
-    userTokenAddress1 = await splToken.getAssociatedTokenAccountAddress(stDephyTokenAddress, tokenOwner1.address, splToken.TOKEN_2022_PROGRAM_ADDRESS)
+    userTokenAddress1 = await splToken.getAssociatedTokenAccountAddress(stPhyMintAddress, tokenOwner1.address, splToken.TOKEN_2022_PROGRAM_ADDRESS)
     await sendAndConfirmIxs([
       ...splToken.getMintTokensInstructions({
         feePayer: payer,
-        mint: stDephyTokenAddress,
+        mint: stPhyMintAddress,
         mintAuthority: vendor,
         destination: tokenOwner1.address,
         ata: userTokenAddress1,
@@ -162,7 +163,7 @@ describe("dephy-id-stake-pool", () => {
         stakePool: stakePoolKeypair,
         authority,
         stakePoolAuthority: stakePoolAuthority.address,
-        stakeTokenMint: stDephyTokenAddress,
+        stakeTokenMint: stPhyMintAddress,
         payer,
         stakeTokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
         collection: productAssetAddress,
@@ -176,7 +177,7 @@ describe("dephy-id-stake-pool", () => {
     const stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(rpc, stakePoolAddress)
     assert.equal(stakePoolAccount.data.authority, stakePoolAuthority.address, 'stakePoolAuthority')
     assert.equal(stakePoolAccount.data.config.collection, productAssetAddress, 'collection')
-    assert.equal(stakePoolAccount.data.config.stakeTokenMint, stDephyTokenAddress, 'stakeTokenMint')
+    assert.equal(stakePoolAccount.data.config.stakeTokenMint, stPhyMintAddress, 'stakeTokenMint')
     assert.equal(stakePoolAccount.data.config.maxStakeAmount, 20000_000_000n, 'maxStakeAmount')
     assert.equal(stakePoolAccount.data.stakeTokenAccount, stakeTokenAddress, 'stakeTokenAccount')
     assert.equal(stakePoolAccount.data.totalAmount, 0n, 'totalAmount')
@@ -205,6 +206,21 @@ describe("dephy-id-stake-pool", () => {
     assert.equal(nftStakeAccount.data.depositAuthority, tokenOwner1.address, 'depositAuthority')
     assert.equal(nftStakeAccount.data.nftTokenAccount, did1Address, 'nftTokenAccount')
     assert.equal(nftStakeAccount.data.amount, 0n, 'amount')
+
+    const assetAccount = await mplCore.fetchAssetAccount(rpc, did1Address)
+    assert(assetAccount.data.plugins.freezeDelegate?.frozen)
+  })
+
+  it('should fail on transfer frozen asset', async () => {
+    await assert.rejects(async () => {
+      await sendAndConfirmIxs([
+        mplCore.getTransferV1Instruction({
+          asset: did1Address,
+          payer: didOwner1,
+          newOwner: tokenOwner1.address,
+        })
+      ], { showError: true })
+    })
   })
 
   // TODO: deposit from other than depositAuthority
@@ -225,7 +241,7 @@ describe("dephy-id-stake-pool", () => {
         stakePool: stakePoolAddress,
         nftStake: nftStake.address,
         user: tokenOwner1,
-        stakeTokenMint: stDephyTokenAddress,
+        stakeTokenMint: stPhyMintAddress,
         stakeTokenAccount: stakeTokenAddress,
         userStakeTokenAccount: userTokenAddress1,
         payer,
@@ -301,7 +317,7 @@ describe("dephy-id-stake-pool", () => {
         user: tokenOwner1,
         payer,
         amount: null,
-        stakeTokenMint: stDephyTokenAddress,
+        stakeTokenMint: stPhyMintAddress,
         stakeTokenAccount: stakeTokenAddress,
         userStakeTokenAccount: userTokenAddress1,
         tokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
@@ -339,6 +355,9 @@ describe("dephy-id-stake-pool", () => {
 
     const nftStakeAccount = await dephyIdStakePool.fetchNftStakeAccount(rpc, nftStake.address)
     assert.equal(nftStakeAccount.data.active, false)
+
+    const assetAccount = await mplCore.fetchAssetAccount(rpc, did1Address)
+    assert.equal(assetAccount.data.plugins.freezeDelegate, null)
   })
 
   it('close non empty nft stake will fail', async () => {

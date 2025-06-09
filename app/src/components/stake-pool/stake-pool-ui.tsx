@@ -1,6 +1,6 @@
 import { address, assertIsAddress, type Account, type Address } from "gill"
 import { Button } from "../ui/button"
-import { useInitialize, useAdminAccount, useCreateStakePool, useStakePools, useStakePool, useStakeDephyId, useNftStakes, useNftStake, useUserStakes, useDeposit, useWithdraw } from "./stake-pool-data-access"
+import { useInitialize, useAdminAccount, useCreateStakePool, useStakePools, useStakePool, useStakeDephyId, useNftStakes, useNftStake, useUserStakes, useDeposit, useWithdraw, useUnstakeDephyId, useCloseNftStake } from "./stake-pool-data-access"
 import { Link, useParams } from "react-router"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
 import * as splToken from "gill/programs/token"
@@ -135,6 +135,26 @@ export function StakeDephyId({ stakePoolAddress }: { stakePoolAddress: Address }
         <input type="text" name="mplCoreAsset" placeholder="MPL Core Asset" />
         <input type="text" name="depositAuthority" placeholder="Deposit Authority" />
         <Button type="submit">Stake Dephy ID</Button>
+      </form>
+    </div>
+  )
+}
+
+export function UnstakeDephyId({ nftStake }: { nftStake: Account<dephyIdStakePool.NftStakeAccount> }) {
+  const unstake = useUnstakeDephyId({ nftStake })
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const formData = new FormData(event.currentTarget)
+
+    unstake.mutateAsync()
+  }
+
+  return (
+    <div>
+      <h2>Unstake</h2>
+      <form onSubmit={handleSubmit}>
+        <Button type="submit">Unstake</Button>
       </form>
     </div>
   )
@@ -311,6 +331,24 @@ export function ShowUserStake({ userStake, mint }: {
       ) : (
         <div>User Stake not found</div>
       )}
+    </div>
+  )
+}
+
+export function CloseNftStake({ nftStake }: { nftStake: Account<dephyIdStakePool.NftStakeAccount> }) {
+  const closeNftStake = useCloseNftStake({ nftStakeAddress: nftStake.address })
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    closeNftStake.mutateAsync()
+  }
+
+  return (
+    <div>
+      <h2>Close Nft Stake</h2>
+      <form onSubmit={handleSubmit}>
+        <Button type="submit">Close Nft Stake</Button>
+      </form>
     </div>
   )
 }

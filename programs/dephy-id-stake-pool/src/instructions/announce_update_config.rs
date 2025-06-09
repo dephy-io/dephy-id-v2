@@ -7,7 +7,7 @@ use anchor_lang::prelude::*;
 #[derive(Accounts)]
 pub struct AnnounceUpdateConfig<'info> {
     #[account(mut)]
-    pub stake_pool: Box<Account<'info, StakePoolAccount>>,
+    pub stake_pool: Account<'info, StakePoolAccount>,
     #[account(address = stake_pool.authority @ ErrorCode::InvalidAuthority)]
     pub authority: Signer<'info>,
     #[account(init, payer = payer, space = 8 + AnnouncedConfigAccount::INIT_SPACE, seeds = [stake_pool.key().as_ref(), b"ANNOUNCED_CONFIG"], bump)]

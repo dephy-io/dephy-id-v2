@@ -170,6 +170,36 @@ export function useStakeDephyId() {
   })
 }
 
+export function useUnstakeDephyId({ nftStake }: { nftStake: Account<dephyIdStakePool.NftStakeAccount> }) {
+  const { client } = useWalletUi()
+  const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
+  const toastTransaction = useTransactionToast()
+  const { cluster } = useWalletUiCluster()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async () => {
+      const stakePool = await dephyIdStakePool.fetchStakePoolAccount(client.rpc, nftStake.data.stakePool)
+      const mplCoreAsset = nftStake.data.nftTokenAccount
+      const mplCoreCollection = stakePool.data.config.collection
+
+      return sendAndConfirmIxs([
+        await dephyIdStakePool.getUnstakeNftInstructionAsync({
+          nftStake: nftStake.address,
+          stakePool: stakePool.address,
+          stakeAuthority: feePayer,
+          mplCoreCollection: mplCoreCollection,
+          mplCoreAsset: mplCoreAsset,
+          payer: feePayer
+        })
+      ])
+    },
+    onSuccess: async (signature) => {
+      toastTransaction(signature)
+      queryClient.invalidateQueries({ queryKey: ['stake-pool', 'nft-stakes', { cluster }] })
+    },
+  })
+}
 
 export function useNftStakes({ stakePoolAddress }: { stakePoolAddress: Address }) {
   const { client } = useWalletUi()
@@ -327,6 +357,32 @@ export function useWithdraw({ userStake }: { userStake: Account<dephyIdStakePool
           userStakeTokenAccount,
           payer: feePayer,
           amount,
+        })
+      ])
+    },
+    onSuccess: async (signature) => {
+      toastTransaction(signature)
+      queryClient.invalidateQueries({ queryKey: ['stake-pool', 'nft-stakes', { cluster }] })
+      queryClient.invalidateQueries({ queryKey: ['stake-pool', 'user-stake', { cluster, userStakeAddress: userStake.address }] })
+    },
+  })
+}
+
+export function useCloseNftStake({ nftStakeAddress }: { nftStakeAddress: Address }) {
+  const { cluster } = useWalletUiCluster()
+  const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
+  const nftStake = useNftStake({ nftStakeAddress })
+  const toastTransaction = useTransactionToast()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async () => {
+      return sendAndConfirmIxs([
+        await dephyIdStakePool.getCloseNftStakeInstructionAsync({
+          stakePool: nftStake.data!.data.stakePool,
+          nftStake: nftStakeAddress,
+          stakeAuthority: feePayer,
+          payer: feePayer,
         })
       ])
     },

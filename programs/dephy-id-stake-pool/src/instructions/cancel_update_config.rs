@@ -1,11 +1,11 @@
-use anchor_lang::prelude::*;
-use crate::state::{StakePoolAccount, AnnouncedConfigAccount};
 use crate::error::ErrorCode;
+use crate::state::{AnnouncedConfigAccount, StakePoolAccount};
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct CancelUpdateConfig<'info> {
     #[account(mut, address = announced_config.stake_pool @ ErrorCode::InvalidAccount)]
-    pub stake_pool: Box<Account<'info, StakePoolAccount>>,
+    pub stake_pool: Account<'info, StakePoolAccount>,
     #[account(address = stake_pool.authority @ ErrorCode::InvalidAuthority)]
     pub authority: Signer<'info>,
     #[account(mut, close = payer)]

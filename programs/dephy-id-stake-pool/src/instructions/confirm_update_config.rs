@@ -8,7 +8,7 @@ use anchor_lang::prelude::*;
 #[derive(Accounts)]
 pub struct ConfirmUpdateConfig<'info> {
     #[account(mut, address = announced_config.stake_pool @ ErrorCode::InvalidAccount)]
-    pub stake_pool: Box<Account<'info, StakePoolAccount>>,
+    pub stake_pool: Account<'info, StakePoolAccount>,
     #[account(address = stake_pool.authority @ ErrorCode::InvalidAuthority)]
     pub authority: Signer<'info>,
     #[account(mut, close = payer)]

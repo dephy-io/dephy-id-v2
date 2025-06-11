@@ -285,7 +285,7 @@ cli
   .description('List all nft stakes')
   .option('--stake-pool <address>', 'Address of the stake pool')
   .action(async (options) => {
-    let filters: Parameters<typeof ctx.rpc.getProgramAccounts>[1]['filters'] = [
+    const filters: Parameters<typeof ctx.rpc.getProgramAccounts>[1]['filters'] = [
       {
         memcmp: {
           encoding: 'base64',
@@ -328,7 +328,7 @@ cli
   .description('List all nft stakes for a user')
   .option('--nft-stake <address>', 'Address of the nft stake account')
   .action(async (options) => {
-    let filters: Parameters<typeof ctx.rpc.getProgramAccounts>[1]['filters'] = [
+    const filters: Parameters<typeof ctx.rpc.getProgramAccounts>[1]['filters'] = [
       {
         memcmp: {
           encoding: 'base64',

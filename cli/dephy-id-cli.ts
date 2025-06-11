@@ -5,19 +5,14 @@ import { das } from '@metaplex-foundation/mpl-core-das';
 import { publicKey } from '@metaplex-foundation/umi';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import {
-  address, Base58EncodedBytes, Base64EncodedBytes, getAddressEncoder,
-  getBase58Decoder,
-  getBase58Encoder,
-  getBase64Decoder,
-  getBase64Encoder,
-  ReadonlyUint8Array
+  address, Base58EncodedBytes, getAddressEncoder,
+  getBase58Decoder, getBase64Encoder, ReadonlyUint8Array
 } from "gill";
 import { loadKeypairSignerFromFile } from "gill/node";
 
 import * as dephyId from '../clients/dephy-id/js/src/index.js';
 import {
   getAssetAccountDecoder,
-  getCollectionAccountDecoder,
   MPL_CORE_PROGRAM_ADDRESS
 } from '../deps/mpl-core/js/src/index.js';
 import { createSolanaContext } from './common.js';
@@ -155,7 +150,7 @@ cli
   .action(async (options) => {
     const discriminator = getBase58Decoder().decode(dephyId.PRODUCT_ACCOUNT_DISCRIMINATOR)
 
-    let filters: Parameters<typeof ctx.rpc.getProgramAccounts>[1]['filters'] = [{
+    const filters: Parameters<typeof ctx.rpc.getProgramAccounts>[1]['filters'] = [{
       memcmp: {
         offset: 0n,
         encoding: 'base58',

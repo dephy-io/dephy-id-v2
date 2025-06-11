@@ -11,7 +11,7 @@ pub use constants::*;
 pub use instructions::*;
 pub use state::*;
 
-declare_id!("6RuNPDwj63gfBFEx7DFfoQPbxfkDHQt4ccf8d4eWAZDX");
+declare_id!("D1DdkvuK3V8kzxD5CSsx7JorEo3hMLw4L7Bvujv3pTD6");
 
 #[program]
 pub mod dephy_id {

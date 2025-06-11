@@ -20,5 +20,3 @@ test-sbf = []
 [dependencies]
 anchor-lang = { workspace = true }
 mpl-core = { path = "../../deps/mpl-core/rust" }
-
-[dev-dependencies]

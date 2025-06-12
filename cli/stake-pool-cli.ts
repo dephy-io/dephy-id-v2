@@ -52,14 +52,12 @@ cli
   .option('-s, --stake-pool-authority <address>', 'Address of the stake pool authority, defaults to authority')
   .requiredOption('--stake-token-mint <address>', 'Address of the stake token mint')
   .requiredOption('--collection <address>', 'Address of the collection')
-  .option('--withdraw-pending <seconds>', 'Withdrawal pending period in seconds', '1814400')
   .option('--max-stake-amount <amount>', 'Maximum stake amount (ui amount)', '20000')
   .action(async (options) => {
     const authority = options.authority ? await loadKeypairSignerFromFile(options.authority) : ctx.feePayer;
     const stakePoolAuthority = options.stakePoolAuthority ? address(options.stakePoolAuthority) : authority.address
     const collection = address(options.collection)
     const stakeTokenMint = address(options.stakeTokenMint)
-    const withdrawPending = BigInt(options.withdrawPending)
     const maxStakeAmount = Number(options.maxStakeAmount)
     const stakePoolSigner = await generateKeyPairSigner()
 
@@ -90,7 +88,6 @@ cli
     console.log(`Authority: ${authority.address}`)
     console.log(`Collection: ${collectionAccount.address}`)
     console.log(`Stake Token Mint: ${stakeTokenMint}`)
-    console.log(`Withdraw Pending: ${withdrawPending} seconds`)
     console.log(`Max Stake Amount: ${maxStakeAmountInSmallestUnits}`)
     console.log(`Transaction: ${signature}`)
   });
@@ -100,7 +97,7 @@ cli
   .command('stake-nft')
   .description('Stake a DePHY ID NFT into a stake pool')
   .requiredOption('--stake-pool <address>', 'Address of the stake pool')
-  .requiredOption('--stake-authority <path>', 'Path to the NFT owner\'s keypair file (stake authority), defaults to fee payer')
+  .option('--stake-authority <path>', 'Path to the NFT owner\'s keypair file (stake authority), defaults to fee payer')
   .option('--deposit-authority <address>', 'Address of the deposit authority, defaults to stake authority')
   .requiredOption('--nft-asset <address>', 'Address of the DePHY ID NFT to stake (mpl_core_asset)')
   .action(async (options) => {

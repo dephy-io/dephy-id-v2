@@ -1,10 +1,12 @@
 import fs from 'node:fs'
 
 import { Command } from "@commander-js/extra-typings"
-import { Address, address, getAddressCodec, getBase16Encoder, IInstruction, KeyPairSigner } from "gill"
+import { Address, address, generateKeyPairSigner, getAddressCodec, getBase16Encoder, IInstruction } from "gill"
 import { loadKeypairSignerFromFile } from 'gill/node'
+import * as splToken from 'gill/programs/token'
 
 import * as dephyId from '../clients/dephy-id/js/src/index.js';
+import * as dephyIdStakePool from '../clients/dephy-id-stake-pool/js/src/index.js';
 import { createSolanaContext } from "./common.js"
 
 
@@ -87,28 +89,6 @@ cli.command('dump-devices')
   })
 
 
-function getCreateDevice({
-  payer, vendor, productAsset, seed, owner, name, uri
-}: {
-  payer: KeyPairSigner,
-  vendor: KeyPairSigner,
-  productAsset: Address,
-  seed: Uint8Array,
-  owner: Address,
-  name: string,
-  uri: string,
-}) {
-  return dephyId.getCreateDeviceInstructionAsync({
-    name,
-    owner,
-    payer,
-    productAsset,
-    seed,
-    uri,
-    mintAuthority: vendor,
-  })
-}
-
 
 cli.command('create-dev-devices')
   .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
@@ -116,6 +96,7 @@ cli.command('create-dev-devices')
   .requiredOption('--csv <csvFile>', 'CSV file for all devices and owners')
   .requiredOption('-p, --product <product>', 'Product asset address')
   .option('-v, --vendor <vendor>', 'Path to vendor keypair file')
+  .option('--owner <owner>', 'override owner address')
   .action(async (options) => {
     const { keypair, url: urlOrMoniker } = options
 
@@ -126,12 +107,16 @@ cli.command('create-dev-devices')
 
     const vendor = options.vendor ? await loadKeypairSignerFromFile(options.vendor) : ctx.feePayer
     const productAsset = address(options.product)
+    const ownerOverrided = options.owner ? address(options.owner) : undefined
 
     const csvFile = fs.readFileSync(options.csv, { encoding: 'utf8' })
-    const devicesAndOwners = csvFile.split('\n').slice(1).map((line) => {
+    const devicesAndOwners = csvFile.trim().split('\n').slice(1).map((line) => {
       const [device, owner] = line.split(',')
 
-      return { deviceSeed: addressCodec.encode(address(device)), owner: address(owner) } as { deviceSeed: Uint8Array, owner: Address }
+      return {
+        deviceSeed: addressCodec.encode(address(device)),
+        owner: ownerOverrided || address(owner)
+      } as { deviceSeed: Uint8Array, owner: Address }
     })
 
     let ixs: IInstruction[] = []
@@ -147,15 +132,17 @@ cli.command('create-dev-devices')
         console.log('skip', deviceAssetPda[0])
         i++
       } else {
+        const pubkey = deviceAssetPda[0]
+        const name = pubkey.substring(0, 4) + '...' + pubkey.substring(pubkey.length - 4)
         ixs.push(
-          await getCreateDevice({
+          await dephyId.getCreateDeviceInstructionAsync({
             payer: ctx.feePayer,
-            vendor,
+            mintAuthority: vendor,
+            owner,
             productAsset,
             seed: deviceSeed,
-            owner,
-            name: 'Device',  // TODO: naming
-            uri: '',
+            name,
+            uri: `https://workers.dephy.id/${pubkey}`,
           })
         )
       }
@@ -172,5 +159,101 @@ cli.command('create-dev-devices')
       console.log('Transaction signature:', signature)
     }
   })
+
+
+cli.command('stake-nfts')
+  .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
+  .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
+  .requiredOption('--stake-pool <address>', 'Address of the stake pool')
+  .requiredOption('--csv <csvFile>', 'CSV file for all devices and owners')
+  .option('--amount <amount>', 'Amount of tokens for each deposit (ui amount)')
+  .action(async (options) => {
+    const { keypair, url: urlOrMoniker } = options
+
+    const ctx = await createSolanaContext({
+      keypair,
+      urlOrMoniker,
+    })
+
+    const stakePoolAddress = address(options.stakePool)
+    const stakePool = await dephyIdStakePool.fetchStakePoolAccount(ctx.rpc, stakePoolAddress)
+    const productAsset = stakePool.data.config.collection
+
+    const stakeTokenMint = await splToken.fetchMint(ctx.rpc, stakePool.data.config.stakeTokenMint)
+    const amount = options.amount ?
+      splToken.tokenUiAmountToAmount(Number(options.amount), stakeTokenMint.data.decimals) :
+      undefined;
+
+    const userStakeTokenAccount = (await splToken.findAssociatedTokenPda({
+      mint: stakeTokenMint.address,
+      owner: ctx.feePayer.address,
+      tokenProgram: stakeTokenMint.programAddress,
+    }))[0]
+
+    const csvFile = fs.readFileSync(options.csv, { encoding: 'utf8' })
+    const devicesAndOwners = csvFile.trim().split('\n').slice(1).map((line) => {
+      const [device, owner] = line.split(',')
+
+      return {
+        deviceSeed: addressCodec.encode(address(device)),
+        owner: address(owner)
+      } as { deviceSeed: Uint8Array, owner: Address }
+    })
+
+    let ixs: IInstruction[] = []
+    for (let i = 0; i < devicesAndOwners.length; i++) {
+      const { deviceSeed, owner } = devicesAndOwners[i]
+      const deviceAssetPda = await dephyId.findDeviceAssetPda({
+        productAsset,
+        deviceSeed,
+      })
+
+      if (owner != ctx.feePayer.address) {
+        console.log('skip', deviceAssetPda[0])
+        i++
+      } else {
+        const nftStakeSigner = await generateKeyPairSigner()
+
+        ixs.push(
+          await dephyIdStakePool.getCreateNftStakeInstructionAsync({
+            stakePool: stakePoolAddress,
+            nftStake: nftStakeSigner,
+            stakeAuthority: ctx.feePayer,
+            depositAuthority: ctx.feePayer.address,
+            mplCoreAsset: deviceAssetPda[0],
+            mplCoreCollection: productAsset,
+            payer: ctx.feePayer,
+          })
+        )
+
+        if (amount) {
+          ixs.push(
+            await dephyIdStakePool.getDepositTokenInstructionAsync({
+              nftStake: nftStakeSigner.address,
+              stakePool: stakePoolAddress,
+              user: ctx.feePayer,
+              stakeTokenMint: stakeTokenMint.address,
+              stakeTokenAccount: stakePool.data.stakeTokenAccount,
+              userStakeTokenAccount: userStakeTokenAccount,
+              payer: ctx.feePayer,
+              amount,
+            })
+          )
+        }
+      }
+
+      if (ixs.length >= 6) {
+        const signature = await ctx.sendAndConfirmIxs(ixs)
+        console.log('Transaction signature:', signature)
+        ixs = []
+      }
+    }
+
+    if (ixs.length > 0) {
+      const signature = await ctx.sendAndConfirmIxs(ixs)
+      console.log('Transaction signature:', signature)
+    }
+  })
+
 
 await cli.parseAsync()

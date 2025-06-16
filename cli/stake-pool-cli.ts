@@ -284,6 +284,9 @@ cli
   .command('list-nft-stakes')
   .description('List all nft stakes')
   .option('--stake-pool <address>', 'Address of the stake pool')
+  .option('--stake-authority <address>', 'Address of the stake authority')
+  .option('--deposit-authority <address>', 'Address of the deposit authority')
+  .option('--nft-token <address>', 'Address of the nft token')
   .action(async (options) => {
     const filters: Parameters<typeof ctx.rpc.getProgramAccounts>[1]['filters'] = [
       {
@@ -301,6 +304,36 @@ cli
           encoding: 'base58',
           offset: 8n,
           bytes: address(options.stakePool) as unknown as Base58EncodedBytes,
+        },
+      })
+    }
+
+    if (options.stakeAuthority) {
+      filters.push({
+        memcmp: {
+          encoding: 'base58',
+          offset: 8n + 32n,
+          bytes: address(options.stakeAuthority) as unknown as Base58EncodedBytes,
+        },
+      })
+    }
+
+    if (options.depositAuthority) {
+      filters.push({
+        memcmp: {
+          encoding: 'base58',
+          offset: 8n + 32n + 32n,
+          bytes: address(options.depositAuthority) as unknown as Base58EncodedBytes,
+        },
+      })
+    }
+
+    if (options.nftToken) {
+      filters.push({
+        memcmp: {
+          encoding: 'base58',
+          offset: 8n + 32n + 32n + 32n,
+          bytes: address(options.nftToken) as unknown as Base58EncodedBytes,
         },
       })
     }
@@ -327,6 +360,7 @@ cli
   .command('list-user-stakes')
   .description('List all nft stakes for a user')
   .option('--nft-stake <address>', 'Address of the nft stake account')
+  .option('--user <address>', 'Address of the user')
   .action(async (options) => {
     const filters: Parameters<typeof ctx.rpc.getProgramAccounts>[1]['filters'] = [
       {
@@ -344,6 +378,16 @@ cli
           encoding: 'base58',
           offset: 8n + 32n,
           bytes: address(options.nftStake) as unknown as Base58EncodedBytes,
+        },
+      })
+    }
+
+    if (options.user) {
+      filters.push({
+        memcmp: {
+          encoding: 'base58',
+          offset: 8n + 32n + 32n,
+          bytes: address(options.user) as unknown as Base58EncodedBytes,
         },
       })
     }

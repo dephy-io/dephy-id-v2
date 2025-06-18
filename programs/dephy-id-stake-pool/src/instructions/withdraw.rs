@@ -87,5 +87,12 @@ pub fn process_withdraw(ctx: Context<Withdraw>, maybe_amount: Option<u64>) -> Re
         ctx.accounts.stake_token_mint.decimals,
     )?;
 
+    // if remaining amount is zero, close user stake account
+    if user_stake.amount == 0 {
+        ctx.accounts
+            .user_stake_account
+            .close(ctx.accounts.payer.to_account_info())?;
+    }
+
     Ok(())
 }

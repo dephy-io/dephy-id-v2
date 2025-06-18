@@ -14,7 +14,7 @@ pub struct Deposit<'info> {
     pub nft_stake: Account<'info, NftStakeAccount>,
     #[account(mut, address = nft_stake.stake_pool @ ErrorCode::InvalidAccount)]
     pub stake_pool: Account<'info, StakePoolAccount>,
-    #[account(address = nft_stake.deposit_authority @ ErrorCode::InvalidAuthority)]
+    #[account()]
     pub user: Signer<'info>,
     #[account(
         init_if_needed, payer = payer,
@@ -54,7 +54,12 @@ pub fn process_deposit(ctx: Context<Deposit>, maybe_amount: Option<u64>) -> Resu
     let nft_stake = &mut ctx.accounts.nft_stake;
     let user_stake = &mut ctx.accounts.user_stake_account;
 
-    require!(nft_stake.active, ErrorCode::NftStakeNotActive);
+    if ctx.accounts.user.key() != nft_stake.deposit_authority
+        && ctx.accounts.user.key() != nft_stake.stake_authority
+    {
+        return Err(ErrorCode::InvalidAuthority.into());
+    }
+
     require_gt!(amount, 0, ErrorCode::InvalidAmount);
     require_gte!(
         config.max_stake_amount,

@@ -7,6 +7,7 @@ import * as splToken from 'gill/programs/token'
 
 import * as dephyId from '../clients/dephy-id/js/src/index.js';
 import * as dephyIdStakePool from '../clients/dephy-id-stake-pool/js/src/index.js';
+import * as mplCore from '../deps/mpl-core/js/src/index.js'
 import { createSolanaContext } from "./common.js"
 
 
@@ -243,6 +244,71 @@ cli.command('stake-nfts')
       }
 
       if (ixs.length >= 6) {
+        const signature = await ctx.sendAndConfirmIxs(ixs)
+        console.log('Transaction signature:', signature)
+        ixs = []
+      }
+    }
+
+    if (ixs.length > 0) {
+      const signature = await ctx.sendAndConfirmIxs(ixs)
+      console.log('Transaction signature:', signature)
+    }
+  })
+
+
+cli.command('batch-transfer')
+  .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
+  .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
+  .requiredOption('--csv <csvFile>', 'CSV file for all devices and dest')
+  .requiredOption('-p, --product <product>', 'Product asset address')
+  .option('--dest <dest>', 'override dest address')
+  .action(async (options) => {
+    const { keypair, url: urlOrMoniker } = options
+
+    const ctx = await createSolanaContext({
+      keypair,
+      urlOrMoniker,
+    })
+
+    const productAsset = address(options.product)
+    const destOverrided = options.dest ? address(options.dest) : undefined
+
+    const csvFile = fs.readFileSync(options.csv, { encoding: 'utf8' })
+    const devicesAndDest = csvFile.trim().split('\n').slice(1).map((line) => {
+      const [device, dest] = line.split(',')
+
+      return {
+        deviceSeed: addressCodec.encode(address(device)),
+        dest: destOverrided || address(dest)
+      } as { deviceSeed: Uint8Array, dest: Address }
+    })
+
+    let ixs: IInstruction[] = []
+    for (let i = 0; i < devicesAndDest.length; i++) {
+      const { deviceSeed, dest } = devicesAndDest[i]
+      const deviceAssetPda = await dephyId.findDeviceAssetPda({
+        productAsset,
+        deviceSeed,
+      })
+      const pubkey = deviceAssetPda[0]
+      const deviceAsset = await mplCore.fetchAssetV1(ctx.rpc, pubkey)
+
+      if (deviceAsset.data.owner == dest || deviceAsset.data.owner != ctx.feePayer.address) {
+        console.log('skip', pubkey)
+        i++
+      } else {
+        ixs.push(
+          mplCore.getTransferV1Instruction({
+            asset: pubkey,
+            collection: productAsset,
+            payer: ctx.feePayer,
+            newOwner: dest,
+          })
+        )
+      }
+
+      if (ixs.length >= 22) {
         const signature = await ctx.sendAndConfirmIxs(ixs)
         console.log('Transaction signature:', signature)
         ixs = []

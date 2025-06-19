@@ -6,7 +6,7 @@ import { publicKey } from '@metaplex-foundation/umi';
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 import {
   address, Base58EncodedBytes, getAddressEncoder,
-  getBase58Decoder, getBase64Encoder, ReadonlyUint8Array
+  getBase16Decoder, getBase58Decoder, getBase64Encoder, ReadonlyUint8Array
 } from "gill";
 import { loadKeypairSignerFromFile } from "gill/node";
 
@@ -19,6 +19,29 @@ import { createSolanaContext } from './common.js';
 
 
 let ctx: Awaited<ReturnType<typeof createSolanaContext>>
+
+const b16Decoder = getBase16Decoder()
+
+function formatter(key: string, value: unknown): unknown {
+  if (typeof value === 'bigint') {
+    return value.toString()
+  }
+  if (value instanceof Uint8Array) {
+    return b16Decoder.decode(value)
+  }
+  return value
+}
+
+function logWithFormat(obj: unknown, format: 'js' | 'json' = 'js') {
+  switch (format) {
+    case 'json':
+      console.log(JSON.stringify(obj, formatter, 2))
+      break
+    default:
+      console.dir(obj, { depth: null })
+      break
+  }
+}
 
 const cli = new Command()
   .name('dephy-id-cli')
@@ -147,6 +170,7 @@ cli
   .command('list-products')
   .description('Get all products')
   .option('--vendor <vendor>', 'Vendor address')
+  .addOption(new Option('-f, --format <format>', 'output format, "js" | "json", default to "js"').choices(['js', 'json']).default('js'))
   .action(async (options) => {
     const discriminator = getBase58Decoder().decode(dephyId.PRODUCT_ACCOUNT_DISCRIMINATOR)
 
@@ -181,7 +205,8 @@ cli
       const decodedAccount = dephyId.getProductAccountDecoder().decode(data)
       return { address: pubkey, ...decodedAccount }
     })
-    console.dir(products, { depth: null })
+
+    logWithFormat(products, options.format)
   })
 
 const listDevicesNative = async (product: string) => {
@@ -210,23 +235,25 @@ const listDevicesNative = async (product: string) => {
 cli
   .command('list-devices <product>')
   .description('List all devices of the product')
-  .action(async (product) => {
+  .addOption(new Option('-f, --format <format>', 'output format, "js" | "json", default to "js"').choices(['js', 'json']).default('js'))
+  .action(async (product, options) => {
     const accounts = await listDevicesNative(product)
-    console.dir(accounts, { depth: null })
+    logWithFormat(accounts, options.format)
   })
 
 
 cli
   .command('list-devices-das <product>')
   .description('List all devices of the product, requires a endpoint with DAS support like helius.dev')
-  .action(async (product, _options, cmd) => {
+  .addOption(new Option('-f, --format <format>', 'output format, "js" | "json", default to "js"').choices(['js', 'json']).default('js'))
+  .action(async (product, options, cmd) => {
     const { url } = cmd.optsWithGlobals()
     const umi = createUmi(url).use(dasApi())
 
     const collection = publicKey(product)
 
-    const devices = await das.getAssetsByCollection(umi, { collection });
-    console.dir(devices, { depth: null })
+    const devices = await das.getAssetsByCollection(umi, { collection })
+    logWithFormat(devices, options.format)
   })
 
 

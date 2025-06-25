@@ -76,11 +76,9 @@ pub fn process_unstake_nft(ctx: Context<UnstakeNft>) -> Result<()> {
 
     nft_stake.active = false;
 
-    if nft_stake.amount == 0 {
-        ctx.accounts
-            .nft_stake
-            .close(ctx.accounts.payer.to_account_info())?;
-    }
+    ctx.accounts
+        .nft_stake
+        .close(ctx.accounts.payer.to_account_info())?;
 
     Ok(())
 }

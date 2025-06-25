@@ -64,6 +64,7 @@ export type CreateProductInstruction<
   TAccountProductAsset extends string | IAccountMeta<string> = string,
   TAccountProductAccount extends string | IAccountMeta<string> = string,
   TAccountPayer extends string | IAccountMeta<string> = string,
+  TAccountMintAuthority extends string | IAccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
     | IAccountMeta<string> = '11111111111111111111111111111111',
@@ -89,6 +90,9 @@ export type CreateProductInstruction<
         ? WritableSignerAccount<TAccountPayer> &
             IAccountSignerMeta<TAccountPayer>
         : TAccountPayer,
+      TAccountMintAuthority extends string
+        ? ReadonlyAccount<TAccountMintAuthority>
+        : TAccountMintAuthority,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
@@ -141,6 +145,7 @@ export type CreateProductAsyncInput<
   TAccountProductAsset extends string = string,
   TAccountProductAccount extends string = string,
   TAccountPayer extends string = string,
+  TAccountMintAuthority extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountMplCore extends string = string,
 > = {
@@ -150,6 +155,7 @@ export type CreateProductAsyncInput<
   productAsset?: Address<TAccountProductAsset>;
   productAccount?: Address<TAccountProductAccount>;
   payer: TransactionSigner<TAccountPayer>;
+  mintAuthority?: Address<TAccountMintAuthority>;
   systemProgram?: Address<TAccountSystemProgram>;
   mplCore?: Address<TAccountMplCore>;
   name: CreateProductInstructionDataArgs['name'];
@@ -161,6 +167,7 @@ export async function getCreateProductInstructionAsync<
   TAccountProductAsset extends string,
   TAccountProductAccount extends string,
   TAccountPayer extends string,
+  TAccountMintAuthority extends string,
   TAccountSystemProgram extends string,
   TAccountMplCore extends string,
   TProgramAddress extends Address = typeof DEPHY_ID_PROGRAM_ADDRESS,
@@ -170,6 +177,7 @@ export async function getCreateProductInstructionAsync<
     TAccountProductAsset,
     TAccountProductAccount,
     TAccountPayer,
+    TAccountMintAuthority,
     TAccountSystemProgram,
     TAccountMplCore
   >,
@@ -181,6 +189,7 @@ export async function getCreateProductInstructionAsync<
     TAccountProductAsset,
     TAccountProductAccount,
     TAccountPayer,
+    TAccountMintAuthority,
     TAccountSystemProgram,
     TAccountMplCore
   >
@@ -194,6 +203,7 @@ export async function getCreateProductInstructionAsync<
     productAsset: { value: input.productAsset ?? null, isWritable: true },
     productAccount: { value: input.productAccount ?? null, isWritable: true },
     payer: { value: input.payer ?? null, isWritable: true },
+    mintAuthority: { value: input.mintAuthority ?? null, isWritable: false },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     mplCore: { value: input.mplCore ?? null, isWritable: false },
   };
@@ -236,6 +246,7 @@ export async function getCreateProductInstructionAsync<
       getAccountMeta(accounts.productAsset),
       getAccountMeta(accounts.productAccount),
       getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.mintAuthority),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.mplCore),
     ],
@@ -249,6 +260,7 @@ export async function getCreateProductInstructionAsync<
     TAccountProductAsset,
     TAccountProductAccount,
     TAccountPayer,
+    TAccountMintAuthority,
     TAccountSystemProgram,
     TAccountMplCore
   >;
@@ -261,6 +273,7 @@ export type CreateProductInput<
   TAccountProductAsset extends string = string,
   TAccountProductAccount extends string = string,
   TAccountPayer extends string = string,
+  TAccountMintAuthority extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountMplCore extends string = string,
 > = {
@@ -270,6 +283,7 @@ export type CreateProductInput<
   productAsset: Address<TAccountProductAsset>;
   productAccount: Address<TAccountProductAccount>;
   payer: TransactionSigner<TAccountPayer>;
+  mintAuthority?: Address<TAccountMintAuthority>;
   systemProgram?: Address<TAccountSystemProgram>;
   mplCore?: Address<TAccountMplCore>;
   name: CreateProductInstructionDataArgs['name'];
@@ -281,6 +295,7 @@ export function getCreateProductInstruction<
   TAccountProductAsset extends string,
   TAccountProductAccount extends string,
   TAccountPayer extends string,
+  TAccountMintAuthority extends string,
   TAccountSystemProgram extends string,
   TAccountMplCore extends string,
   TProgramAddress extends Address = typeof DEPHY_ID_PROGRAM_ADDRESS,
@@ -290,6 +305,7 @@ export function getCreateProductInstruction<
     TAccountProductAsset,
     TAccountProductAccount,
     TAccountPayer,
+    TAccountMintAuthority,
     TAccountSystemProgram,
     TAccountMplCore
   >,
@@ -300,6 +316,7 @@ export function getCreateProductInstruction<
   TAccountProductAsset,
   TAccountProductAccount,
   TAccountPayer,
+  TAccountMintAuthority,
   TAccountSystemProgram,
   TAccountMplCore
 > {
@@ -312,6 +329,7 @@ export function getCreateProductInstruction<
     productAsset: { value: input.productAsset ?? null, isWritable: true },
     productAccount: { value: input.productAccount ?? null, isWritable: true },
     payer: { value: input.payer ?? null, isWritable: true },
+    mintAuthority: { value: input.mintAuthority ?? null, isWritable: false },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     mplCore: { value: input.mplCore ?? null, isWritable: false },
   };
@@ -340,6 +358,7 @@ export function getCreateProductInstruction<
       getAccountMeta(accounts.productAsset),
       getAccountMeta(accounts.productAccount),
       getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.mintAuthority),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.mplCore),
     ],
@@ -353,6 +372,7 @@ export function getCreateProductInstruction<
     TAccountProductAsset,
     TAccountProductAccount,
     TAccountPayer,
+    TAccountMintAuthority,
     TAccountSystemProgram,
     TAccountMplCore
   >;
@@ -372,8 +392,9 @@ export type ParsedCreateProductInstruction<
     productAsset: TAccountMetas[1];
     productAccount: TAccountMetas[2];
     payer: TAccountMetas[3];
-    systemProgram: TAccountMetas[4];
-    mplCore: TAccountMetas[5];
+    mintAuthority?: TAccountMetas[4] | undefined;
+    systemProgram: TAccountMetas[5];
+    mplCore: TAccountMetas[6];
   };
   data: CreateProductInstructionData;
 };
@@ -386,7 +407,7 @@ export function parseCreateProductInstruction<
     IInstructionWithAccounts<TAccountMetas> &
     IInstructionWithData<Uint8Array>
 ): ParsedCreateProductInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 6) {
+  if (instruction.accounts.length < 7) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -396,6 +417,12 @@ export function parseCreateProductInstruction<
     accountIndex += 1;
     return accountMeta;
   };
+  const getNextOptionalAccount = () => {
+    const accountMeta = getNextAccount();
+    return accountMeta.address === DEPHY_ID_PROGRAM_ADDRESS
+      ? undefined
+      : accountMeta;
+  };
   return {
     programAddress: instruction.programAddress,
     accounts: {
@@ -403,6 +430,7 @@ export function parseCreateProductInstruction<
       productAsset: getNextAccount(),
       productAccount: getNextAccount(),
       payer: getNextAccount(),
+      mintAuthority: getNextOptionalAccount(),
       systemProgram: getNextAccount(),
       mplCore: getNextAccount(),
     },

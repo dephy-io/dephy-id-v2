@@ -20,6 +20,8 @@ pub struct CreateProduct<'info> {
     pub product_account: Account<'info, ProductAccount>,
     #[account(mut)]
     pub payer: Signer<'info>,
+    /// CHECK: The mint authority of the product, defaults to vendor
+    pub mint_authority: Option<UncheckedAccount<'info>>,
     pub system_program: Program<'info, System>,
     /// CHECK: The mpl-core program address
     #[account(address = mpl_core::ID @ ErrorCode::InvalidMplCoreProgram)]
@@ -27,6 +29,13 @@ pub struct CreateProduct<'info> {
 }
 
 pub fn handle_create_product(ctx: Context<CreateProduct>, args: CreateProductArgs) -> Result<()> {
+    let mint_authority = ctx
+        .accounts
+        .mint_authority
+        .as_ref()
+        .map(|account| account.key())
+        .unwrap_or(ctx.accounts.vendor.key());
+
     mpl_core::instructions::CreateCollectionV2Cpi::new(
         &ctx.accounts.mpl_core,
         mpl_core::instructions::CreateCollectionV2CpiAccounts {
@@ -89,7 +98,7 @@ pub fn handle_create_product(ctx: Context<CreateProduct>, args: CreateProductArg
     let product_account = &mut ctx.accounts.product_account;
     product_account.vendor = ctx.accounts.vendor.key();
     product_account.collection = ctx.accounts.product_asset.key();
-    product_account.mint_authority = ctx.accounts.vendor.key();
+    product_account.mint_authority = mint_authority;
 
     Ok(())
 }

@@ -2,7 +2,6 @@ import assert from 'assert';
 import {
   Address,
   airdropFactory,
-  assertAccountExists,
   createSolanaClient, createTransaction, devnet,
   generateKeyPairSigner,
   getSignatureFromTransaction, IInstruction, isSolanaError, KeyPairSigner, lamports,
@@ -219,7 +218,7 @@ describe("dephy-id-stake-pool", () => {
           payer: didOwner1,
           newOwner: tokenOwner1.address,
         })
-      ], { showError: true })
+      ], { showError: false })
     })
   })
 
@@ -353,25 +352,13 @@ describe("dephy-id-stake-pool", () => {
       })
     ])
 
-    const nftStakeAccount = await dephyIdStakePool.fetchNftStakeAccount(rpc, nftStake.address)
-    assert.equal(nftStakeAccount.data.active, false)
+    const nftStakeAccount = await dephyIdStakePool.fetchMaybeNftStakeAccount(rpc, nftStake.address)
+    assert.equal(nftStakeAccount.exists, false)
 
     const assetAccount = await mplCore.fetchAssetAccount(rpc, did1Address)
     assert.equal(assetAccount.data.plugins.freezeDelegate, null)
   })
 
-  it('close non empty nft stake will fail', async () => {
-    await assert.rejects(async () => {
-      await sendAndConfirmIxs([
-        await dephyIdStakePool.getCloseNftStakeInstructionAsync({
-          stakePool: stakePoolAddress,
-          nftStake: nftStake.address,
-          stakeAuthority: didOwner1,
-          payer,
-        })
-      ], { showError: false })
-    })
-  })
 
   it('withdraw all after unstake', async () => {
     let stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(rpc, stakePoolAddress)
@@ -390,32 +377,11 @@ describe("dephy-id-stake-pool", () => {
       })
     ])
 
-    const userStakeAccount = await dephyIdStakePool.fetchUserStakeAccount(rpc, userStakeAddress)
-    assert.equal(userStakeAccount.data.amount, 0n, 'userStake amount')
-
-    const nftStakeAccount = await dephyIdStakePool.fetchNftStakeAccount(rpc, nftStake.address)
-    assert.equal(nftStakeAccount.data.amount, 0n, 'nftStake amount')
+    const userStakeAccount = await dephyIdStakePool.fetchMaybeUserStakeAccount(rpc, userStakeAddress)
+    assert.equal(userStakeAccount.exists, false)
 
     stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(rpc, stakePoolAddress)
     assert.equal(stakePoolAccount.data.totalAmount, 0n, 'stakePool totalAmount')
   })
 
-
-  it('close empty nft stake', async () => {
-    let nftStakeAccount = await dephyIdStakePool.fetchMaybeNftStakeAccount(rpc, nftStake.address)
-    assertAccountExists(nftStakeAccount)
-    assert.equal(nftStakeAccount.data.amount, 0n)
-
-    await sendAndConfirmIxs([
-      await dephyIdStakePool.getCloseNftStakeInstructionAsync({
-        stakePool: stakePoolAddress,
-        nftStake: nftStake.address,
-        stakeAuthority: didOwner1,
-        payer,
-      })
-    ])
-
-    nftStakeAccount = await dephyIdStakePool.fetchMaybeNftStakeAccount(rpc, nftStake.address)
-    assert.equal(nftStakeAccount.exists, false)
-  })
 })

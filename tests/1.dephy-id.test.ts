@@ -84,9 +84,11 @@ describe("dephy-id", () => {
 
 
   let vendor: KeyPairSigner
+  let mintAuthority: KeyPairSigner
   let productAsset: Address
   it("create product", async () => {
     vendor = await generateKeyPairSigner()
+    mintAuthority = await generateKeyPairSigner()
     const productName = "Demo Product 1"
     const productAssetPda = await dephyId.findProductAssetPda({ productName, vendor: vendor.address })
     productAsset = productAssetPda[0]
@@ -97,7 +99,8 @@ describe("dephy-id", () => {
         payer,
         productAsset,
         uri: "https://example.com/product-1",
-        vendor
+        vendor,
+        mintAuthority: mintAuthority.address,
       }),
     ])
 
@@ -140,7 +143,7 @@ describe("dephy-id", () => {
         productAsset,
         seed: encodedSeed,
         uri: "https://example.com/product-1/device-1",
-        mintAuthority: vendor,
+        mintAuthority,
       }),
     ])
 
@@ -181,7 +184,7 @@ describe("dephy-id", () => {
         payer,
         productAsset,
         owner,
-        mintAuthority: vendor,
+        mintAuthority,
       })
     ))
 
@@ -212,7 +215,7 @@ describe("dephy-id", () => {
       payer,
       productAsset,
       owner: payer.address,
-      mintAuthority: vendor,
+      mintAuthority,
       expiry: Math.trunc(Date.now() / 1000) + 300
     })
 

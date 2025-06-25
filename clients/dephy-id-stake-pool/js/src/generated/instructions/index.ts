@@ -6,7 +6,10 @@
  * @see https://github.com/codama-idl/codama
  */
 
+export * from './announceUpdateConfig';
+export * from './cancelUpdateConfig';
 export * from './closeNftStake';
+export * from './confirmUpdateConfig';
 export * from './createNftStake';
 export * from './createStakePool';
 export * from './depositToken';

@@ -1,4 +1,7 @@
+pub mod announce_update_config;
+pub mod cancel_update_config;
 pub mod close_nft_stake;
+pub mod confirm_update_config;
 pub mod create_nft_stake;
 pub mod create_stake_pool;
 pub mod deposit;
@@ -6,7 +9,10 @@ pub mod initialize;
 pub mod unstake_nft;
 pub mod withdraw;
 
+pub use announce_update_config::*;
+pub use cancel_update_config::*;
 pub use close_nft_stake::*;
+pub use confirm_update_config::*;
 pub use create_nft_stake::*;
 pub use create_stake_pool::*;
 pub use deposit::*;

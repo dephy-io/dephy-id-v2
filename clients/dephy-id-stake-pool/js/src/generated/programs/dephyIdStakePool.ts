@@ -14,7 +14,10 @@ import {
   type ReadonlyUint8Array,
 } from '@solana/kit';
 import {
+  type ParsedAnnounceUpdateConfigInstruction,
+  type ParsedCancelUpdateConfigInstruction,
   type ParsedCloseNftStakeInstruction,
+  type ParsedConfirmUpdateConfigInstruction,
   type ParsedCreateNftStakeInstruction,
   type ParsedCreateStakePoolInstruction,
   type ParsedDepositTokenInstruction,
@@ -28,6 +31,7 @@ export const DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS =
 
 export enum DephyIdStakePoolAccount {
   AdminAccount,
+  AnnouncedConfigAccount,
   NftStakeAccount,
   StakePoolAccount,
   UserStakeAccount,
@@ -47,6 +51,17 @@ export function identifyDephyIdStakePoolAccount(
     )
   ) {
     return DephyIdStakePoolAccount.AdminAccount;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([56, 17, 67, 145, 200, 140, 137, 226])
+      ),
+      0
+    )
+  ) {
+    return DephyIdStakePoolAccount.AnnouncedConfigAccount;
   }
   if (
     containsBytes(
@@ -87,7 +102,10 @@ export function identifyDephyIdStakePoolAccount(
 }
 
 export enum DephyIdStakePoolInstruction {
+  AnnounceUpdateConfig,
+  CancelUpdateConfig,
   CloseNftStake,
+  ConfirmUpdateConfig,
   CreateNftStake,
   CreateStakePool,
   DepositToken,
@@ -104,12 +122,45 @@ export function identifyDephyIdStakePoolInstruction(
     containsBytes(
       data,
       fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([25, 72, 63, 45, 123, 42, 124, 197])
+      ),
+      0
+    )
+  ) {
+    return DephyIdStakePoolInstruction.AnnounceUpdateConfig;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([235, 155, 243, 161, 6, 145, 121, 173])
+      ),
+      0
+    )
+  ) {
+    return DephyIdStakePoolInstruction.CancelUpdateConfig;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
         new Uint8Array([254, 163, 164, 157, 253, 253, 83, 23])
       ),
       0
     )
   ) {
     return DephyIdStakePoolInstruction.CloseNftStake;
+  }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([25, 58, 1, 51, 3, 105, 99, 234])
+      ),
+      0
+    )
+  ) {
+    return DephyIdStakePoolInstruction.ConfirmUpdateConfig;
   }
   if (
     containsBytes(
@@ -186,8 +237,17 @@ export type ParsedDephyIdStakePoolInstruction<
   TProgram extends string = 'DSTKMXnJXgvViSkr6hciBaYsTpcduxZuF334WLrvEZmW',
 > =
   | ({
+      instructionType: DephyIdStakePoolInstruction.AnnounceUpdateConfig;
+    } & ParsedAnnounceUpdateConfigInstruction<TProgram>)
+  | ({
+      instructionType: DephyIdStakePoolInstruction.CancelUpdateConfig;
+    } & ParsedCancelUpdateConfigInstruction<TProgram>)
+  | ({
       instructionType: DephyIdStakePoolInstruction.CloseNftStake;
     } & ParsedCloseNftStakeInstruction<TProgram>)
+  | ({
+      instructionType: DephyIdStakePoolInstruction.ConfirmUpdateConfig;
+    } & ParsedConfirmUpdateConfigInstruction<TProgram>)
   | ({
       instructionType: DephyIdStakePoolInstruction.CreateNftStake;
     } & ParsedCreateNftStakeInstruction<TProgram>)

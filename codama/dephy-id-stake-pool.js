@@ -17,6 +17,9 @@ export const pdas = addPdasVisitor({
   }, {
     name: 'userStakeAccount',
     seeds: [variablePdaSeedNode('nftStake', publicKeyTypeNode()), constantPdaSeedNodeFromString('utf8', 'USER_STAKE'), variablePdaSeedNode('user', publicKeyTypeNode())],
+  }, {
+    name: 'announcedConfig',
+    seeds: [variablePdaSeedNode('stakePool', publicKeyTypeNode()), constantPdaSeedNodeFromString('utf8', 'ANNOUNCED_CONFIG')],
   }]
 })
 

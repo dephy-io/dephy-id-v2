@@ -16,8 +16,6 @@ import {
   getProgramDerivedAddress,
   getStructDecoder,
   getStructEncoder,
-  getU64Decoder,
-  getU64Encoder,
   transformEncoder,
   type Address,
   type Codec,
@@ -41,6 +39,12 @@ import {
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
+import {
+  getStakePoolConfigArgsDecoder,
+  getStakePoolConfigArgsEncoder,
+  type StakePoolConfigArgs,
+  type StakePoolConfigArgsArgs,
+} from '../types';
 
 export const CREATE_STAKE_POOL_DISCRIMINATOR = new Uint8Array([
   198, 175, 88, 63, 128, 43, 8, 214,
@@ -114,18 +118,18 @@ export type CreateStakePoolInstruction<
 
 export type CreateStakePoolInstructionData = {
   discriminator: ReadonlyUint8Array;
-  maxStakeAmount: bigint;
+  args: StakePoolConfigArgs;
 };
 
 export type CreateStakePoolInstructionDataArgs = {
-  maxStakeAmount: number | bigint;
+  args: StakePoolConfigArgsArgs;
 };
 
 export function getCreateStakePoolInstructionDataEncoder(): Encoder<CreateStakePoolInstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
-      ['maxStakeAmount', getU64Encoder()],
+      ['args', getStakePoolConfigArgsEncoder()],
     ]),
     (value) => ({ ...value, discriminator: CREATE_STAKE_POOL_DISCRIMINATOR })
   );
@@ -134,7 +138,7 @@ export function getCreateStakePoolInstructionDataEncoder(): Encoder<CreateStakeP
 export function getCreateStakePoolInstructionDataDecoder(): Decoder<CreateStakePoolInstructionData> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
-    ['maxStakeAmount', getU64Decoder()],
+    ['args', getStakePoolConfigArgsDecoder()],
   ]);
 }
 
@@ -172,7 +176,7 @@ export type CreateStakePoolAsyncInput<
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   stakeTokenProgram: Address<TAccountStakeTokenProgram>;
-  maxStakeAmount: CreateStakePoolInstructionDataArgs['maxStakeAmount'];
+  args: CreateStakePoolInstructionDataArgs['args'];
 };
 
 export async function getCreateStakePoolInstructionAsync<
@@ -349,7 +353,7 @@ export type CreateStakePoolInput<
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   stakeTokenProgram: Address<TAccountStakeTokenProgram>;
-  maxStakeAmount: CreateStakePoolInstructionDataArgs['maxStakeAmount'];
+  args: CreateStakePoolInstructionDataArgs['args'];
 };
 
 export function getCreateStakePoolInstruction<

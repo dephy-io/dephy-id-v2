@@ -1,5 +1,5 @@
 use crate::{
-    constants::CONFIG_REVIEW_TIME,
+    constants::ANNOUNCED_CONFIG_SEED,
     error::ErrorCode,
     state::{AnnouncedConfigAccount, StakePoolAccount},
 };
@@ -11,7 +11,7 @@ pub struct ConfirmUpdateConfig<'info> {
     pub stake_pool: Account<'info, StakePoolAccount>,
     #[account(address = stake_pool.authority @ ErrorCode::InvalidAuthority)]
     pub authority: Signer<'info>,
-    #[account(mut, close = payer)]
+    #[account(mut, close = payer, seeds = [stake_pool.key().as_ref(), ANNOUNCED_CONFIG_SEED], bump)]
     pub announced_config: Account<'info, AnnouncedConfigAccount>,
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -40,7 +40,7 @@ pub fn process_confirm_update_config(ctx: Context<ConfirmUpdateConfig>) -> Resul
 
     let clock = Clock::get()?;
     let now = clock.unix_timestamp as u64;
-    if now - announced_config.timestamp < CONFIG_REVIEW_TIME {
+    if now - announced_config.timestamp < stake_pool.config.config_review_time {
         return Err(ErrorCode::NotReadyYet.into());
     }
 
@@ -49,10 +49,7 @@ pub fn process_confirm_update_config(ctx: Context<ConfirmUpdateConfig>) -> Resul
     let config = &mut stake_pool.config;
     let new_config = &announced_config.config;
 
-    config.min_stake_amount = new_config.min_stake_amount;
     config.max_stake_amount = new_config.max_stake_amount;
-    config.min_locktime = new_config.min_locktime;
-    config.max_locktime = new_config.max_locktime;
 
     Ok(())
 }

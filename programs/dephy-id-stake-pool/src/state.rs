@@ -32,10 +32,12 @@ pub struct StakePoolConfig {
     pub collection: Pubkey,
     pub stake_token_mint: Pubkey,
     pub max_stake_amount: u64,
+    pub config_review_time: u64,
 }
 
 #[derive(Debug, Clone, InitSpace, AnchorSerialize, AnchorDeserialize)]
 pub struct StakePoolConfigArgs {
+    pub config_review_time: u64,
     pub max_stake_amount: u64,
 }
 

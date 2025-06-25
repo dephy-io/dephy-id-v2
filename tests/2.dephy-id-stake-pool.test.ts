@@ -4,8 +4,9 @@ import {
   airdropFactory,
   createSolanaClient, createTransaction, devnet,
   generateKeyPairSigner,
-  getSignatureFromTransaction, IInstruction, isSolanaError, KeyPairSigner, lamports,
+  getSignatureFromTransaction, IInstruction, isNone, isSolanaError, KeyPairSigner, lamports,
   signTransactionMessageWithSigners,
+  some,
 } from 'gill'
 import * as splToken from 'gill/programs/token'
 
@@ -166,7 +167,10 @@ describe("dephy-id-stake-pool", () => {
         payer,
         stakeTokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
         collection: productAssetAddress,
-        maxStakeAmount: 20000_000_000n,
+        args: {
+          maxStakeAmount: 20000_000_000n,
+          configReviewTime: 3n,
+        }
       })
     ])
 
@@ -384,4 +388,83 @@ describe("dephy-id-stake-pool", () => {
     assert.equal(stakePoolAccount.data.totalAmount, 0n, 'stakePool totalAmount')
   })
 
+
+  it('announce update config', async () => {
+    await sendAndConfirmIxs([
+      await dephyIdStakePool.getAnnounceUpdateConfigInstructionAsync({
+        stakePool: stakePoolAddress,
+        authority: stakePoolAuthority,
+        payer,
+        args: {
+          configReviewTime: 3n,
+          maxStakeAmount: 10000_000_000n,
+        }
+      })
+    ])
+
+    const announcedConfigPda = await dephyIdStakePool.findAnnouncedConfigPda({ stakePool: stakePoolAddress })
+
+    const stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(rpc, stakePoolAddress)
+    assert.deepEqual(stakePoolAccount.data.announcedConfig, some(announcedConfigPda[0]))
+
+    const announcedConfig = await dephyIdStakePool.fetchAnnouncedConfigAccount(rpc, announcedConfigPda[0])
+    assert.equal(announcedConfig.data.stakePool, stakePoolAddress)
+    assert.equal(announcedConfig.data.authority, stakePoolAuthority.address)
+    assert.equal(announcedConfig.data.config.configReviewTime, 3n)
+    assert.equal(announcedConfig.data.config.maxStakeAmount, 10000_000_000n)
+  })
+
+  it('confirm should fail during config review time', async () => {
+    await assert.rejects(async () => {
+      await sendAndConfirmIxs([
+        await dephyIdStakePool.getConfirmUpdateConfigInstructionAsync({
+          stakePool: stakePoolAddress,
+          authority: stakePoolAuthority,
+          payer,
+        })
+      ], { showError: false })
+    })
+  })
+
+  it('confirm update config', async () => {
+    await Bun.sleep(4000)
+
+    await sendAndConfirmIxs([
+      await dephyIdStakePool.getConfirmUpdateConfigInstructionAsync({
+        stakePool: stakePoolAddress,
+        authority: stakePoolAuthority,
+        payer,
+      })
+    ])
+
+    const stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(rpc, stakePoolAddress)
+    assert.equal(stakePoolAccount.data.config.configReviewTime, 3n)
+    assert.equal(stakePoolAccount.data.config.maxStakeAmount, 10000_000_000n)
+  })
+
+  it('cancel update config', async () => {
+    // announce update config
+    await sendAndConfirmIxs([
+      await dephyIdStakePool.getAnnounceUpdateConfigInstructionAsync({
+        stakePool: stakePoolAddress,
+        authority: stakePoolAuthority,
+        payer,
+        args: {
+          configReviewTime: 5n,
+          maxStakeAmount: 20000_000_000n,
+        }
+      })
+    ])
+
+    await sendAndConfirmIxs([
+      await dephyIdStakePool.getCancelUpdateConfigInstructionAsync({
+        stakePool: stakePoolAddress,
+        authority: stakePoolAuthority,
+        payer,
+      })
+    ])
+
+    const stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(rpc, stakePoolAddress)
+    assert(isNone(stakePoolAccount.data.announcedConfig))
+  })
 })

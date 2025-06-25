@@ -7,3 +7,4 @@
  */
 
 export * from './stakePoolConfig';
+export * from './stakePoolConfigArgs';

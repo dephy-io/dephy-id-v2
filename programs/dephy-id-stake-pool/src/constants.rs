@@ -1,10 +1,10 @@
 use anchor_lang::prelude::constant;
 
 #[constant]
-pub const CONFIG_REVIEW_TIME: u64 = 60 * 60 * 24 * 3; // 3 days
+pub const ADMIN_SEED: &[u8] = b"ADMIN";
 
 #[constant]
-pub const ADMIN_SEED: &[u8] = b"ADMIN";
+pub const ANNOUNCED_CONFIG_SEED: &[u8] = b"ANNOUNCED_CONFIG";
 
 #[constant]
 pub const POOL_WALLET_SEED: &[u8] = b"POOL_WALLET";

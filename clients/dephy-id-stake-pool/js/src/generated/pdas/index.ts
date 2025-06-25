@@ -7,6 +7,7 @@
  */
 
 export * from './adminAccount';
+export * from './announcedConfig';
 export * from './poolWallet';
 export * from './stakeTokenAccount';
 export * from './userStakeAccount';

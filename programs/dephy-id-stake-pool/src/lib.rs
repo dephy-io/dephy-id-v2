@@ -27,21 +27,20 @@ pub mod dephy_id_stake_pool {
         process_create_stake_pool(ctx, args)
     }
 
-    // Do config later
-    // pub fn announce_update_config(
-    //     ctx: Context<AnnounceUpdateConfig>,
-    //     config: StakePoolUpdatableConfig,
-    // ) -> Result<()> {
-    //     process_announce_update_config(ctx, config)
-    // }
+    pub fn announce_update_config(
+        ctx: Context<AnnounceUpdateConfig>,
+        args: StakePoolConfigArgs,
+    ) -> Result<()> {
+        process_announce_update_config(ctx, args)
+    }
 
-    // pub fn cancel_update_config(ctx: Context<CancelUpdateConfig>) -> Result<()> {
-    //     process_cancel_update_config(ctx)
-    // }
+    pub fn cancel_update_config(ctx: Context<CancelUpdateConfig>) -> Result<()> {
+        process_cancel_update_config(ctx)
+    }
 
-    // pub fn confirm_update_config(ctx: Context<ConfirmUpdateConfig>) -> Result<()> {
-    //     process_confirm_update_config(ctx)
-    // }
+    pub fn confirm_update_config(ctx: Context<ConfirmUpdateConfig>) -> Result<()> {
+        process_confirm_update_config(ctx)
+    }
 
     // Will only support MplCore
     pub fn create_nft_stake(ctx: Context<CreateNftStake>) -> Result<()> {

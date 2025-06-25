@@ -1,3 +1,4 @@
+use crate::constants::ANNOUNCED_CONFIG_SEED;
 use crate::error::ErrorCode;
 use crate::state::{AnnouncedConfigAccount, StakePoolAccount};
 use anchor_lang::prelude::*;
@@ -8,7 +9,7 @@ pub struct CancelUpdateConfig<'info> {
     pub stake_pool: Account<'info, StakePoolAccount>,
     #[account(address = stake_pool.authority @ ErrorCode::InvalidAuthority)]
     pub authority: Signer<'info>,
-    #[account(mut, close = payer)]
+    #[account(mut, close = payer, seeds = [stake_pool.key().as_ref(), ANNOUNCED_CONFIG_SEED], bump)]
     pub announced_config: Account<'info, AnnouncedConfigAccount>,
     #[account(mut)]
     pub payer: Signer<'info>,

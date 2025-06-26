@@ -8,4 +8,5 @@
 
 export * from './dephyAccount';
 export * from './deviceAsset';
+export * from './productAccount';
 export * from './productAsset';

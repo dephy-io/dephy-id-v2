@@ -33,6 +33,9 @@
       ],
       "dephy-id-stake-pool-client": [
         "../clients/dephy-id-stake-pool/js/src"
+      ],
+      "mpl-core": [
+        "../deps/mpl-core/js/src"
       ]
     },
     "esModuleInterop": true,

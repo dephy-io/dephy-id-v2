@@ -1,8 +1,13 @@
 import { useWalletUi } from "@wallet-ui/react"
 import { Button } from "../ui/button"
 import { useCreateDevice, useCreateProduct, useDephyAccount, useInitialize, useListProducts } from "./dephy-id-data-access"
-import { address, assertIsAddress, getAddressEncoder, getBase58Encoder } from "gill"
+import { address, assertIsAddress, getAddressDecoder, getAddressEncoder, type Account, type Address } from "gill"
 import React from "react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
+import { CommonCard as Card, InputWithLabel } from "../common-ui"
+import * as dephyId from "dephy-id-client"
+import * as mplCore from "mpl-core"
+import { Link } from "react-router"
 
 export function Initialize() {
   const initialize = useInitialize()
@@ -17,13 +22,12 @@ export function Initialize() {
   }
 
   return (
-    <div>
-      <h2>Initialize</h2>
+    <Card title="Initialize">
       {dephyAccount.data ?
         <div>Already initialized</div> :
         <Button onClick={handleSubmit}>Initialize</Button>
       }
-    </div>
+    </Card>
   )
 }
 
@@ -40,15 +44,13 @@ export function CreateProduct() {
   }
 
   return (
-    <div>
-      <h2>Create Product</h2>
-
-      <form onSubmit={handleSubmit}>
-        <input type="text" name="name" placeholder="Name" />
-        <input type="text" name="uri" placeholder="URI" />
+    <form onSubmit={handleSubmit}>
+      <Card title="Create Product">
+        <InputWithLabel id="name" name="name" label="Name" />
+        <InputWithLabel id="uri" name="uri" label="URI" />
         <Button type="submit">Create</Button>
-      </form>
-    </div>
+      </Card>
+    </form>
   )
 }
 
@@ -62,14 +64,37 @@ export function ListProducts() {
   }
 
   return (
-    <div>
-      <h2>Products</h2>
+    <Card title="Products">
       <ul>
         {listProducts.data?.map((product) => (
-          <li key={product.pubkey.toString()}>{product.account.collection.toString()}</li>
+          <li key={product.pubkey.toString()}>
+            <Link to={`/dephy-id/${product.account.collection}`}>{product.account.collection}</Link>
+          </li>
         ))}
       </ul>
-    </div>
+    </Card>
+  )
+}
+
+export function ShowProduct({ product, collection }: { product: Account<dephyId.ProductAccount>, collection: Account<mplCore.CollectionAccount> }) {
+  let vendor: Address | undefined
+  if (collection.data.plugins?.appDatas?.[0].dataAuthority.type === 'UpdateAuthority') {
+    vendor = getAddressDecoder().decode(collection.data.plugins?.appDatas?.[0].data)
+  }
+
+  return (
+    <Card title="Product">
+      <p>Product Account: {product.address}</p>
+      <p>Collection: {product.data.collection}</p>
+      <p>Vendor: {product.data.vendor}</p>
+      <p>Mint Authority: {product.data.mintAuthority}</p>
+      <p>Name: {collection.data.base.name}</p>
+      <p>URI: {collection.data.base.uri}</p>
+      <p>Update Authority: {collection.data.base.updateAuthority}</p>
+      <p>Num Minted: {collection.data.base.numMinted}</p>
+      <p>Current Size: {collection.data.base.currentSize}</p>
+      <p>AppDatas 0: {vendor}</p>
+    </Card>
   )
 }
 
@@ -98,23 +123,26 @@ export function CreateDevice() {
   }
 
   return (
-    <div>
-      <h2>Create Device</h2>
-
-      <form onSubmit={handleSubmit}>
-        <select name="productAsset">
-          {listProducts.data?.map((product) => (
-            <option key={product.account.collection.toString()} value={product.account.collection.toString()}>
-              {product.account.collection.toString()}
-            </option>
-          ))}
-        </select>
-        <input type="text" name="name" placeholder="Name" />
-        <input type="text" name="uri" placeholder="URI" />
-        <input type="text" name="owner" placeholder="Owner" />
-        <input type="text" name="seed" placeholder="Seed" />
+    <form onSubmit={handleSubmit}>
+      <Card title="Create Device">
+        <Select name="productAsset">
+          <SelectTrigger>
+            <SelectValue placeholder="Select a product asset" />
+          </SelectTrigger>
+          <SelectContent className="font-mono">
+            {listProducts.data?.map((product) => (
+              <SelectItem key={product.account.collection.toString()} value={product.account.collection.toString()}>
+                {product.account.collection.toString()}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <InputWithLabel id="name" name="name" label="Name" />
+        <InputWithLabel id="uri" name="uri" label="URI" />
+        <InputWithLabel id="owner" name="owner" label="Owner" />
+        <InputWithLabel id="seed" name="seed" label="Seed" />
         <Button type="submit">Create</Button>
-      </form>
-    </div>
+      </Card>
+    </form>
   )
 }

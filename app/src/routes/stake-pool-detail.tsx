@@ -16,11 +16,13 @@ export default function StakePoolDetail() {
     return <div>Loading...</div>
   }
 
-  return (<div>
-    <h1>Stake Pool Detail</h1>
+  return (
+    <div className="flex flex-col gap-4">
+      <h1>Stake Pool Detail</h1>
 
-    <ShowStakePool stakePool={stakePool.data!} mint={mint.data!} />
-    {account && <StakeDephyId stakePoolAddress={params.address} />}
-    <ListNftStakes />
-  </div>)
+      <ShowStakePool stakePool={stakePool.data!} mint={mint.data!} />
+      {account && <StakeDephyId stakePoolAddress={params.address} />}
+      <ListNftStakes />
+    </div>
+  )
 }

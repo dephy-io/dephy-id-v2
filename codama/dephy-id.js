@@ -28,6 +28,11 @@ export const pdas = addPdasVisitor({
       variablePdaSeedNode('product_asset', publicKeyTypeNode()),
       variablePdaSeedNode('device_seed', bytesTypeNode()),
     ]
+  }, {
+    name: 'productAccount',
+    seeds: [
+      variablePdaSeedNode('product_asset', publicKeyTypeNode()),
+    ]
   }]
 })
 

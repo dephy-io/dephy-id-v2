@@ -13,7 +13,7 @@ export default function StakePoolIndex() {
   }
 
   return (
-    <div>
+    <div className="flex flex-col gap-4">
       <h1>Stake Pool</h1>
       <Initialize />
       <CreateStakePool />

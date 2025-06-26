@@ -22,7 +22,7 @@ export default function NftStakeDetail() {
   }
 
   return (
-    <div>
+    <div className="flex flex-col gap-4">
       <h1>Nft Stake Detail</h1>
 
       <ShowNftStake nftStake={nftStake.data} mint={mint.data!} />

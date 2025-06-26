@@ -56,11 +56,13 @@ export function useCreateStakePool() {
       collection,
       stakeTokenMint: stakeTokenMintAddress,
       maxStakeAmount,
+      configReviewTime,
     }: {
       stakePoolAuthority: Address
       collection: Address
       stakeTokenMint: Address
       maxStakeAmount: number
+      configReviewTime: number
     }) => {
       const stakePool = await generateKeyPairSigner()
       const stakeTokenMint = await fetchMint(client.rpc, stakeTokenMintAddress)
@@ -77,7 +79,10 @@ export function useCreateStakePool() {
           stakeTokenMint: stakeTokenMintAddress,
           payer: feePayer,
           stakeTokenProgram,
-          maxStakeAmount: maxStakeAmountInSmallestUnits,
+          args: {
+            maxStakeAmount: maxStakeAmountInSmallestUnits,
+            configReviewTime,
+          }
         })
       ])
     },

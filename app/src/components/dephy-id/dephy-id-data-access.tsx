@@ -1,21 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useWalletUiCluster, useWalletUi, useWalletAccountTransactionSendingSigner } from '@wallet-ui/react'
+import { useWalletUiCluster, useWalletUi } from '@wallet-ui/react'
 import {
-  isSolanaError, createTransaction,
-  type IInstruction,
-  signAndSendTransactionMessageWithSigners,
   getBase58Decoder,
   type Address,
   type Base58EncodedBytes,
-  getBase58Encoder,
   type ReadonlyUint8Array,
-  createNoopSigner,
   getBase64Encoder,
 } from 'gill'
 import * as dephyId from 'dephy-id-client'
+import * as mplCore from 'mpl-core'
 import { useTransactionToast } from '../use-transaction-toast'
 import { useSendAndConfirmIxs } from '~/lib/utils'
-
 
 export function useDephyAccount() {
   const { client } = useWalletUi()
@@ -114,6 +109,33 @@ export function useListProducts({ vendor }: { vendor: Address }) {
     }
   })
 }
+
+
+export function useProduct({ productAsset }: { productAsset: Address }) {
+  const { client } = useWalletUi()
+
+  return useQuery({
+    queryKey: ['dephy-id', 'product', { productAsset }],
+    queryFn: async () => {
+      const [productAddress] = await dephyId.findProductAccountPda({ productAsset })
+      return dephyId.fetchProductAccount(client.rpc, productAddress)
+    },
+  })
+}
+
+
+export function useMplCoreCollection({ collectionAsset }: { collectionAsset?: Address }) {
+  const { client } = useWalletUi()
+
+  return useQuery({
+    queryKey: ['mpl-core', 'collection', { collectionAsset }],
+    queryFn: async () => {
+      return mplCore.fetchCollectionAccount(client.rpc, collectionAsset!)
+    },
+    enabled: !!collectionAsset,
+  })
+}
+
 
 export function useCreateDevice() {
   const { cluster } = useWalletUiCluster()

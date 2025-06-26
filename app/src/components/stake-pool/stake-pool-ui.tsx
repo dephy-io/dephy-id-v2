@@ -6,7 +6,9 @@ import * as dephyIdStakePool from "dephy-id-stake-pool-client"
 import * as splToken from "gill/programs/token"
 import { useWalletUi } from "@wallet-ui/react"
 import { useTokenAccounts } from "../account/account-data-access"
-
+import { CommonCard as Card, InputWithLabel } from "../common-ui"
+import { Select, SelectContent, SelectItem, SelectValue } from "../ui/select"
+import { SelectTrigger } from "@radix-ui/react-select"
 
 export function Initialize() {
   const initialize = useInitialize()
@@ -21,13 +23,12 @@ export function Initialize() {
   }
 
   return (
-    <div>
-      <h2>Initialize</h2>
+    <Card title="Initialize">
       {adminAccount.data ?
         <div>Authority: {adminAccount.data.data.authority}</div> :
         <Button onClick={handleSubmit}>Initialize</Button>
       }
-    </div>
+    </Card>
   )
 }
 
@@ -41,13 +42,15 @@ export function CreateStakePool() {
     const collection = address(formData.get('collection') as string)
     const stakeTokenMint = address(formData.get('stakeTokenMint') as string)
     const maxStakeAmount = Number(formData.get('maxStakeAmount') as string)
+    const configReviewTime = Number(formData.get('configReviewTime') as string)
 
     console.log(stakePoolAuthority, collection, stakeTokenMint, maxStakeAmount)
     createStakePool.mutateAsync({
       stakePoolAuthority,
       collection,
       stakeTokenMint,
-      maxStakeAmount
+      maxStakeAmount,
+      configReviewTime,
     })
   }
 
@@ -56,16 +59,16 @@ export function CreateStakePool() {
   }
 
   return (
-    <div>
-      <h2>Create Stake Pool</h2>
-      <form onSubmit={handleSubmit}>
-        <input type="text" name="stakePoolAuthority" placeholder="Stake Pool Authority" />
-        <input type="text" name="collection" placeholder="Collection" />
-        <input type="text" name="stakeTokenMint" placeholder="Stake Token Mint" />
-        <input type="number" name="maxStakeAmount" placeholder="Max Stake Amount" />
+    <form onSubmit={handleSubmit}>
+      <Card title="Create Stake Pool">
+        <InputWithLabel type="text" name="stakePoolAuthority" label="Stake Pool Authority" />
+        <InputWithLabel type="text" name="collection" label="Collection" />
+        <InputWithLabel type="text" name="stakeTokenMint" label="Stake Token Mint" />
+        <InputWithLabel type="number" name="maxStakeAmount" label="Max Stake Amount (UI)" />
+        <InputWithLabel type="number" name="configReviewTime" label="Config Review Time (seconds)" />
         <Button type="submit">Create</Button>
-      </form>
-    </div>
+      </Card>
+    </form>
   )
 }
 
@@ -77,8 +80,7 @@ export function ListStakePools() {
   }
 
   return (
-    <div>
-      <h2>Stake Pools</h2>
+    <Card title="Stake Pools">
       <ul>
         {stakePools.data?.map((stakePool) => (
           <li key={stakePool.pubkey.toString()}>
@@ -86,7 +88,7 @@ export function ListStakePools() {
           </li>
         ))}
       </ul>
-    </div>
+    </Card>
   )
 }
 
@@ -98,8 +100,7 @@ export function ShowStakePool({ stakePool, mint }: {
   assertIsAddress(params.address)
 
   return (
-    <div>
-      <h2>Stake Pool</h2>
+    <Card title="Stake Pool">
       <p>{params.address}</p>
       {stakePool.data ? (
         <div>
@@ -107,11 +108,12 @@ export function ShowStakePool({ stakePool, mint }: {
           <p>Collection: {stakePool.data.config.collection}</p>
           <p>Stake Token Mint: {stakePool.data.config.stakeTokenMint}</p>
           <p>Max Stake Amount: {splToken.tokenAmountToUiAmount(stakePool.data.config.maxStakeAmount, mint.data!.decimals)}</p>
+          <p>Config Review Time: {stakePool.data.config.configReviewTime}</p>
         </div>
       ) : (
         <div>Stake Pool not found</div>
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -129,14 +131,13 @@ export function StakeDephyId({ stakePoolAddress }: { stakePoolAddress: Address }
   }
 
   return (
-    <div>
-      <h2>Stake Dephy ID</h2>
-      <form onSubmit={handleSubmit}>
-        <input type="text" name="mplCoreAsset" placeholder="MPL Core Asset" />
-        <input type="text" name="depositAuthority" placeholder="Deposit Authority" />
+    <form onSubmit={handleSubmit}>
+      <Card title="Stake Dephy ID">
+        <InputWithLabel type="text" id="mplCoreAsset" name="mplCoreAsset" label="MPL Core Asset" />
+        <InputWithLabel type="text" id="depositAuthority" name="depositAuthority" label="Deposit Authority" />
         <Button type="submit">Stake Dephy ID</Button>
-      </form>
-    </div>
+      </Card>
+    </form>
   )
 }
 
@@ -151,12 +152,11 @@ export function UnstakeDephyId({ nftStake }: { nftStake: Account<dephyIdStakePoo
   }
 
   return (
-    <div>
-      <h2>Unstake</h2>
+    <Card title="Unstake">
       <form onSubmit={handleSubmit}>
         <Button type="submit">Unstake</Button>
       </form>
-    </div>
+    </Card>
   )
 }
 
@@ -170,8 +170,7 @@ export function ListNftStakes() {
   }
 
   return (
-    <div>
-      <h2>Nft Stakes</h2>
+    <Card title="Nft Stakes">
       <ul>
         {nftStakes.data?.map((nftStake) => (
           <li key={nftStake.pubkey.toString()}>
@@ -179,7 +178,7 @@ export function ListNftStakes() {
           </li>
         ))}
       </ul>
-    </div>
+    </Card>
   )
 }
 
@@ -192,8 +191,7 @@ export function ShowNftStake({ nftStake, mint }: {
   assertIsAddress(params.address)
 
   return (
-    <div>
-      <h2>Nft Stake</h2>
+    <Card title="Nft Stake">
       <p>{params.address}</p>
       {nftStake.data ? (
         <div>
@@ -207,7 +205,7 @@ export function ShowNftStake({ nftStake, mint }: {
       ) : (
         <div>Nft Stake not found</div>
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -235,20 +233,24 @@ export function Deposit({ nftStake }: { nftStake: Account<dephyIdStakePool.NftSt
   }
 
   return (
-    <div>
-      <h2>Deposit</h2>
-      <form onSubmit={handleSubmit}>
-        <select name="userStakeTokenAccount">
-          {tokenAccounts.data?.value.map((tokenAccount) => (
-            <option key={tokenAccount.pubkey} value={tokenAccount.pubkey}>
-              {tokenAccount.pubkey}: {tokenAccount.account.data.parsed.info.tokenAmount.uiAmountString}
-            </option>
-          ))}
-        </select>
-        <input type="number" name="amount" placeholder="Amount" />
+    <form onSubmit={handleSubmit}>
+      <Card title="Deposit">
+        <Select name="userStakeTokenAccount">
+          <SelectTrigger>
+            <SelectValue placeholder="Select a token account" />
+          </SelectTrigger>
+          <SelectContent>
+            {tokenAccounts.data?.value.map((tokenAccount) => (
+              <SelectItem key={tokenAccount.pubkey} value={tokenAccount.pubkey}>
+                {tokenAccount.pubkey}: {tokenAccount.account.data.parsed.info.tokenAmount.uiAmountString}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <InputWithLabel id="amount" type="number" name="amount" label="Amount" />
         <Button type="submit">Deposit</Button>
-      </form>
-    </div>
+      </Card>
+    </form>
   )
 }
 
@@ -274,9 +276,8 @@ export function Withdraw({ userStake }: { userStake: Account<dephyIdStakePool.Us
   }
 
   return (
-    <div>
-      <h2>Withdraw</h2>
-      <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit}>
+      <Card title="Withdraw">
         <select name="userStakeTokenAccount">
           {tokenAccounts.data?.value.map((tokenAccount) => (
             <option key={tokenAccount.pubkey} value={tokenAccount.pubkey}>
@@ -284,10 +285,10 @@ export function Withdraw({ userStake }: { userStake: Account<dephyIdStakePool.Us
             </option>
           ))}
         </select>
-        <input type="number" name="amount" placeholder="Amount" />
+        <InputWithLabel label="Amount" id="amount" type="number" name="amount" />
         <Button type="submit">Withdraw</Button>
-      </form>
-    </div>
+      </Card>
+    </form>
   )
 }
 
@@ -299,8 +300,7 @@ export function ListUserStakes({ nftStakeAddress, mint }: { nftStakeAddress: Add
   }
 
   return (
-    <div>
-      <h2>User Stakes</h2>
+    <Card title="User Stakes">
       <ul>
         {userStakes.data?.map((userStake) => (
           <li key={userStake.pubkey.toString()}>
@@ -309,7 +309,7 @@ export function ListUserStakes({ nftStakeAddress, mint }: { nftStakeAddress: Add
           </li>
         ))}
       </ul>
-    </div>
+    </Card>
   )
 }
 
@@ -320,8 +320,7 @@ export function ShowUserStake({ userStake, mint }: {
   assertIsAddress(params.address)
 
   return (
-    <div>
-      <h2>User Stake</h2>
+    <Card title="User Stake">
       <p>{params.address}</p>
       {userStake.data ? (
         <div>
@@ -331,7 +330,7 @@ export function ShowUserStake({ userStake, mint }: {
       ) : (
         <div>User Stake not found</div>
       )}
-    </div>
+    </Card>
   )
 }
 
@@ -344,11 +343,10 @@ export function CloseNftStake({ nftStake }: { nftStake: Account<dephyIdStakePool
   }
 
   return (
-    <div>
-      <h2>Close Nft Stake</h2>
+    <Card title="Close Nft Stake">
       <form onSubmit={handleSubmit}>
         <Button type="submit">Close Nft Stake</Button>
       </form>
-    </div>
+    </Card>
   )
 }

@@ -20,10 +20,11 @@ export default function UserStakeDetail() {
     return <div>User Stake not found</div>
   }
 
-  return (<div>
-    <h1>User Stake Detail</h1>
-    <p>{params.address}</p>
-    <ShowUserStake userStake={userStake.data} mint={mint.data!} />
-    <Withdraw userStake={userStake.data} />
-  </div>)
+  return (
+    <div className="flex flex-col gap-4">
+      <h1>User Stake Detail</h1>
+      <ShowUserStake userStake={userStake.data} mint={mint.data!} />
+      <Withdraw userStake={userStake.data} />
+    </div>
+  )
 }

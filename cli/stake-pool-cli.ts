@@ -53,12 +53,14 @@ cli
   .requiredOption('--stake-token-mint <address>', 'Address of the stake token mint')
   .requiredOption('--collection <address>', 'Address of the collection')
   .option('--max-stake-amount <amount>', 'Maximum stake amount (ui amount)', '20000')
+  .option('--config-review-time <seconds>', 'Config review time in seconds', '86400')
   .action(async (options) => {
     const authority = options.authority ? await loadKeypairSignerFromFile(options.authority) : ctx.feePayer;
     const stakePoolAuthority = options.stakePoolAuthority ? address(options.stakePoolAuthority) : authority.address
     const collection = address(options.collection)
     const stakeTokenMint = address(options.stakeTokenMint)
     const maxStakeAmount = Number(options.maxStakeAmount)
+    const configReviewTime = Number(options.configReviewTime)
     const stakePoolSigner = await generateKeyPairSigner()
 
     const adminAddress = (await dephyIdStakePool.findAdminAccountPda())[0]
@@ -79,7 +81,10 @@ cli
         collection,
         stakeTokenMint,
         payer: ctx.feePayer,
-        maxStakeAmount: maxStakeAmountInSmallestUnits,
+        args: {
+          maxStakeAmount: maxStakeAmountInSmallestUnits,
+          configReviewTime,
+        },
         stakeTokenProgram: stakeTokenMintAccount.programAddress,
       }),
     ])

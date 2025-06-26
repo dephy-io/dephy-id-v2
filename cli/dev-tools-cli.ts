@@ -168,6 +168,7 @@ cli.command('stake-nfts')
   .requiredOption('--stake-pool <address>', 'Address of the stake pool')
   .requiredOption('--csv <csvFile>', 'CSV file for all devices and owners')
   .option('--amount <amount>', 'Amount of tokens for each deposit (ui amount)')
+  .option('--check', 'Check the owner and if the devices are already staked', false)
   .action(async (options) => {
     const { keypair, url: urlOrMoniker } = options
 
@@ -209,38 +210,52 @@ cli.command('stake-nfts')
         deviceSeed,
       })
 
-      if (owner != ctx.feePayer.address) {
-        console.log('skip', deviceAssetPda[0])
-        i++
-      } else {
-        const nftStakeSigner = await generateKeyPairSigner()
+      if (options.check) {
+        const asset = await mplCore.fetchAssetAccount(ctx.rpc, deviceAssetPda[0])
 
+        if (asset.data.base.owner != ctx.feePayer.address) {
+          console.log('skip not owner', deviceAssetPda[0], asset.data.base.owner)
+          continue
+        }
+
+        if (asset.data.plugins.freezeDelegate?.frozen) {
+          console.log('skip frozen', deviceAssetPda[0])
+          continue
+        }
+      } else {
+        if (owner != ctx.feePayer.address) {
+          console.log('skip', deviceAssetPda[0])
+          continue
+        }
+      }
+
+      const nftStakeSigner = await generateKeyPairSigner()
+
+      ixs.push(
+        await dephyIdStakePool.getCreateNftStakeInstructionAsync({
+          stakePool: stakePoolAddress,
+          nftStake: nftStakeSigner,
+          stakeAuthority: ctx.feePayer,
+          depositAuthority: ctx.feePayer.address,
+          mplCoreAsset: deviceAssetPda[0],
+          mplCoreCollection: productAsset,
+          payer: ctx.feePayer,
+        })
+      )
+
+      if (amount) {
         ixs.push(
-          await dephyIdStakePool.getCreateNftStakeInstructionAsync({
+          await dephyIdStakePool.getDepositTokenInstructionAsync({
+            nftStake: nftStakeSigner.address,
             stakePool: stakePoolAddress,
-            nftStake: nftStakeSigner,
-            stakeAuthority: ctx.feePayer,
-            depositAuthority: ctx.feePayer.address,
-            mplCoreAsset: deviceAssetPda[0],
-            mplCoreCollection: productAsset,
+            user: ctx.feePayer,
+            stakeTokenMint: stakeTokenMint.address,
+            stakeTokenAccount: stakePool.data.stakeTokenAccount,
+            userStakeTokenAccount: userStakeTokenAccount,
             payer: ctx.feePayer,
+            amount,
           })
         )
-
-        if (amount) {
-          ixs.push(
-            await dephyIdStakePool.getDepositTokenInstructionAsync({
-              nftStake: nftStakeSigner.address,
-              stakePool: stakePoolAddress,
-              user: ctx.feePayer,
-              stakeTokenMint: stakeTokenMint.address,
-              stakeTokenAccount: stakePool.data.stakeTokenAccount,
-              userStakeTokenAccount: userStakeTokenAccount,
-              payer: ctx.feePayer,
-              amount,
-            })
-          )
-        }
       }
 
       if (ixs.length >= 6) {

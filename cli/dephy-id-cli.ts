@@ -257,4 +257,27 @@ cli
   })
 
 
+cli
+  .command('search-assets-das')
+  .description('Search assets using DAS')
+  .option('--owner <owner>', 'owner address')
+  .option('--collection <collection>', 'collection address')
+  .addOption(new Option('--frozen <frozen>', 'frozen status').choices(['true', 'false']))
+  .addOption(new Option('-f, --format <format>', 'output format, "js" | "json", default to "js"').choices(['js', 'json']).default('js'))
+  .action(async (options, cmd) => {
+    const { url } = cmd.optsWithGlobals()
+    const umi = createUmi(url).use(dasApi())
+
+    const owner = options.owner ? publicKey(options.owner) : undefined
+    const grouping = options.collection ? ['collection', publicKey(options.collection)] as [string, string] : undefined
+    const frozen = options.frozen === 'true' ? true : options.frozen === 'false' ? false : undefined
+
+    const assets = await das.searchAssets(umi, {
+      owner,
+      grouping,
+      frozen,
+    })
+    logWithFormat(assets, options.format)
+  })
+
 await cli.parseAsync();

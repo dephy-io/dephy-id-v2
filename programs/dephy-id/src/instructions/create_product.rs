@@ -16,7 +16,10 @@ pub struct CreateProduct<'info> {
     /// This will be created by mpl-core as a collection
     #[account(mut, seeds = [PRODUCT_SEED_PREFIX, vendor.key().as_ref(), args.name.as_ref()], bump)]
     pub product_asset: SystemAccount<'info>,
-    #[account(init, payer = payer, space = 8 + ProductAccount::INIT_SPACE, seeds = [product_asset.key().as_ref()], bump)]
+    #[account(init, payer = payer,
+        space = ProductAccount::DISCRIMINATOR.len() + ProductAccount::INIT_SPACE,
+        seeds = [product_asset.key().as_ref()], bump
+    )]
     pub product_account: Account<'info, ProductAccount>,
     #[account(mut)]
     pub payer: Signer<'info>,

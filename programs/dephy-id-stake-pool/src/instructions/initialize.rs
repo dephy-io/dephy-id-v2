@@ -3,7 +3,10 @@ use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
-    #[account(init, payer = payer, space = 8 + AdminAccount::INIT_SPACE, seeds = [ADMIN_SEED], bump)]
+    #[account(init, payer = payer,
+        space = AdminAccount::DISCRIMINATOR.len() + AdminAccount::INIT_SPACE,
+        seeds = [ADMIN_SEED], bump
+    )]
     pub admin: Account<'info, AdminAccount>,
     pub authority: Signer<'info>,
     #[account(mut)]

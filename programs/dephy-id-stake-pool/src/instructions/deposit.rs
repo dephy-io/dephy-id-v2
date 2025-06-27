@@ -18,7 +18,7 @@ pub struct Deposit<'info> {
     pub user: Signer<'info>,
     #[account(
         init_if_needed, payer = payer,
-        space = 8 + UserStakeAccount::INIT_SPACE,
+        space = UserStakeAccount::DISCRIMINATOR.len() + UserStakeAccount::INIT_SPACE,
         seeds = [nft_stake.key().as_ref(), USER_STAKE_SEED, user.key.as_ref()], bump
     )]
     pub user_stake_account: Account<'info, UserStakeAccount>,

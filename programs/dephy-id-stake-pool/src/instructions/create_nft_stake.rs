@@ -9,7 +9,9 @@ use anchor_lang::prelude::*;
 pub struct CreateNftStake<'info> {
     #[account(mut)]
     pub stake_pool: Account<'info, StakePoolAccount>,
-    #[account(init, payer = payer, space = 8 + NftStakeAccount::INIT_SPACE)]
+    #[account(init, payer = payer,
+        space = NftStakeAccount::DISCRIMINATOR.len() + NftStakeAccount::INIT_SPACE
+    )]
     pub nft_stake: Account<'info, NftStakeAccount>,
     pub stake_authority: Signer<'info>,
     /// CHECK:

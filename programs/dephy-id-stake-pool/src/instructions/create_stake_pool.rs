@@ -10,7 +10,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 pub struct CreateStakePool<'info> {
     #[account(seeds = [ADMIN_SEED], bump)]
     pub admin: Account<'info, AdminAccount>,
-    #[account(init, payer = payer, space = 8 + StakePoolAccount::INIT_SPACE)]
+    #[account(init, payer = payer, space = StakePoolAccount::DISCRIMINATOR.len() + StakePoolAccount::INIT_SPACE)]
     pub stake_pool: Account<'info, StakePoolAccount>,
     #[account(address = admin.authority @ ErrorCode::InvalidAuthority)]
     pub authority: Signer<'info>,

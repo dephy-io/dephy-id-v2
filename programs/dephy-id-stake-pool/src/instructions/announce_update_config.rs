@@ -11,7 +11,10 @@ pub struct AnnounceUpdateConfig<'info> {
     pub stake_pool: Account<'info, StakePoolAccount>,
     #[account(address = stake_pool.authority @ ErrorCode::InvalidAuthority)]
     pub authority: Signer<'info>,
-    #[account(init, payer = payer, space = 8 + AnnouncedConfigAccount::INIT_SPACE, seeds = [stake_pool.key().as_ref(), ANNOUNCED_CONFIG_SEED], bump)]
+    #[account(init, payer = payer,
+        space = AnnouncedConfigAccount::DISCRIMINATOR.len() + AnnouncedConfigAccount::INIT_SPACE,
+        seeds = [stake_pool.key().as_ref(), ANNOUNCED_CONFIG_SEED], bump,
+    )]
     pub announced_config: Account<'info, AnnouncedConfigAccount>,
     #[account(mut)]
     pub payer: Signer<'info>,

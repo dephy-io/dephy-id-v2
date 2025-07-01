@@ -19,7 +19,15 @@ export default {
           formatCode: true,
           anchorTraits: false,
           traitOptions: {
-            scalarEnumDefaults: ['Copy'],
+            baseDefaults: [
+              'anchor_lang::prelude::AnchorSerialize',
+              'anchor_lang::prelude::AnchorDeserialize',
+              'Clone',
+              'Debug',
+              'Eq',
+              'PartialEq',
+            ],
+            scalarEnumDefaults: ['Copy', 'num_derive::FromPrimitive'],
           },
         }
       ]

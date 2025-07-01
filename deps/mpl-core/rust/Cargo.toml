@@ -10,8 +10,8 @@ serde = ["dep:serde", "dep:serde_with"]
 test-sbf = []
 
 [dependencies]
-solana-program = { workspace = true }
-borsh = { workspace = true }
+borsh = "0.10"
+anchor-lang = { workspace = true }
 thiserror = { workspace = true }
 serde = { workspace = true, features = ["derive"], optional = true }
 serde_with = { workspace = true, optional = true }
@@ -21,3 +21,13 @@ modular-bitfield = { workspace = true }
 rmp-serde = { workspace = true }
 num-derive = { workspace = true }
 num-traits = { workspace = true }
+
+solana-account-info = { workspace = true }
+solana-cpi = { workspace = true }
+solana-decode-error = { workspace = true }
+solana-instruction = { workspace = true }
+solana-msg = { workspace = true }
+solana-program = { workspace = true }
+solana-program-entrypoint = { workspace = true }
+solana-program-error = { workspace = true }
+solana-pubkey = { workspace = true }

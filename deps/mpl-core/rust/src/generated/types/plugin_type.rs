@@ -5,11 +5,11 @@
 //! <https://github.com/codama-idl/codama>
 //!
 
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
+use anchor_lang::prelude::AnchorDeserialize;
+use anchor_lang::prelude::AnchorSerialize;
+use num_derive::FromPrimitive;
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq, Copy)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq, Copy, FromPrimitive)]
 pub enum PluginType {
     Royalties,
     FreezeDelegate,
@@ -26,4 +26,6 @@ pub enum PluginType {
     ImmutableMetadata,
     VerifiedCreators,
     Autograph,
+    BubblegumV2,
+    FreezeExecute,
 }

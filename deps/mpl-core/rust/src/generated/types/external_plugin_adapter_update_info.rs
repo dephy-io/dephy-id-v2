@@ -10,11 +10,10 @@ use crate::generated::types::LifecycleHookUpdateInfo;
 use crate::generated::types::LinkedAppDataUpdateInfo;
 use crate::generated::types::LinkedLifecycleHookUpdateInfo;
 use crate::generated::types::OracleUpdateInfo;
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
+use anchor_lang::prelude::AnchorDeserialize;
+use anchor_lang::prelude::AnchorSerialize;
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub enum ExternalPluginAdapterUpdateInfo {
     LifecycleHook(LifecycleHookUpdateInfo),
     Oracle(OracleUpdateInfo),

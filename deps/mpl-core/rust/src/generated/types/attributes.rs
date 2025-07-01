@@ -6,11 +6,10 @@
 //!
 
 use crate::generated::types::Attribute;
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
+use anchor_lang::prelude::AnchorDeserialize;
+use anchor_lang::prelude::AnchorSerialize;
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Attributes {
     pub attribute_list: Vec<Attribute>,
 }

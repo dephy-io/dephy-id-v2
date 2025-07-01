@@ -8,9 +8,11 @@
 use crate::generated::types::AddBlocker;
 use crate::generated::types::Attributes;
 use crate::generated::types::Autograph;
+use crate::generated::types::BubblegumV2;
 use crate::generated::types::BurnDelegate;
 use crate::generated::types::Edition;
 use crate::generated::types::FreezeDelegate;
+use crate::generated::types::FreezeExecute;
 use crate::generated::types::ImmutableMetadata;
 use crate::generated::types::MasterEdition;
 use crate::generated::types::PermanentBurnDelegate;
@@ -20,11 +22,10 @@ use crate::generated::types::Royalties;
 use crate::generated::types::TransferDelegate;
 use crate::generated::types::UpdateDelegate;
 use crate::generated::types::VerifiedCreators;
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
+use anchor_lang::prelude::AnchorDeserialize;
+use anchor_lang::prelude::AnchorSerialize;
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub enum Plugin {
     Royalties(Royalties),
     FreezeDelegate(FreezeDelegate),
@@ -41,4 +42,6 @@ pub enum Plugin {
     ImmutableMetadata(ImmutableMetadata),
     VerifiedCreators(VerifiedCreators),
     Autograph(Autograph),
+    BubblegumV2(BubblegumV2),
+    FreezeExecute(FreezeExecute),
 }

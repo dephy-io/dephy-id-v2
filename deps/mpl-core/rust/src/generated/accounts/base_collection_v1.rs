@@ -6,12 +6,11 @@
 //!
 
 use crate::generated::types::Key;
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
-use solana_program::pubkey::Pubkey;
+use anchor_lang::prelude::AnchorDeserialize;
+use anchor_lang::prelude::AnchorSerialize;
+use solana_pubkey::Pubkey;
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct BaseCollectionV1 {
     pub key: Key,
     #[cfg_attr(
@@ -33,12 +32,10 @@ impl BaseCollectionV1 {
     }
 }
 
-impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for BaseCollectionV1 {
+impl<'a> TryFrom<&solana_account_info::AccountInfo<'a>> for BaseCollectionV1 {
     type Error = std::io::Error;
 
-    fn try_from(
-        account_info: &solana_program::account_info::AccountInfo<'a>,
-    ) -> Result<Self, Self::Error> {
+    fn try_from(account_info: &solana_account_info::AccountInfo<'a>) -> Result<Self, Self::Error> {
         let mut data: &[u8] = &(*account_info.data).borrow();
         Self::deserialize(&mut data)
     }
@@ -47,7 +44,7 @@ impl<'a> TryFrom<&solana_program::account_info::AccountInfo<'a>> for BaseCollect
 #[cfg(feature = "fetch")]
 pub fn fetch_base_collection_v1(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &solana_program::pubkey::Pubkey,
+    address: &solana_pubkey::Pubkey,
 ) -> Result<crate::shared::DecodedAccount<BaseCollectionV1>, std::io::Error> {
     let accounts = fetch_all_base_collection_v1(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -56,7 +53,7 @@ pub fn fetch_base_collection_v1(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_base_collection_v1(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[solana_program::pubkey::Pubkey],
+    addresses: &[solana_pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::DecodedAccount<BaseCollectionV1>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)
@@ -81,7 +78,7 @@ pub fn fetch_all_base_collection_v1(
 #[cfg(feature = "fetch")]
 pub fn fetch_maybe_base_collection_v1(
     rpc: &solana_client::rpc_client::RpcClient,
-    address: &solana_program::pubkey::Pubkey,
+    address: &solana_pubkey::Pubkey,
 ) -> Result<crate::shared::MaybeAccount<BaseCollectionV1>, std::io::Error> {
     let accounts = fetch_all_maybe_base_collection_v1(rpc, &[*address])?;
     Ok(accounts[0].clone())
@@ -90,7 +87,7 @@ pub fn fetch_maybe_base_collection_v1(
 #[cfg(feature = "fetch")]
 pub fn fetch_all_maybe_base_collection_v1(
     rpc: &solana_client::rpc_client::RpcClient,
-    addresses: &[solana_program::pubkey::Pubkey],
+    addresses: &[solana_pubkey::Pubkey],
 ) -> Result<Vec<crate::shared::MaybeAccount<BaseCollectionV1>>, std::io::Error> {
     let accounts = rpc
         .get_multiple_accounts(addresses)

@@ -7,27 +7,27 @@
 
 use crate::generated::types::ExternalPluginAdapterInitInfo;
 use crate::generated::types::PluginAuthorityPair;
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
+use anchor_lang::prelude::AnchorDeserialize;
+use anchor_lang::prelude::AnchorSerialize;
 
 /// Accounts.
 #[derive(Debug)]
 pub struct CreateCollectionV2 {
     /// The address of the new asset
-    pub collection: solana_program::pubkey::Pubkey,
+    pub collection: solana_pubkey::Pubkey,
     /// The authority of the new asset
-    pub update_authority: Option<solana_program::pubkey::Pubkey>,
+    pub update_authority: Option<solana_pubkey::Pubkey>,
     /// The account paying for the storage fees
-    pub payer: solana_program::pubkey::Pubkey,
+    pub payer: solana_pubkey::Pubkey,
     /// The system program
-    pub system_program: solana_program::pubkey::Pubkey,
+    pub system_program: solana_pubkey::Pubkey,
 }
 
 impl CreateCollectionV2 {
     pub fn instruction(
         &self,
         args: CreateCollectionV2InstructionArgs,
-    ) -> solana_program::instruction::Instruction {
+    ) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
     #[allow(clippy::arithmetic_side_effects)]
@@ -35,28 +35,23 @@ impl CreateCollectionV2 {
     pub fn instruction_with_remaining_accounts(
         &self,
         args: CreateCollectionV2InstructionArgs,
-        remaining_accounts: &[solana_program::instruction::AccountMeta],
-    ) -> solana_program::instruction::Instruction {
+        remaining_accounts: &[solana_instruction::AccountMeta],
+    ) -> solana_instruction::Instruction {
         let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.collection,
-            true,
-        ));
+        accounts.push(solana_instruction::AccountMeta::new(self.collection, true));
         if let Some(update_authority) = self.update_authority {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 update_authority,
                 false,
             ));
         } else {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 crate::MPL_CORE_ID,
                 false,
             ));
         }
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.payer, true,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        accounts.push(solana_instruction::AccountMeta::new(self.payer, true));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.system_program,
             false,
         ));
@@ -65,7 +60,7 @@ impl CreateCollectionV2 {
         let mut args = borsh::to_vec(&args).unwrap();
         data.append(&mut args);
 
-        solana_program::instruction::Instruction {
+        solana_instruction::Instruction {
             program_id: crate::MPL_CORE_ID,
             accounts,
             data,
@@ -73,8 +68,7 @@ impl CreateCollectionV2 {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct CreateCollectionV2InstructionData {
     discriminator: u8,
 }
@@ -91,8 +85,7 @@ impl Default for CreateCollectionV2InstructionData {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct CreateCollectionV2InstructionArgs {
     pub name: String,
     pub uri: String,
@@ -110,15 +103,15 @@ pub struct CreateCollectionV2InstructionArgs {
 ///   3. `[optional]` system_program (default to `11111111111111111111111111111111`)
 #[derive(Clone, Debug, Default)]
 pub struct CreateCollectionV2Builder {
-    collection: Option<solana_program::pubkey::Pubkey>,
-    update_authority: Option<solana_program::pubkey::Pubkey>,
-    payer: Option<solana_program::pubkey::Pubkey>,
-    system_program: Option<solana_program::pubkey::Pubkey>,
+    collection: Option<solana_pubkey::Pubkey>,
+    update_authority: Option<solana_pubkey::Pubkey>,
+    payer: Option<solana_pubkey::Pubkey>,
+    system_program: Option<solana_pubkey::Pubkey>,
     name: Option<String>,
     uri: Option<String>,
     plugins: Option<Vec<PluginAuthorityPair>>,
     external_plugin_adapters: Option<Vec<ExternalPluginAdapterInitInfo>>,
-    __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
+    __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
 impl CreateCollectionV2Builder {
@@ -127,7 +120,7 @@ impl CreateCollectionV2Builder {
     }
     /// The address of the new asset
     #[inline(always)]
-    pub fn collection(&mut self, collection: solana_program::pubkey::Pubkey) -> &mut Self {
+    pub fn collection(&mut self, collection: solana_pubkey::Pubkey) -> &mut Self {
         self.collection = Some(collection);
         self
     }
@@ -136,21 +129,21 @@ impl CreateCollectionV2Builder {
     #[inline(always)]
     pub fn update_authority(
         &mut self,
-        update_authority: Option<solana_program::pubkey::Pubkey>,
+        update_authority: Option<solana_pubkey::Pubkey>,
     ) -> &mut Self {
         self.update_authority = update_authority;
         self
     }
     /// The account paying for the storage fees
     #[inline(always)]
-    pub fn payer(&mut self, payer: solana_program::pubkey::Pubkey) -> &mut Self {
+    pub fn payer(&mut self, payer: solana_pubkey::Pubkey) -> &mut Self {
         self.payer = Some(payer);
         self
     }
     /// `[optional account, default to '11111111111111111111111111111111']`
     /// The system program
     #[inline(always)]
-    pub fn system_program(&mut self, system_program: solana_program::pubkey::Pubkey) -> &mut Self {
+    pub fn system_program(&mut self, system_program: solana_pubkey::Pubkey) -> &mut Self {
         self.system_program = Some(system_program);
         self
     }
@@ -181,10 +174,7 @@ impl CreateCollectionV2Builder {
     }
     /// Add an additional account to the instruction.
     #[inline(always)]
-    pub fn add_remaining_account(
-        &mut self,
-        account: solana_program::instruction::AccountMeta,
-    ) -> &mut Self {
+    pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
         self.__remaining_accounts.push(account);
         self
     }
@@ -192,20 +182,20 @@ impl CreateCollectionV2Builder {
     #[inline(always)]
     pub fn add_remaining_accounts(
         &mut self,
-        accounts: &[solana_program::instruction::AccountMeta],
+        accounts: &[solana_instruction::AccountMeta],
     ) -> &mut Self {
         self.__remaining_accounts.extend_from_slice(accounts);
         self
     }
     #[allow(clippy::clone_on_copy)]
-    pub fn instruction(&self) -> solana_program::instruction::Instruction {
+    pub fn instruction(&self) -> solana_instruction::Instruction {
         let accounts = CreateCollectionV2 {
             collection: self.collection.expect("collection is not set"),
             update_authority: self.update_authority,
             payer: self.payer.expect("payer is not set"),
             system_program: self
                 .system_program
-                .unwrap_or(solana_program::pubkey!("11111111111111111111111111111111")),
+                .unwrap_or(solana_pubkey::pubkey!("11111111111111111111111111111111")),
         };
         let args = CreateCollectionV2InstructionArgs {
             name: self.name.clone().expect("name is not set"),
@@ -221,34 +211,34 @@ impl CreateCollectionV2Builder {
 /// `create_collection_v2` CPI accounts.
 pub struct CreateCollectionV2CpiAccounts<'a, 'b> {
     /// The address of the new asset
-    pub collection: &'b solana_program::account_info::AccountInfo<'a>,
+    pub collection: &'b solana_account_info::AccountInfo<'a>,
     /// The authority of the new asset
-    pub update_authority: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    pub update_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// The account paying for the storage fees
-    pub payer: &'b solana_program::account_info::AccountInfo<'a>,
+    pub payer: &'b solana_account_info::AccountInfo<'a>,
     /// The system program
-    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
+    pub system_program: &'b solana_account_info::AccountInfo<'a>,
 }
 
 /// `create_collection_v2` CPI instruction.
 pub struct CreateCollectionV2Cpi<'a, 'b> {
     /// The program to invoke.
-    pub __program: &'b solana_program::account_info::AccountInfo<'a>,
+    pub __program: &'b solana_account_info::AccountInfo<'a>,
     /// The address of the new asset
-    pub collection: &'b solana_program::account_info::AccountInfo<'a>,
+    pub collection: &'b solana_account_info::AccountInfo<'a>,
     /// The authority of the new asset
-    pub update_authority: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    pub update_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// The account paying for the storage fees
-    pub payer: &'b solana_program::account_info::AccountInfo<'a>,
+    pub payer: &'b solana_account_info::AccountInfo<'a>,
     /// The system program
-    pub system_program: &'b solana_program::account_info::AccountInfo<'a>,
+    pub system_program: &'b solana_account_info::AccountInfo<'a>,
     /// The arguments for the instruction.
     pub __args: CreateCollectionV2InstructionArgs,
 }
 
 impl<'a, 'b> CreateCollectionV2Cpi<'a, 'b> {
     pub fn new(
-        program: &'b solana_program::account_info::AccountInfo<'a>,
+        program: &'b solana_account_info::AccountInfo<'a>,
         accounts: CreateCollectionV2CpiAccounts<'a, 'b>,
         args: CreateCollectionV2InstructionArgs,
     ) -> Self {
@@ -262,25 +252,21 @@ impl<'a, 'b> CreateCollectionV2Cpi<'a, 'b> {
         }
     }
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program::entrypoint::ProgramResult {
+    pub fn invoke(&self) -> solana_program_entrypoint::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], &[])
     }
     #[inline(always)]
     pub fn invoke_with_remaining_accounts(
         &self,
-        remaining_accounts: &[(
-            &'b solana_program::account_info::AccountInfo<'a>,
-            bool,
-            bool,
-        )],
-    ) -> solana_program::entrypoint::ProgramResult {
+        remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
+    ) -> solana_program_entrypoint::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], remaining_accounts)
     }
     #[inline(always)]
     pub fn invoke_signed(
         &self,
         signers_seeds: &[&[&[u8]]],
-    ) -> solana_program::entrypoint::ProgramResult {
+    ) -> solana_program_entrypoint::ProgramResult {
         self.invoke_signed_with_remaining_accounts(signers_seeds, &[])
     }
     #[allow(clippy::arithmetic_side_effects)]
@@ -289,38 +275,31 @@ impl<'a, 'b> CreateCollectionV2Cpi<'a, 'b> {
     pub fn invoke_signed_with_remaining_accounts(
         &self,
         signers_seeds: &[&[&[u8]]],
-        remaining_accounts: &[(
-            &'b solana_program::account_info::AccountInfo<'a>,
-            bool,
-            bool,
-        )],
-    ) -> solana_program::entrypoint::ProgramResult {
+        remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
+    ) -> solana_program_entrypoint::ProgramResult {
         let mut accounts = Vec::with_capacity(4 + remaining_accounts.len());
-        accounts.push(solana_program::instruction::AccountMeta::new(
+        accounts.push(solana_instruction::AccountMeta::new(
             *self.collection.key,
             true,
         ));
         if let Some(update_authority) = self.update_authority {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 *update_authority.key,
                 false,
             ));
         } else {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 crate::MPL_CORE_ID,
                 false,
             ));
         }
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.payer.key,
-            true,
-        ));
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        accounts.push(solana_instruction::AccountMeta::new(*self.payer.key, true));
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.system_program.key,
             false,
         ));
         remaining_accounts.iter().for_each(|remaining_account| {
-            accounts.push(solana_program::instruction::AccountMeta {
+            accounts.push(solana_instruction::AccountMeta {
                 pubkey: *remaining_account.0.key,
                 is_signer: remaining_account.1,
                 is_writable: remaining_account.2,
@@ -330,7 +309,7 @@ impl<'a, 'b> CreateCollectionV2Cpi<'a, 'b> {
         let mut args = borsh::to_vec(&self.__args).unwrap();
         data.append(&mut args);
 
-        let instruction = solana_program::instruction::Instruction {
+        let instruction = solana_instruction::Instruction {
             program_id: crate::MPL_CORE_ID,
             accounts,
             data,
@@ -348,9 +327,9 @@ impl<'a, 'b> CreateCollectionV2Cpi<'a, 'b> {
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
 
         if signers_seeds.is_empty() {
-            solana_program::program::invoke(&instruction, &account_infos)
+            solana_cpi::invoke(&instruction, &account_infos)
         } else {
-            solana_program::program::invoke_signed(&instruction, &account_infos, signers_seeds)
+            solana_cpi::invoke_signed(&instruction, &account_infos, signers_seeds)
         }
     }
 }
@@ -369,7 +348,7 @@ pub struct CreateCollectionV2CpiBuilder<'a, 'b> {
 }
 
 impl<'a, 'b> CreateCollectionV2CpiBuilder<'a, 'b> {
-    pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
+    pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
         let instruction = Box::new(CreateCollectionV2CpiBuilderInstruction {
             __program: program,
             collection: None,
@@ -388,7 +367,7 @@ impl<'a, 'b> CreateCollectionV2CpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn collection(
         &mut self,
-        collection: &'b solana_program::account_info::AccountInfo<'a>,
+        collection: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.collection = Some(collection);
         self
@@ -398,14 +377,14 @@ impl<'a, 'b> CreateCollectionV2CpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn update_authority(
         &mut self,
-        update_authority: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+        update_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     ) -> &mut Self {
         self.instruction.update_authority = update_authority;
         self
     }
     /// The account paying for the storage fees
     #[inline(always)]
-    pub fn payer(&mut self, payer: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
+    pub fn payer(&mut self, payer: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.payer = Some(payer);
         self
     }
@@ -413,7 +392,7 @@ impl<'a, 'b> CreateCollectionV2CpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn system_program(
         &mut self,
-        system_program: &'b solana_program::account_info::AccountInfo<'a>,
+        system_program: &'b solana_account_info::AccountInfo<'a>,
     ) -> &mut Self {
         self.instruction.system_program = Some(system_program);
         self
@@ -447,7 +426,7 @@ impl<'a, 'b> CreateCollectionV2CpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn add_remaining_account(
         &mut self,
-        account: &'b solana_program::account_info::AccountInfo<'a>,
+        account: &'b solana_account_info::AccountInfo<'a>,
         is_writable: bool,
         is_signer: bool,
     ) -> &mut Self {
@@ -463,11 +442,7 @@ impl<'a, 'b> CreateCollectionV2CpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn add_remaining_accounts(
         &mut self,
-        accounts: &[(
-            &'b solana_program::account_info::AccountInfo<'a>,
-            bool,
-            bool,
-        )],
+        accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> &mut Self {
         self.instruction
             .__remaining_accounts
@@ -475,7 +450,7 @@ impl<'a, 'b> CreateCollectionV2CpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program::entrypoint::ProgramResult {
+    pub fn invoke(&self) -> solana_program_entrypoint::ProgramResult {
         self.invoke_signed(&[])
     }
     #[allow(clippy::clone_on_copy)]
@@ -483,7 +458,7 @@ impl<'a, 'b> CreateCollectionV2CpiBuilder<'a, 'b> {
     pub fn invoke_signed(
         &self,
         signers_seeds: &[&[&[u8]]],
-    ) -> solana_program::entrypoint::ProgramResult {
+    ) -> solana_program_entrypoint::ProgramResult {
         let args = CreateCollectionV2InstructionArgs {
             name: self.instruction.name.clone().expect("name is not set"),
             uri: self.instruction.uri.clone().expect("uri is not set"),
@@ -514,19 +489,15 @@ impl<'a, 'b> CreateCollectionV2CpiBuilder<'a, 'b> {
 
 #[derive(Clone, Debug)]
 struct CreateCollectionV2CpiBuilderInstruction<'a, 'b> {
-    __program: &'b solana_program::account_info::AccountInfo<'a>,
-    collection: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    update_authority: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    payer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    __program: &'b solana_account_info::AccountInfo<'a>,
+    collection: Option<&'b solana_account_info::AccountInfo<'a>>,
+    update_authority: Option<&'b solana_account_info::AccountInfo<'a>>,
+    payer: Option<&'b solana_account_info::AccountInfo<'a>>,
+    system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     name: Option<String>,
     uri: Option<String>,
     plugins: Option<Vec<PluginAuthorityPair>>,
     external_plugin_adapters: Option<Vec<ExternalPluginAdapterInitInfo>>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
-    __remaining_accounts: Vec<(
-        &'b solana_program::account_info::AccountInfo<'a>,
-        bool,
-        bool,
-    )>,
+    __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

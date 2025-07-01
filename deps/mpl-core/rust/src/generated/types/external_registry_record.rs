@@ -9,11 +9,10 @@ use crate::generated::types::ExternalCheckResult;
 use crate::generated::types::ExternalPluginAdapterType;
 use crate::generated::types::HookableLifecycleEvent;
 use crate::generated::types::PluginAuthority;
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
+use anchor_lang::prelude::AnchorDeserialize;
+use anchor_lang::prelude::AnchorSerialize;
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct ExternalRegistryRecord {
     pub plugin_type: ExternalPluginAdapterType,
     pub authority: PluginAuthority,

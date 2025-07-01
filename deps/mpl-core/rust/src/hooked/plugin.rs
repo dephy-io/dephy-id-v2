@@ -1,4 +1,5 @@
 use borsh::BorshDeserialize as CrateDeserialize;
+use num_traits::FromPrimitive;
 use solana_program::{account_info::AccountInfo, pubkey::Pubkey};
 
 use crate::{
@@ -9,9 +10,9 @@ use crate::{
         Plugin, PluginAuthority, PluginType, RegistryRecord,
     },
     AddBlockerPlugin, AppDataWithData, AttributesPlugin, AutographPlugin, BaseAuthority,
-    BasePlugin, BurnDelegatePlugin, DataBlob, DataSectionWithData, EditionPlugin,
-    ExternalPluginAdaptersList, ExternalRegistryRecordSafe, FreezeDelegatePlugin,
-    ImmutableMetadataPlugin, LifecycleHookWithData, MasterEditionPlugin,
+    BasePlugin, BubblegumV2Plugin, BurnDelegatePlugin, DataBlob, DataSectionWithData,
+    EditionPlugin, ExternalPluginAdaptersList, ExternalRegistryRecordSafe, FreezeDelegatePlugin,
+    FreezeExecutePlugin, ImmutableMetadataPlugin, LifecycleHookWithData, MasterEditionPlugin,
     PermanentBurnDelegatePlugin, PermanentFreezeDelegatePlugin, PermanentTransferDelegatePlugin,
     PluginRegistryV1Safe, PluginsList, RegistryRecordSafe, RoyaltiesPlugin, SolanaAccount,
     TransferDelegatePlugin, UpdateDelegatePlugin, VerifiedCreatorsPlugin,
@@ -41,7 +42,7 @@ pub fn fetch_plugin<T: DataBlob + SolanaAccount, U: CrateDeserialize>(
         .registry
         .iter()
         .find(|record| {
-            if let Ok(plugin) = PluginType::try_from_slice(&[record.plugin_type]) {
+            if let Some(plugin) = PluginType::from_u8(record.plugin_type) {
                 plugin == plugin_type
             } else {
                 false
@@ -110,13 +111,11 @@ pub fn fetch_plugins(account_data: &[u8]) -> Result<Vec<RegistryRecord>, std::io
         .registry
         .iter()
         .filter_map(|record| {
-            PluginType::try_from_slice(&[record.plugin_type])
-                .ok()
-                .map(|plugin_type| RegistryRecord {
-                    plugin_type,
-                    authority: record.authority.clone(),
-                    offset: record.offset,
-                })
+            PluginType::from_u8(record.plugin_type).map(|plugin_type| RegistryRecord {
+                plugin_type,
+                authority: record.authority.clone(),
+                offset: record.offset,
+            })
         })
         .collect();
 
@@ -248,9 +247,7 @@ pub fn list_plugins(account_data: &[u8]) -> Result<Vec<PluginType>, std::io::Err
     Ok(plugin_registry
         .registry
         .iter()
-        .filter_map(|registry_record| {
-            PluginType::try_from_slice(&[registry_record.plugin_type]).ok()
-        })
+        .filter_map(|registry_record| PluginType::from_u8(registry_record.plugin_type))
         .collect())
 }
 
@@ -263,7 +260,7 @@ pub(crate) fn registry_records_to_plugin_list(
     let result = registry_records
         .iter()
         .try_fold(PluginsList::default(), |mut acc, record| {
-            if PluginType::try_from_slice(&[record.plugin_type]).is_ok() {
+            if PluginType::from_u8(record.plugin_type).is_some() {
                 let authority: BaseAuthority = record.authority.clone().into();
                 let base = BasePlugin {
                     authority,
@@ -345,6 +342,15 @@ pub(crate) fn registry_records_to_plugin_list(
                     Plugin::Autograph(autograph) => {
                         acc.autograph = Some(AutographPlugin { base, autograph })
                     }
+                    Plugin::BubblegumV2(bubblegum_v2) => {
+                        acc.bubblegum_v2 = Some(BubblegumV2Plugin { base, bubblegum_v2 })
+                    }
+                    Plugin::FreezeExecute(freeze_execute) => {
+                        acc.freeze_execute = Some(FreezeExecutePlugin {
+                            base,
+                            freeze_execute,
+                        })
+                    }
                 }
             }
             Ok(acc)
@@ -362,7 +368,7 @@ pub(crate) fn registry_records_to_external_plugin_adapter_list(
     let result = registry_records.iter().try_fold(
         ExternalPluginAdaptersList::default(),
         |mut acc, record| {
-            if ExternalPluginAdapterType::try_from_slice(&[record.plugin_type]).is_ok() {
+            if ExternalPluginAdapterType::from_u8(record.plugin_type).is_some() {
                 let plugin = ExternalPluginAdapter::deserialize(
                     &mut &account_data[record.offset as usize..],
                 )?;

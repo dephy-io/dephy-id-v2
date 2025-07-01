@@ -7,11 +7,10 @@
 
 use crate::generated::types::ExternalPluginAdapterSchema;
 use crate::generated::types::PluginAuthority;
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
+use anchor_lang::prelude::AnchorDeserialize;
+use anchor_lang::prelude::AnchorSerialize;
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct LinkedAppData {
     pub data_authority: PluginAuthority,
     pub schema: ExternalPluginAdapterSchema,

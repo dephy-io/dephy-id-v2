@@ -6,33 +6,30 @@
 //!
 
 use crate::generated::types::CompressionProof;
-use borsh::BorshDeserialize;
-use borsh::BorshSerialize;
+use anchor_lang::prelude::AnchorDeserialize;
+use anchor_lang::prelude::AnchorSerialize;
 
 /// Accounts.
 #[derive(Debug)]
 pub struct TransferV1 {
     /// The address of the asset
-    pub asset: solana_program::pubkey::Pubkey,
+    pub asset: solana_pubkey::Pubkey,
     /// The collection to which the asset belongs
-    pub collection: Option<solana_program::pubkey::Pubkey>,
+    pub collection: Option<solana_pubkey::Pubkey>,
     /// The account paying for the storage fees
-    pub payer: solana_program::pubkey::Pubkey,
+    pub payer: solana_pubkey::Pubkey,
     /// The owner or delegate of the asset
-    pub authority: Option<solana_program::pubkey::Pubkey>,
+    pub authority: Option<solana_pubkey::Pubkey>,
     /// The new owner to which to transfer the asset
-    pub new_owner: solana_program::pubkey::Pubkey,
+    pub new_owner: solana_pubkey::Pubkey,
     /// The system program
-    pub system_program: Option<solana_program::pubkey::Pubkey>,
+    pub system_program: Option<solana_pubkey::Pubkey>,
     /// The SPL Noop Program
-    pub log_wrapper: Option<solana_program::pubkey::Pubkey>,
+    pub log_wrapper: Option<solana_pubkey::Pubkey>,
 }
 
 impl TransferV1 {
-    pub fn instruction(
-        &self,
-        args: TransferV1InstructionArgs,
-    ) -> solana_program::instruction::Instruction {
+    pub fn instruction(&self, args: TransferV1InstructionArgs) -> solana_instruction::Instruction {
         self.instruction_with_remaining_accounts(args, &[])
     }
     #[allow(clippy::arithmetic_side_effects)]
@@ -40,57 +37,53 @@ impl TransferV1 {
     pub fn instruction_with_remaining_accounts(
         &self,
         args: TransferV1InstructionArgs,
-        remaining_accounts: &[solana_program::instruction::AccountMeta],
-    ) -> solana_program::instruction::Instruction {
+        remaining_accounts: &[solana_instruction::AccountMeta],
+    ) -> solana_instruction::Instruction {
         let mut accounts = Vec::with_capacity(7 + remaining_accounts.len());
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.asset, false,
-        ));
+        accounts.push(solana_instruction::AccountMeta::new(self.asset, false));
         if let Some(collection) = self.collection {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 collection, false,
             ));
         } else {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 crate::MPL_CORE_ID,
                 false,
             ));
         }
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            self.payer, true,
-        ));
+        accounts.push(solana_instruction::AccountMeta::new(self.payer, true));
         if let Some(authority) = self.authority {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 authority, true,
             ));
         } else {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 crate::MPL_CORE_ID,
                 false,
             ));
         }
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
             self.new_owner,
             false,
         ));
         if let Some(system_program) = self.system_program {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 system_program,
                 false,
             ));
         } else {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 crate::MPL_CORE_ID,
                 false,
             ));
         }
         if let Some(log_wrapper) = self.log_wrapper {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 log_wrapper,
                 false,
             ));
         } else {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 crate::MPL_CORE_ID,
                 false,
             ));
@@ -100,7 +93,7 @@ impl TransferV1 {
         let mut args = borsh::to_vec(&args).unwrap();
         data.append(&mut args);
 
-        solana_program::instruction::Instruction {
+        solana_instruction::Instruction {
             program_id: crate::MPL_CORE_ID,
             accounts,
             data,
@@ -108,8 +101,7 @@ impl TransferV1 {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct TransferV1InstructionData {
     discriminator: u8,
 }
@@ -126,8 +118,7 @@ impl Default for TransferV1InstructionData {
     }
 }
 
-#[derive(BorshSerialize, BorshDeserialize, Clone, Debug, Eq, PartialEq)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct TransferV1InstructionArgs {
     pub compression_proof: Option<CompressionProof>,
 }
@@ -145,15 +136,15 @@ pub struct TransferV1InstructionArgs {
 ///   6. `[optional]` log_wrapper
 #[derive(Clone, Debug, Default)]
 pub struct TransferV1Builder {
-    asset: Option<solana_program::pubkey::Pubkey>,
-    collection: Option<solana_program::pubkey::Pubkey>,
-    payer: Option<solana_program::pubkey::Pubkey>,
-    authority: Option<solana_program::pubkey::Pubkey>,
-    new_owner: Option<solana_program::pubkey::Pubkey>,
-    system_program: Option<solana_program::pubkey::Pubkey>,
-    log_wrapper: Option<solana_program::pubkey::Pubkey>,
+    asset: Option<solana_pubkey::Pubkey>,
+    collection: Option<solana_pubkey::Pubkey>,
+    payer: Option<solana_pubkey::Pubkey>,
+    authority: Option<solana_pubkey::Pubkey>,
+    new_owner: Option<solana_pubkey::Pubkey>,
+    system_program: Option<solana_pubkey::Pubkey>,
+    log_wrapper: Option<solana_pubkey::Pubkey>,
     compression_proof: Option<CompressionProof>,
-    __remaining_accounts: Vec<solana_program::instruction::AccountMeta>,
+    __remaining_accounts: Vec<solana_instruction::AccountMeta>,
 }
 
 impl TransferV1Builder {
@@ -162,53 +153,47 @@ impl TransferV1Builder {
     }
     /// The address of the asset
     #[inline(always)]
-    pub fn asset(&mut self, asset: solana_program::pubkey::Pubkey) -> &mut Self {
+    pub fn asset(&mut self, asset: solana_pubkey::Pubkey) -> &mut Self {
         self.asset = Some(asset);
         self
     }
     /// `[optional account]`
     /// The collection to which the asset belongs
     #[inline(always)]
-    pub fn collection(&mut self, collection: Option<solana_program::pubkey::Pubkey>) -> &mut Self {
+    pub fn collection(&mut self, collection: Option<solana_pubkey::Pubkey>) -> &mut Self {
         self.collection = collection;
         self
     }
     /// The account paying for the storage fees
     #[inline(always)]
-    pub fn payer(&mut self, payer: solana_program::pubkey::Pubkey) -> &mut Self {
+    pub fn payer(&mut self, payer: solana_pubkey::Pubkey) -> &mut Self {
         self.payer = Some(payer);
         self
     }
     /// `[optional account]`
     /// The owner or delegate of the asset
     #[inline(always)]
-    pub fn authority(&mut self, authority: Option<solana_program::pubkey::Pubkey>) -> &mut Self {
+    pub fn authority(&mut self, authority: Option<solana_pubkey::Pubkey>) -> &mut Self {
         self.authority = authority;
         self
     }
     /// The new owner to which to transfer the asset
     #[inline(always)]
-    pub fn new_owner(&mut self, new_owner: solana_program::pubkey::Pubkey) -> &mut Self {
+    pub fn new_owner(&mut self, new_owner: solana_pubkey::Pubkey) -> &mut Self {
         self.new_owner = Some(new_owner);
         self
     }
     /// `[optional account]`
     /// The system program
     #[inline(always)]
-    pub fn system_program(
-        &mut self,
-        system_program: Option<solana_program::pubkey::Pubkey>,
-    ) -> &mut Self {
+    pub fn system_program(&mut self, system_program: Option<solana_pubkey::Pubkey>) -> &mut Self {
         self.system_program = system_program;
         self
     }
     /// `[optional account]`
     /// The SPL Noop Program
     #[inline(always)]
-    pub fn log_wrapper(
-        &mut self,
-        log_wrapper: Option<solana_program::pubkey::Pubkey>,
-    ) -> &mut Self {
+    pub fn log_wrapper(&mut self, log_wrapper: Option<solana_pubkey::Pubkey>) -> &mut Self {
         self.log_wrapper = log_wrapper;
         self
     }
@@ -220,10 +205,7 @@ impl TransferV1Builder {
     }
     /// Add an additional account to the instruction.
     #[inline(always)]
-    pub fn add_remaining_account(
-        &mut self,
-        account: solana_program::instruction::AccountMeta,
-    ) -> &mut Self {
+    pub fn add_remaining_account(&mut self, account: solana_instruction::AccountMeta) -> &mut Self {
         self.__remaining_accounts.push(account);
         self
     }
@@ -231,13 +213,13 @@ impl TransferV1Builder {
     #[inline(always)]
     pub fn add_remaining_accounts(
         &mut self,
-        accounts: &[solana_program::instruction::AccountMeta],
+        accounts: &[solana_instruction::AccountMeta],
     ) -> &mut Self {
         self.__remaining_accounts.extend_from_slice(accounts);
         self
     }
     #[allow(clippy::clone_on_copy)]
-    pub fn instruction(&self) -> solana_program::instruction::Instruction {
+    pub fn instruction(&self) -> solana_instruction::Instruction {
         let accounts = TransferV1 {
             asset: self.asset.expect("asset is not set"),
             collection: self.collection,
@@ -258,46 +240,46 @@ impl TransferV1Builder {
 /// `transfer_v1` CPI accounts.
 pub struct TransferV1CpiAccounts<'a, 'b> {
     /// The address of the asset
-    pub asset: &'b solana_program::account_info::AccountInfo<'a>,
+    pub asset: &'b solana_account_info::AccountInfo<'a>,
     /// The collection to which the asset belongs
-    pub collection: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    pub collection: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// The account paying for the storage fees
-    pub payer: &'b solana_program::account_info::AccountInfo<'a>,
+    pub payer: &'b solana_account_info::AccountInfo<'a>,
     /// The owner or delegate of the asset
-    pub authority: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    pub authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// The new owner to which to transfer the asset
-    pub new_owner: &'b solana_program::account_info::AccountInfo<'a>,
+    pub new_owner: &'b solana_account_info::AccountInfo<'a>,
     /// The system program
-    pub system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    pub system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// The SPL Noop Program
-    pub log_wrapper: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    pub log_wrapper: Option<&'b solana_account_info::AccountInfo<'a>>,
 }
 
 /// `transfer_v1` CPI instruction.
 pub struct TransferV1Cpi<'a, 'b> {
     /// The program to invoke.
-    pub __program: &'b solana_program::account_info::AccountInfo<'a>,
+    pub __program: &'b solana_account_info::AccountInfo<'a>,
     /// The address of the asset
-    pub asset: &'b solana_program::account_info::AccountInfo<'a>,
+    pub asset: &'b solana_account_info::AccountInfo<'a>,
     /// The collection to which the asset belongs
-    pub collection: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    pub collection: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// The account paying for the storage fees
-    pub payer: &'b solana_program::account_info::AccountInfo<'a>,
+    pub payer: &'b solana_account_info::AccountInfo<'a>,
     /// The owner or delegate of the asset
-    pub authority: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    pub authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// The new owner to which to transfer the asset
-    pub new_owner: &'b solana_program::account_info::AccountInfo<'a>,
+    pub new_owner: &'b solana_account_info::AccountInfo<'a>,
     /// The system program
-    pub system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    pub system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// The SPL Noop Program
-    pub log_wrapper: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    pub log_wrapper: Option<&'b solana_account_info::AccountInfo<'a>>,
     /// The arguments for the instruction.
     pub __args: TransferV1InstructionArgs,
 }
 
 impl<'a, 'b> TransferV1Cpi<'a, 'b> {
     pub fn new(
-        program: &'b solana_program::account_info::AccountInfo<'a>,
+        program: &'b solana_account_info::AccountInfo<'a>,
         accounts: TransferV1CpiAccounts<'a, 'b>,
         args: TransferV1InstructionArgs,
     ) -> Self {
@@ -314,25 +296,21 @@ impl<'a, 'b> TransferV1Cpi<'a, 'b> {
         }
     }
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program::entrypoint::ProgramResult {
+    pub fn invoke(&self) -> solana_program_entrypoint::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], &[])
     }
     #[inline(always)]
     pub fn invoke_with_remaining_accounts(
         &self,
-        remaining_accounts: &[(
-            &'b solana_program::account_info::AccountInfo<'a>,
-            bool,
-            bool,
-        )],
-    ) -> solana_program::entrypoint::ProgramResult {
+        remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
+    ) -> solana_program_entrypoint::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], remaining_accounts)
     }
     #[inline(always)]
     pub fn invoke_signed(
         &self,
         signers_seeds: &[&[&[u8]]],
-    ) -> solana_program::entrypoint::ProgramResult {
+    ) -> solana_program_entrypoint::ProgramResult {
         self.invoke_signed_with_remaining_accounts(signers_seeds, &[])
     }
     #[allow(clippy::arithmetic_side_effects)]
@@ -341,71 +319,61 @@ impl<'a, 'b> TransferV1Cpi<'a, 'b> {
     pub fn invoke_signed_with_remaining_accounts(
         &self,
         signers_seeds: &[&[&[u8]]],
-        remaining_accounts: &[(
-            &'b solana_program::account_info::AccountInfo<'a>,
-            bool,
-            bool,
-        )],
-    ) -> solana_program::entrypoint::ProgramResult {
+        remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
+    ) -> solana_program_entrypoint::ProgramResult {
         let mut accounts = Vec::with_capacity(7 + remaining_accounts.len());
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.asset.key,
-            false,
-        ));
+        accounts.push(solana_instruction::AccountMeta::new(*self.asset.key, false));
         if let Some(collection) = self.collection {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 *collection.key,
                 false,
             ));
         } else {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 crate::MPL_CORE_ID,
                 false,
             ));
         }
-        accounts.push(solana_program::instruction::AccountMeta::new(
-            *self.payer.key,
-            true,
-        ));
+        accounts.push(solana_instruction::AccountMeta::new(*self.payer.key, true));
         if let Some(authority) = self.authority {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 *authority.key,
                 true,
             ));
         } else {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 crate::MPL_CORE_ID,
                 false,
             ));
         }
-        accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+        accounts.push(solana_instruction::AccountMeta::new_readonly(
             *self.new_owner.key,
             false,
         ));
         if let Some(system_program) = self.system_program {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 *system_program.key,
                 false,
             ));
         } else {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 crate::MPL_CORE_ID,
                 false,
             ));
         }
         if let Some(log_wrapper) = self.log_wrapper {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 *log_wrapper.key,
                 false,
             ));
         } else {
-            accounts.push(solana_program::instruction::AccountMeta::new_readonly(
+            accounts.push(solana_instruction::AccountMeta::new_readonly(
                 crate::MPL_CORE_ID,
                 false,
             ));
         }
         remaining_accounts.iter().for_each(|remaining_account| {
-            accounts.push(solana_program::instruction::AccountMeta {
+            accounts.push(solana_instruction::AccountMeta {
                 pubkey: *remaining_account.0.key,
                 is_signer: remaining_account.1,
                 is_writable: remaining_account.2,
@@ -415,7 +383,7 @@ impl<'a, 'b> TransferV1Cpi<'a, 'b> {
         let mut args = borsh::to_vec(&self.__args).unwrap();
         data.append(&mut args);
 
-        let instruction = solana_program::instruction::Instruction {
+        let instruction = solana_instruction::Instruction {
             program_id: crate::MPL_CORE_ID,
             accounts,
             data,
@@ -442,9 +410,9 @@ impl<'a, 'b> TransferV1Cpi<'a, 'b> {
             .for_each(|remaining_account| account_infos.push(remaining_account.0.clone()));
 
         if signers_seeds.is_empty() {
-            solana_program::program::invoke(&instruction, &account_infos)
+            solana_cpi::invoke(&instruction, &account_infos)
         } else {
-            solana_program::program::invoke_signed(&instruction, &account_infos, signers_seeds)
+            solana_cpi::invoke_signed(&instruction, &account_infos, signers_seeds)
         }
     }
 }
@@ -466,7 +434,7 @@ pub struct TransferV1CpiBuilder<'a, 'b> {
 }
 
 impl<'a, 'b> TransferV1CpiBuilder<'a, 'b> {
-    pub fn new(program: &'b solana_program::account_info::AccountInfo<'a>) -> Self {
+    pub fn new(program: &'b solana_account_info::AccountInfo<'a>) -> Self {
         let instruction = Box::new(TransferV1CpiBuilderInstruction {
             __program: program,
             asset: None,
@@ -483,7 +451,7 @@ impl<'a, 'b> TransferV1CpiBuilder<'a, 'b> {
     }
     /// The address of the asset
     #[inline(always)]
-    pub fn asset(&mut self, asset: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
+    pub fn asset(&mut self, asset: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.asset = Some(asset);
         self
     }
@@ -492,14 +460,14 @@ impl<'a, 'b> TransferV1CpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn collection(
         &mut self,
-        collection: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+        collection: Option<&'b solana_account_info::AccountInfo<'a>>,
     ) -> &mut Self {
         self.instruction.collection = collection;
         self
     }
     /// The account paying for the storage fees
     #[inline(always)]
-    pub fn payer(&mut self, payer: &'b solana_program::account_info::AccountInfo<'a>) -> &mut Self {
+    pub fn payer(&mut self, payer: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.payer = Some(payer);
         self
     }
@@ -508,17 +476,14 @@ impl<'a, 'b> TransferV1CpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn authority(
         &mut self,
-        authority: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+        authority: Option<&'b solana_account_info::AccountInfo<'a>>,
     ) -> &mut Self {
         self.instruction.authority = authority;
         self
     }
     /// The new owner to which to transfer the asset
     #[inline(always)]
-    pub fn new_owner(
-        &mut self,
-        new_owner: &'b solana_program::account_info::AccountInfo<'a>,
-    ) -> &mut Self {
+    pub fn new_owner(&mut self, new_owner: &'b solana_account_info::AccountInfo<'a>) -> &mut Self {
         self.instruction.new_owner = Some(new_owner);
         self
     }
@@ -527,7 +492,7 @@ impl<'a, 'b> TransferV1CpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn system_program(
         &mut self,
-        system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+        system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
     ) -> &mut Self {
         self.instruction.system_program = system_program;
         self
@@ -537,7 +502,7 @@ impl<'a, 'b> TransferV1CpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn log_wrapper(
         &mut self,
-        log_wrapper: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+        log_wrapper: Option<&'b solana_account_info::AccountInfo<'a>>,
     ) -> &mut Self {
         self.instruction.log_wrapper = log_wrapper;
         self
@@ -552,7 +517,7 @@ impl<'a, 'b> TransferV1CpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn add_remaining_account(
         &mut self,
-        account: &'b solana_program::account_info::AccountInfo<'a>,
+        account: &'b solana_account_info::AccountInfo<'a>,
         is_writable: bool,
         is_signer: bool,
     ) -> &mut Self {
@@ -568,11 +533,7 @@ impl<'a, 'b> TransferV1CpiBuilder<'a, 'b> {
     #[inline(always)]
     pub fn add_remaining_accounts(
         &mut self,
-        accounts: &[(
-            &'b solana_program::account_info::AccountInfo<'a>,
-            bool,
-            bool,
-        )],
+        accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
     ) -> &mut Self {
         self.instruction
             .__remaining_accounts
@@ -580,7 +541,7 @@ impl<'a, 'b> TransferV1CpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program::entrypoint::ProgramResult {
+    pub fn invoke(&self) -> solana_program_entrypoint::ProgramResult {
         self.invoke_signed(&[])
     }
     #[allow(clippy::clone_on_copy)]
@@ -588,7 +549,7 @@ impl<'a, 'b> TransferV1CpiBuilder<'a, 'b> {
     pub fn invoke_signed(
         &self,
         signers_seeds: &[&[&[u8]]],
-    ) -> solana_program::entrypoint::ProgramResult {
+    ) -> solana_program_entrypoint::ProgramResult {
         let args = TransferV1InstructionArgs {
             compression_proof: self.instruction.compression_proof.clone(),
         };
@@ -619,19 +580,15 @@ impl<'a, 'b> TransferV1CpiBuilder<'a, 'b> {
 
 #[derive(Clone, Debug)]
 struct TransferV1CpiBuilderInstruction<'a, 'b> {
-    __program: &'b solana_program::account_info::AccountInfo<'a>,
-    asset: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    collection: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    payer: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    authority: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    new_owner: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    system_program: Option<&'b solana_program::account_info::AccountInfo<'a>>,
-    log_wrapper: Option<&'b solana_program::account_info::AccountInfo<'a>>,
+    __program: &'b solana_account_info::AccountInfo<'a>,
+    asset: Option<&'b solana_account_info::AccountInfo<'a>>,
+    collection: Option<&'b solana_account_info::AccountInfo<'a>>,
+    payer: Option<&'b solana_account_info::AccountInfo<'a>>,
+    authority: Option<&'b solana_account_info::AccountInfo<'a>>,
+    new_owner: Option<&'b solana_account_info::AccountInfo<'a>>,
+    system_program: Option<&'b solana_account_info::AccountInfo<'a>>,
+    log_wrapper: Option<&'b solana_account_info::AccountInfo<'a>>,
     compression_proof: Option<CompressionProof>,
     /// Additional instruction accounts `(AccountInfo, is_writable, is_signer)`.
-    __remaining_accounts: Vec<(
-        &'b solana_program::account_info::AccountInfo<'a>,
-        bool,
-        bool,
-    )>,
+    __remaining_accounts: Vec<(&'b solana_account_info::AccountInfo<'a>, bool, bool)>,
 }

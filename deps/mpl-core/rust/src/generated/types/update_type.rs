@@ -10,8 +10,8 @@ use anchor_lang::prelude::AnchorSerialize;
 use num_derive::FromPrimitive;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq, Copy, FromPrimitive)]
-pub enum ExternalPluginAdapterSchema {
-    Binary,
-    Json,
-    MsgPack,
+pub enum UpdateType {
+    Mint,
+    Add,
+    Remove,
 }

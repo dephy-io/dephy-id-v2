@@ -79,8 +79,10 @@ cli
   .command('create-product <name> <uri>')
   .description('Create a new product asset')
   .option('-v, --vendor <path>', 'Path to vendor keypair file')
+  .option('--mint-authority <path>', 'Public key of the mint authority')
   .action(async (name, uri, options) => {
     const vendor = options.vendor ? await loadKeypairSignerFromFile(options.vendor) : ctx.feePayer;
+    const mintAuthority = options.mintAuthority ? address(options.mintAuthority) : vendor.address;
     const [productAssetAddress] = await dephyId.findProductAssetPda({
       productName: name,
       vendor: vendor.address
@@ -91,7 +93,9 @@ cli
         name,
         payer: ctx.feePayer,
         uri,
-        vendor
+        vendor,
+        mintAuthority,
+        plugins: null,
       })
     ]);
 

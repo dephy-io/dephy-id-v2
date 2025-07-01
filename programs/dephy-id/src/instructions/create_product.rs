@@ -6,6 +6,7 @@ use crate::{error::ErrorCode, ProductAccount, PRODUCT_SEED_PREFIX};
 pub struct CreateProductArgs {
     pub name: String,
     pub uri: String,
+    pub plugins: Option<Vec<mpl_core::types::PluginAuthorityPair>>,
 }
 
 #[derive(Accounts)]
@@ -50,7 +51,7 @@ pub fn handle_create_product(ctx: Context<CreateProduct>, args: CreateProductArg
         mpl_core::instructions::CreateCollectionV2InstructionArgs {
             name: args.name.clone(),
             uri: args.uri,
-            plugins: None, // TODO: add plugins
+            plugins: args.plugins,
             external_plugin_adapters: Some(vec![
                 mpl_core::types::ExternalPluginAdapterInitInfo::AppData(
                     mpl_core::types::AppDataInitInfo {

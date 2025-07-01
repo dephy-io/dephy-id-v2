@@ -101,6 +101,10 @@ describe("dephy-id", () => {
         uri: "https://example.com/product-1",
         vendor,
         mintAuthority: mintAuthority.address,
+        plugins: [{
+          plugin: mplCore.plugin('PermanentTransferDelegate', [{}]),
+          authority: mplCore.basePluginAuthority('Address', { address: mintAuthority.address })
+        }],
       }),
     ])
 
@@ -294,5 +298,23 @@ describe("dephy-id", () => {
 
     assert.equal((await rpc.getBalance(assetSigner).send()).value, 800_000_000n)
     assert.equal((await rpc.getBalance(user.address).send()).value, 200_000_000n)
+  })
+
+
+  it('can transfer with permanent transfer delegate', async () => {
+    const newOwner = await generateKeyPairSigner()
+
+    await sendAndConfirmIxs([
+      mplCore.getTransferV1Instruction({
+        asset: deviceAsset,
+        collection: productAsset,
+        payer,
+        newOwner: newOwner.address,
+        authority: mintAuthority,
+      })
+    ])
+
+    const assetAccount = await mplCore.fetchAssetAccount(rpc, deviceAsset)
+    assert.equal(assetAccount.data.base.owner, newOwner.address)
   })
 });

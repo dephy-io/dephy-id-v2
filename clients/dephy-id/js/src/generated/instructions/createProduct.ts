@@ -13,8 +13,12 @@ import {
   fixDecoderSize,
   fixEncoderSize,
   getAddressEncoder,
+  getArrayDecoder,
+  getArrayEncoder,
   getBytesDecoder,
   getBytesEncoder,
+  getOptionDecoder,
+  getOptionEncoder,
   getProgramDerivedAddress,
   getStructDecoder,
   getStructEncoder,
@@ -32,6 +36,8 @@ import {
   type IInstruction,
   type IInstructionWithAccounts,
   type IInstructionWithData,
+  type Option,
+  type OptionOrNullable,
   type ReadonlyAccount,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
@@ -47,6 +53,12 @@ import {
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
+import {
+  getPluginAuthorityPairDecoder,
+  getPluginAuthorityPairEncoder,
+  type PluginAuthorityPair,
+  type PluginAuthorityPairArgs,
+} from '../types';
 
 export const CREATE_PRODUCT_DISCRIMINATOR = new Uint8Array([
   183, 155, 202, 119, 43, 114, 174, 225,
@@ -107,9 +119,14 @@ export type CreateProductInstructionData = {
   discriminator: ReadonlyUint8Array;
   name: string;
   uri: string;
+  plugins: Option<Array<PluginAuthorityPair>>;
 };
 
-export type CreateProductInstructionDataArgs = { name: string; uri: string };
+export type CreateProductInstructionDataArgs = {
+  name: string;
+  uri: string;
+  plugins: OptionOrNullable<Array<PluginAuthorityPairArgs>>;
+};
 
 export function getCreateProductInstructionDataEncoder(): Encoder<CreateProductInstructionDataArgs> {
   return transformEncoder(
@@ -117,6 +134,10 @@ export function getCreateProductInstructionDataEncoder(): Encoder<CreateProductI
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
       ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
       ['uri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      [
+        'plugins',
+        getOptionEncoder(getArrayEncoder(getPluginAuthorityPairEncoder())),
+      ],
     ]),
     (value) => ({ ...value, discriminator: CREATE_PRODUCT_DISCRIMINATOR })
   );
@@ -127,6 +148,10 @@ export function getCreateProductInstructionDataDecoder(): Decoder<CreateProductI
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
     ['name', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
     ['uri', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    [
+      'plugins',
+      getOptionDecoder(getArrayDecoder(getPluginAuthorityPairDecoder())),
+    ],
   ]);
 }
 
@@ -160,6 +185,7 @@ export type CreateProductAsyncInput<
   mplCore?: Address<TAccountMplCore>;
   name: CreateProductInstructionDataArgs['name'];
   uri: CreateProductInstructionDataArgs['uri'];
+  plugins: CreateProductInstructionDataArgs['plugins'];
 };
 
 export async function getCreateProductInstructionAsync<
@@ -288,6 +314,7 @@ export type CreateProductInput<
   mplCore?: Address<TAccountMplCore>;
   name: CreateProductInstructionDataArgs['name'];
   uri: CreateProductInstructionDataArgs['uri'];
+  plugins: CreateProductInstructionDataArgs['plugins'];
 };
 
 export function getCreateProductInstruction<

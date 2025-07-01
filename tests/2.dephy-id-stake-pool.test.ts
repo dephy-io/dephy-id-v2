@@ -79,6 +79,7 @@ describe("dephy-id-stake-pool", () => {
         name: productName,
         productAsset: productAssetAddress,
         uri: "https://example.com/DePHY-ID",
+        plugins: null,
       }),
     ])
 

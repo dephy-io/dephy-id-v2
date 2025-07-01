@@ -103,8 +103,10 @@ cli.command('create-dev-devices')
   .requiredOption('-p, --product <product>', 'Product asset address')
   .option('-v, --vendor <vendor>', 'Path to vendor keypair file')
   .option('--owner <owner>', 'override owner address')
+  .option('--interval <interval>', 'interval between transactions', '1000')
   .action(async (options) => {
     const { keypair, url: urlOrMoniker } = options
+    const interval = Number(options.interval)
 
     const ctx = await createSolanaContext({
       keypair,
@@ -157,6 +159,8 @@ cli.command('create-dev-devices')
         const signature = await ctx.sendAndConfirmIxs(ixs)
         console.log('Transaction signature:', signature)
         ixs = []
+
+        await Bun.sleep(interval)
       }
     }
 

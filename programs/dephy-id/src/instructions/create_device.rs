@@ -14,10 +14,10 @@ pub struct CreateDeviceArgs {
 #[instruction(args: CreateDeviceArgs)]
 pub struct CreateDevice<'info> {
     /// The authority of the product
-    #[account(address = product_account.mint_authority @ ErrorCode::InvalidVendor)]
+    #[account()]
     pub mint_authority: Signer<'info>,
     /// CHECK: the address is checked in the instruction handler
-    #[account(mut, owner = mpl_core::ID @ ErrorCode::InvalidMplCoreProgram, address = product_account.collection @ ErrorCode::ProductAddressMismatch)]
+    #[account(mut, owner = mpl_core::ID @ ErrorCode::InvalidMplCoreProgram)]
     pub product_asset: UncheckedAccount<'info>,
     #[account(seeds = [product_asset.key().as_ref()], bump)]
     pub product_account: Account<'info, ProductAccount>,
@@ -35,6 +35,17 @@ pub struct CreateDevice<'info> {
 }
 
 pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) -> Result<()> {
+    {
+        let product_account = &ctx.accounts.product_account;
+        if product_account.mint_authority != ctx.accounts.mint_authority.key() {
+            return Err(ErrorCode::InvalidAuthority.into());
+        }
+
+        if product_account.collection != ctx.accounts.product_asset.key() {
+            return Err(ErrorCode::ProductAddressMismatch.into());
+        }
+    }
+
     if let Some(expiry) = args.expiry {
         let clock = Clock::get()?;
         if clock.unix_timestamp as u64 > expiry {
@@ -42,14 +53,13 @@ pub fn handle_create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) 
         }
     }
 
-    mpl_core::Collection::deserialize(&ctx.accounts.product_asset.data.borrow())
-        .map_err(|_| ErrorCode::InvalidProductAccount)?;
-
-    let device_seed = Pubkey::new_from_array(args.seed);
-    let attributes = vec![mpl_core::types::Attribute {
-        key: "Seed".to_string(),
-        value: device_seed.to_string(),
-    }];
+    let attributes = {
+        let device_seed = Pubkey::new_from_array(args.seed);
+        vec![mpl_core::types::Attribute {
+            key: "Seed".to_string(),
+            value: device_seed.to_string(),
+        }]
+    };
 
     mpl_core::instructions::CreateV2Cpi::new(
         &ctx.accounts.mpl_core,

@@ -93,7 +93,7 @@ cli
     if (options.permenantTransferAuthority) {
       plugins.push({
         plugin: mplCore.plugin('PermanentTransferDelegate', [{}]),
-        authority: address(options.permenantTransferAuthority)
+        authority: mplCore.pluginAuthority('Address', { address: publicKey(options.permenantTransferAuthority) })
       })
     }
 

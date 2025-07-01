@@ -18,26 +18,26 @@ import { DEPHY_ID_PROGRAM_ADDRESS } from '../programs';
 export const DEPHY_ID_ERROR__INVALID_MPL_CORE_PROGRAM = 0x1770; // 6000
 /** InvalidProductAccount: Product account is not a valid mpl-core collection */
 export const DEPHY_ID_ERROR__INVALID_PRODUCT_ACCOUNT = 0x1771; // 6001
-/** InvalidVendor: Vendor address not match */
-export const DEPHY_ID_ERROR__INVALID_VENDOR = 0x1772; // 6002
+/** InvalidAuthority: Invalid authority */
+export const DEPHY_ID_ERROR__INVALID_AUTHORITY = 0x1772; // 6002
 /** ProductAddressMismatch: Product address not match */
 export const DEPHY_ID_ERROR__PRODUCT_ADDRESS_MISMATCH = 0x1773; // 6003
 /** TransactionExpired: Transaction expired */
 export const DEPHY_ID_ERROR__TRANSACTION_EXPIRED = 0x1774; // 6004
 
 export type DephyIdError =
+  | typeof DEPHY_ID_ERROR__INVALID_AUTHORITY
   | typeof DEPHY_ID_ERROR__INVALID_MPL_CORE_PROGRAM
   | typeof DEPHY_ID_ERROR__INVALID_PRODUCT_ACCOUNT
-  | typeof DEPHY_ID_ERROR__INVALID_VENDOR
   | typeof DEPHY_ID_ERROR__PRODUCT_ADDRESS_MISMATCH
   | typeof DEPHY_ID_ERROR__TRANSACTION_EXPIRED;
 
 let dephyIdErrorMessages: Record<DephyIdError, string> | undefined;
 if (process.env.NODE_ENV !== 'production') {
   dephyIdErrorMessages = {
+    [DEPHY_ID_ERROR__INVALID_AUTHORITY]: `Invalid authority`,
     [DEPHY_ID_ERROR__INVALID_MPL_CORE_PROGRAM]: `Invalid mpl-core program`,
     [DEPHY_ID_ERROR__INVALID_PRODUCT_ACCOUNT]: `Product account is not a valid mpl-core collection`,
-    [DEPHY_ID_ERROR__INVALID_VENDOR]: `Vendor address not match`,
     [DEPHY_ID_ERROR__PRODUCT_ADDRESS_MISMATCH]: `Product address not match`,
     [DEPHY_ID_ERROR__TRANSACTION_EXPIRED]: `Transaction expired`,
   };

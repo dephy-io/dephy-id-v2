@@ -38,6 +38,7 @@ cli.command('dump-devices')
   .requiredOption('-e, --endpoint <endpoint>', 'dephy workers endpoint')
   .requiredOption('-o, --outfile <outfile>', 'output file')
   .option('--limit <limit>', 'fetch batch size', '1000')
+  .option('--only-online', 'only output online devices', false)
   .action(async (options) => {
     try {
       const batchLimit = Number(options.limit)
@@ -75,6 +76,10 @@ cli.command('dump-devices')
       const lines = ['DevicePubkey,OwnerPubkey']
 
       for (const device of allDevices) {
+        if (options.onlyOnline && device.status !== 2) {
+          continue
+        }
+
         const devicePubkey = addressCodec.decode(b16Encoder.encode(device.pubkey))
         const owner = JSON.parse(device.owner) as DeviceOwner
         lines.push(`${devicePubkey},${owner.solana_address}`)
@@ -167,7 +172,7 @@ cli.command('stake-nfts')
   .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
   .requiredOption('--stake-pool <address>', 'Address of the stake pool')
   .requiredOption('--csv <csvFile>', 'CSV file for all devices and owners')
-  .option('--amount <amount>', 'Amount of tokens for each deposit (ui amount)')
+  .option('--amount <amount>', 'Override amount of tokens for each deposit (ui amount)')
   .option('--check', 'Check the owner and if the devices are already staked', false)
   .action(async (options) => {
     const { keypair, url: urlOrMoniker } = options
@@ -182,7 +187,7 @@ cli.command('stake-nfts')
     const productAsset = stakePool.data.config.collection
 
     const stakeTokenMint = await splToken.fetchMint(ctx.rpc, stakePool.data.config.stakeTokenMint)
-    const amount = options.amount ?
+    const overrideAmount = options.amount ?
       splToken.tokenUiAmountToAmount(Number(options.amount), stakeTokenMint.data.decimals) :
       undefined;
 
@@ -194,17 +199,18 @@ cli.command('stake-nfts')
 
     const csvFile = fs.readFileSync(options.csv, { encoding: 'utf8' })
     const devicesAndOwners = csvFile.trim().split('\n').slice(1).map((line) => {
-      const [device, owner] = line.split(',')
+      const [device, owner, amount] = line.split(',')
 
       return {
         deviceSeed: addressCodec.encode(address(device)),
-        owner: address(owner)
-      } as { deviceSeed: Uint8Array, owner: Address }
+        owner: address(owner),
+        amount: overrideAmount ? overrideAmount : amount ? BigInt(amount) : undefined,
+      } as { deviceSeed: Uint8Array, owner: Address, amount: bigint | undefined }
     })
 
     let ixs: IInstruction[] = []
     for (let i = 0; i < devicesAndOwners.length; i++) {
-      const { deviceSeed, owner } = devicesAndOwners[i]
+      const { deviceSeed, owner, amount } = devicesAndOwners[i]
       const deviceAssetPda = await dephyId.findDeviceAssetPda({
         productAsset,
         deviceSeed,

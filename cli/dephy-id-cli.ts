@@ -80,6 +80,7 @@ cli
   .description('Create a new product asset')
   .option('-v, --vendor <path>', 'Path to vendor keypair file')
   .option('-m, --mint-authority <path>', 'Path to the mint authority keypair file')
+  .option('--permenant-transfer-authority <address>', 'Permenant transfer authority address')
   .action(async (name, uri, options) => {
     const vendor = options.vendor ? await loadKeypairSignerFromFile(options.vendor) : ctx.feePayer;
     const mintAuthority = options.mintAuthority ? await loadKeypairSignerFromFile(options.mintAuthority) : vendor;
@@ -88,6 +89,14 @@ cli
       vendor: vendor.address
     });
 
+    const plugins = []
+    if (options.permenantTransferAuthority) {
+      plugins.push({
+        plugin: mplCore.plugin('PermanentTransferDelegate', [{}]),
+        authority: address(options.permenantTransferAuthority)
+      })
+    }
+
     const signature = await ctx.sendAndConfirmIxs([
       await dephyId.getCreateProductInstructionAsync({
         name,
@@ -95,7 +104,7 @@ cli
         uri,
         vendor,
         mintAuthority: mintAuthority.address,
-        plugins: null,
+        plugins: plugins.length > 0 ? plugins : null,
       })
     ]);
 

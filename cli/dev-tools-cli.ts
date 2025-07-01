@@ -104,9 +104,11 @@ cli.command('create-dev-devices')
   .option('-v, --vendor <vendor>', 'Path to vendor keypair file')
   .option('--owner <owner>', 'override owner address')
   .option('--interval <interval>', 'interval between transactions', '1000')
+  .option('--skip <skip>', 'skip lines', '0')
   .action(async (options) => {
     const { keypair, url: urlOrMoniker } = options
     const interval = Number(options.interval)
+    const skip = Number(options.skip)
 
     const ctx = await createSolanaContext({
       keypair,
@@ -128,7 +130,11 @@ cli.command('create-dev-devices')
     })
 
     let ixs: IInstruction[] = []
+    console.log('skip', skip)
     for (let i = 0; i < devicesAndOwners.length; i++) {
+      if (i < skip) {
+        continue
+      }
       const { deviceSeed, owner } = devicesAndOwners[i]
       const deviceAssetPda = await dephyId.findDeviceAssetPda({
         productAsset,
@@ -157,7 +163,7 @@ cli.command('create-dev-devices')
 
       if (ixs.length >= 4) {
         const signature = await ctx.sendAndConfirmIxs(ixs)
-        console.log('Transaction signature:', signature)
+        console.log('Transaction signature:', signature, i)
         ixs = []
 
         await Bun.sleep(interval)
@@ -178,8 +184,10 @@ cli.command('stake-nfts')
   .requiredOption('--csv <csvFile>', 'CSV file for all devices and owners')
   .option('--amount <amount>', 'Override amount of tokens for each deposit (ui amount)')
   .option('--check', 'Check the owner and if the devices are already staked', false)
+  .option('--skip <skip>', 'skip lines', '0')
   .action(async (options) => {
     const { keypair, url: urlOrMoniker } = options
+    const skip = Number(options.skip)
 
     const ctx = await createSolanaContext({
       keypair,
@@ -214,6 +222,9 @@ cli.command('stake-nfts')
 
     let ixs: IInstruction[] = []
     for (let i = 0; i < devicesAndOwners.length; i++) {
+      if (i < skip) {
+        continue
+      }
       const { deviceSeed, owner, amount } = devicesAndOwners[i]
       const deviceAssetPda = await dephyId.findDeviceAssetPda({
         productAsset,
@@ -270,7 +281,7 @@ cli.command('stake-nfts')
 
       if (ixs.length >= 6) {
         const signature = await ctx.sendAndConfirmIxs(ixs)
-        console.log('Transaction signature:', signature)
+        console.log('Transaction signature:', signature, i)
         ixs = []
       }
     }

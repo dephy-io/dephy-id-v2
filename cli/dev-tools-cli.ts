@@ -104,10 +104,12 @@ cli.command('create-dev-devices')
   .option('-v, --vendor <vendor>', 'Path to vendor keypair file')
   .option('--owner <owner>', 'override owner address')
   .option('--interval <interval>', 'interval between transactions', '1000')
+  .option('--batch <batch>', 'batch size', '4')
   .option('--skip <skip>', 'skip lines', '0')
   .action(async (options) => {
     const { keypair, url: urlOrMoniker } = options
     const interval = Number(options.interval)
+    const batch = Number(options.batch)
     const skip = Number(options.skip)
 
     const ctx = await createSolanaContext({
@@ -131,22 +133,18 @@ cli.command('create-dev-devices')
 
     let ixs: IInstruction[] = []
     console.log('skip', skip)
-    for (let i = 0; i < devicesAndOwners.length; i++) {
-      if (i < skip) {
-        continue
-      }
+    for (let i = skip; i < devicesAndOwners.length; i++) {
       const { deviceSeed, owner } = devicesAndOwners[i]
       const deviceAssetPda = await dephyId.findDeviceAssetPda({
         productAsset,
         deviceSeed,
       })
-      const deviceAsset = await ctx.rpc.getAccountInfo(deviceAssetPda[0], { encoding: 'base64' }).send()
+      const pubkey = deviceAssetPda[0]
+      const deviceAsset = await ctx.rpc.getAccountInfo(pubkey, { encoding: 'base64' }).send()
 
       if (deviceAsset.value) {
-        console.log('skip', deviceAssetPda[0])
-        i++
+        console.log('skip', pubkey)
       } else {
-        const pubkey = deviceAssetPda[0]
         const name = pubkey.substring(0, 4) + '...' + pubkey.substring(pubkey.length - 4)
         ixs.push(
           await dephyId.getCreateDeviceInstructionAsync({
@@ -159,9 +157,11 @@ cli.command('create-dev-devices')
             uri: `https://workers.dephy.id/${pubkey}`,
           })
         )
+        console.log('create', pubkey)
       }
 
-      if (ixs.length >= 4) {
+      if (ixs.length >= batch) {
+        console.log('send', ixs.length)
         const signature = await ctx.sendAndConfirmIxs(ixs)
         console.log('Transaction signature:', signature, i)
         ixs = []
@@ -221,10 +221,7 @@ cli.command('stake-nfts')
     })
 
     let ixs: IInstruction[] = []
-    for (let i = 0; i < devicesAndOwners.length; i++) {
-      if (i < skip) {
-        continue
-      }
+    for (let i = skip; i < devicesAndOwners.length; i++) {
       const { deviceSeed, owner, amount } = devicesAndOwners[i]
       const deviceAssetPda = await dephyId.findDeviceAssetPda({
         productAsset,
@@ -299,8 +296,12 @@ cli.command('batch-transfer')
   .requiredOption('--csv <csvFile>', 'CSV file for all devices and dest')
   .requiredOption('-p, --product <product>', 'Product asset address')
   .option('--dest <dest>', 'override dest address')
+  .option('--skip <skip>', 'skip lines', '0')
+  .option('--batch <batch>', 'batch size', '22')
   .action(async (options) => {
     const { keypair, url: urlOrMoniker } = options
+    const batch = Number(options.batch)
+    const skip = Number(options.skip)
 
     const ctx = await createSolanaContext({
       keypair,
@@ -320,33 +321,41 @@ cli.command('batch-transfer')
       } as { deviceSeed: Uint8Array, dest: Address }
     })
 
+    const productAccount = await mplCore.fetchCollectionAccount(ctx.rpc, productAsset)
+    const hasPermanentTransferAuthority = productAccount.data.plugins.permanentTransferDelegate?.authority?.address == ctx.feePayer.address
+    console.log('hasPermanentTransferAuthority', hasPermanentTransferAuthority, devicesAndDest.length)
+    console.log('skip', skip)
+
     let ixs: IInstruction[] = []
-    for (let i = 0; i < devicesAndDest.length; i++) {
+    let last = 0
+    for (let i = skip; i < devicesAndDest.length; i++) {
       const { deviceSeed, dest } = devicesAndDest[i]
       const deviceAssetPda = await dephyId.findDeviceAssetPda({
         productAsset,
         deviceSeed,
       })
       const pubkey = deviceAssetPda[0]
-      const deviceAsset = await mplCore.fetchAssetV1(ctx.rpc, pubkey)
+      const deviceAsset = await mplCore.fetchAssetAccount(ctx.rpc, pubkey)
 
-      if (deviceAsset.data.owner == dest || deviceAsset.data.owner != ctx.feePayer.address) {
+      if (deviceAsset.data.base.owner == dest || (!hasPermanentTransferAuthority && deviceAsset.data.base.owner != ctx.feePayer.address)) {
         console.log('skip', pubkey)
-        i++
       } else {
+        console.log('transfer', pubkey)
         ixs.push(
           mplCore.getTransferV1Instruction({
             asset: pubkey,
             collection: productAsset,
             payer: ctx.feePayer,
             newOwner: dest,
+            authority: ctx.feePayer,
           })
         )
+        last = i
       }
 
-      if (ixs.length >= 22) {
+      if (ixs.length >= batch || (i - last > 50 && ixs.length > 0)) {
         const signature = await ctx.sendAndConfirmIxs(ixs)
-        console.log('Transaction signature:', signature)
+        console.log('Transaction signature:', signature, i)
         ixs = []
       }
     }

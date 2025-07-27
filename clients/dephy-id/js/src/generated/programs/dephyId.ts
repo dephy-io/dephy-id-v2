@@ -17,6 +17,7 @@ import {
   type ParsedCreateDeviceInstruction,
   type ParsedCreateProductInstruction,
   type ParsedInitializeInstruction,
+  type ParsedUpdateMintAuthorityInstruction,
 } from '../instructions';
 
 export const DEPHY_ID_PROGRAM_ADDRESS =
@@ -62,6 +63,7 @@ export enum DephyIdInstruction {
   CreateDevice,
   CreateProduct,
   Initialize,
+  UpdateMintAuthority,
 }
 
 export function identifyDephyIdInstruction(
@@ -101,6 +103,17 @@ export function identifyDephyIdInstruction(
   ) {
     return DephyIdInstruction.Initialize;
   }
+  if (
+    containsBytes(
+      data,
+      fixEncoderSize(getBytesEncoder(), 8).encode(
+        new Uint8Array([103, 51, 57, 197, 223, 22, 44, 142])
+      ),
+      0
+    )
+  ) {
+    return DephyIdInstruction.UpdateMintAuthority;
+  }
   throw new Error(
     'The provided instruction could not be identified as a dephyId instruction.'
   );
@@ -117,4 +130,7 @@ export type ParsedDephyIdInstruction<
     } & ParsedCreateProductInstruction<TProgram>)
   | ({
       instructionType: DephyIdInstruction.Initialize;
-    } & ParsedInitializeInstruction<TProgram>);
+    } & ParsedInitializeInstruction<TProgram>)
+  | ({
+      instructionType: DephyIdInstruction.UpdateMintAuthority;
+    } & ParsedUpdateMintAuthorityInstruction<TProgram>);

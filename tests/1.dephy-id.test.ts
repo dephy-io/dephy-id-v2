@@ -317,4 +317,23 @@ describe("dephy-id", () => {
     const assetAccount = await mplCore.fetchAssetAccount(rpc, deviceAsset)
     assert.equal(assetAccount.data.base.owner, newOwner.address)
   })
+
+
+  it('update mint authority', async () => {
+    const newMintAuthority = await generateKeyPairSigner()
+    const productAccountPda = await dephyId.findProductAccountPda({
+      productAsset
+    })
+
+    await sendAndConfirmIxs([
+      dephyId.getUpdateMintAuthorityInstruction({
+        productAccount: productAccountPda[0],
+        vendor,
+        mintAuthority: newMintAuthority.address
+      })
+    ])
+
+    const productAccount = await dephyId.fetchProductAccount(rpc, productAccountPda[0])
+    assert.equal(productAccount.data.mintAuthority, newMintAuthority.address)
+  })
 });

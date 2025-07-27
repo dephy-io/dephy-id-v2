@@ -28,4 +28,8 @@ pub mod dephy_id {
     pub fn create_device(ctx: Context<CreateDevice>, args: CreateDeviceArgs) -> Result<()> {
         handle_create_device(ctx, args)
     }
+
+    pub fn update_mint_authority(ctx: Context<UpdateMintAuthority>) -> Result<()> {
+        handle_update_mint_authority(ctx)
+    }
 }

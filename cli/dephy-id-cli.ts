@@ -293,4 +293,30 @@ cli
     logWithFormat(assets, options.format)
   })
 
+
+cli
+  .command('update-mint-authority')
+  .description('Update mint authority of a product')
+  .requiredOption('-p, --product <product>', 'Product asset address')
+  .requiredOption('-m, --mint-authority <mintAuthority>', 'New mint authority address')
+  .option('-v, --vendor <vendor>', 'Vendor address')
+  .action(async (options) => {
+    const vendor = options.vendor ? await loadKeypairSignerFromFile(options.vendor) : ctx.feePayer;
+
+    const productAccountPda = await dephyId.findProductAccountPda({
+      productAsset: address(options.product)
+    })
+
+    const signature = await ctx.sendAndConfirmIxs([
+      dephyId.getUpdateMintAuthorityInstruction({
+        productAccount: productAccountPda[0],
+        vendor,
+        mintAuthority: address(options.mintAuthority)
+      })
+    ])
+
+    console.log(`Mint authority updated for product ${options.product}`)
+    console.log(`Transaction: ${signature}`)
+  })
+
 await cli.parseAsync();

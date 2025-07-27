@@ -9,3 +9,4 @@
 export * from './createDevice';
 export * from './createProduct';
 export * from './initialize';
+export * from './updateMintAuthority';

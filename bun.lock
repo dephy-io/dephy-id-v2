@@ -19,7 +19,7 @@
         "dephy-id-stake-pool-client": "workspace:*",
         "gill": "0.9.0",
         "mocha": "^11.7.1",
-        "prettier": "^3.6.0",
+        "prettier": "^3.6.2",
         "ts-mocha": "^11.1.0",
         "typescript": "^5.8.3",
       },

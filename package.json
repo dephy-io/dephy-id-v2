@@ -27,7 +27,8 @@
     "generate-dephy-id": "bunx @codama/cli -c codama/dephy-id.js run js",
     "generate-dephy-id-stake-pool": "bunx @codama/cli -c codama/dephy-id-stake-pool.js run js",
     "generate-all": "bun generate-dephy-id && bun generate-dephy-id-stake-pool",
-    "build-and-test": "anchor build && bun generate-all && anchor test --skip-build"
+    "build-and-test": "anchor build && bun generate-all && anchor test --skip-build",
+    "dev-tools-cli": "bun -b cli/dev-tools-cli.ts"
   },
   "type": "module",
   "workspaces": [

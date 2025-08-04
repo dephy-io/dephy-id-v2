@@ -9,6 +9,7 @@ export default [
   route('dephy-id', 'routes/dephy-id-index.tsx'),
   route('stake-pool/:address', 'routes/stake-pool-detail.tsx'),
   route('stake-pool', 'routes/stake-pool-index.tsx'),
+  route('dev-tools', 'routes/dev-tools.tsx'),
   route('nft-stake/:address', 'routes/nft-stake-detail.tsx'),
   route('user-stake/:address', 'routes/user-stake-detail.tsx')
 ] satisfies RouteConfig;

@@ -1,5 +1,5 @@
 import React from 'react'
-import { createSolanaDevnet, createSolanaLocalnet, createWalletUiConfig, WalletUi } from "@wallet-ui/react";
+import { createSolanaDevnet, createSolanaLocalnet, createSolanaMainnet, createWalletUiConfig, WalletUi } from "@wallet-ui/react";
 import { AppHeader } from 'src/components/app-header'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ClusterChecker } from 'src/components/cluster/cluster-ui'
@@ -16,6 +16,7 @@ const queryClient = new QueryClient({
 
 const config = createWalletUiConfig({
   clusters: [
+    createSolanaMainnet(),
     createSolanaDevnet(),
     createSolanaLocalnet(),
   ]

@@ -22,7 +22,7 @@ export default function StakePoolDetail() {
 
       <ShowStakePool stakePool={stakePool.data!} mint={mint.data!} />
       {account && <StakeDephyId stakePoolAddress={params.address} />}
-      <ListNftStakes />
+      <ListNftStakes stakePool={stakePool.data!} mint={mint.data!} />
     </div>
   )
 }

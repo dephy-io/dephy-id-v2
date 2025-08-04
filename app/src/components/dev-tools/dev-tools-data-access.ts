@@ -161,17 +161,23 @@ export type UserAsset = {
 
 export function useUserAssetsForStakePool({
   stakePoolAddress,
-  dasRpc
+  dasRpc,
+  page = 1,
+  limit = 1000,
+  onlyUnfrozen = false,
 }: {
   stakePoolAddress?: Address
-  dasRpc?: Rpc<DasApi> // DAS RPC instance
+  dasRpc?: Rpc<DasApi>
+  page?: number
+  limit?: number
+  onlyUnfrozen?: boolean
 }) {
   const { account } = useWalletUiAccount()
 
   const stakePool = useStakePool({ stakePoolAddress })
 
   return useQuery<UserAsset[]>({
-    queryKey: ['user-assets', 'stake-pool-collection', { stakePoolAddress, userAddress: account?.address }],
+    queryKey: ['user-assets', 'stake-pool-collection', { stakePoolAddress, userAddress: account?.address, page, limit, onlyUnfrozen }],
     queryFn: async () => {
       if (!account?.address || !stakePool.data?.data.config.collection || !dasRpc) {
         return []
@@ -182,8 +188,9 @@ export function useUserAssetsForStakePool({
         const response = await dasRpc.searchAssets({
           ownerAddress: address(account.address),
           grouping: ["collection", stakePool.data.data.config.collection],
-          page: 1,
-          limit: 1000,
+          page,
+          limit,
+          frozen: onlyUnfrozen ? false : undefined,
           displayOptions: {
             showCollectionMetadata: false,
           }

@@ -1,11 +1,12 @@
 import { useWalletUi, useWalletUiCluster } from "@wallet-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { address, getBase58Decoder, getBase64Encoder, type Address, type Base58EncodedBytes, type ReadonlyUint8Array } from "gill"
+import { address, getBase58Decoder, getBase64Encoder, type Address, type Base58EncodedBytes, type GetProgramAccountsMemcmpFilter, type ReadonlyUint8Array } from "gill"
 import * as dephyId from "dephy-id-client"
 import * as mplCore from "mpl-core"
 import { createDasRpc } from "~/lib/das"
 import { useTransactionToast } from '../use-transaction-toast'
 import { useSendAndConfirmIxs } from '~/lib/utils'
+import { useProgramIds } from "~/lib/program-ids"
 
 export function useDephyAccount() {
   const { client } = useWalletUi()
@@ -68,33 +69,40 @@ export function useCreateProduct() {
   })
 }
 
-export function useListProducts({ vendor }: { vendor: Address }) {
+export function useListProducts({ vendor }: { vendor?: Address }) {
   const { cluster } = useWalletUiCluster()
   const { client } = useWalletUi()
   const base64Encoder = getBase64Encoder()
   const productDecoder = dephyId.getProductAccountDecoder()
   const discriminator = getBase58Decoder().decode(dephyId.PRODUCT_ACCOUNT_DISCRIMINATOR)
+  const { dephyIdProgramId } = useProgramIds()
+
+  const filters: GetProgramAccountsMemcmpFilter[] = [{
+    memcmp: {
+      encoding: 'base58',
+      offset: 0n,
+      bytes: discriminator as unknown as Base58EncodedBytes,
+    }
+  }]
+
+  if (vendor) {
+    filters.push({
+      memcmp: {
+        encoding: 'base58',
+        offset: 8n,
+        bytes: vendor as unknown as Base58EncodedBytes,
+      }
+    })
+  }
 
   return useQuery({
     queryKey: ['dephy-id', 'list-products', { cluster, vendor }],
     queryFn: async () => {
       const rawAccounts = await client.rpc.getProgramAccounts(
-        dephyId.DEPHY_ID_PROGRAM_ADDRESS,
+        dephyIdProgramId,
         {
           encoding: 'base64',
-          filters: [{
-            memcmp: {
-              encoding: 'base58',
-              offset: 0n,
-              bytes: discriminator as unknown as Base58EncodedBytes,
-            }
-          }, {
-            memcmp: {
-              encoding: 'base58',
-              offset: 8n,
-              bytes: vendor as unknown as Base58EncodedBytes,
-            }
-          }]
+          filters,
         }
       ).send()
 

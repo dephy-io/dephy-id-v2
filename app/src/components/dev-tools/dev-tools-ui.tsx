@@ -3,10 +3,10 @@ import { Button } from "../ui/button"
 import { CommonCard as Card, InputWithLabel } from "../common-ui"
 import { useWalletUiAccount } from "@wallet-ui/react"
 import { useQueryClient } from "@tanstack/react-query"
-import { address } from "gill"
+import { address, type Rpc } from "gill"
 import { useStakeNfts, useUserAssetsForStakePool, type UserAsset } from "./dev-tools-data-access"
 import { useStakePools } from "../stake-pool/stake-pool-data-access"
-import { createDasRpc } from "../../lib/das"
+import { createDasRpc, type DasApi } from "../../lib/das"
 import { Link } from "react-router"
 
 interface DeviceEntry {
@@ -15,24 +15,38 @@ interface DeviceEntry {
 }
 
 export function StakeNftsForm() {
-  const { account } = useWalletUiAccount()
+  const { account, cluster } = useWalletUiAccount()
   const queryClient = useQueryClient()
   const stakePools = useStakePools()
   const [stakePoolAddress, setStakePoolAddress] = useState("")
-  const [rpcUrl, setRpcUrl] = useState("")
   const [csvData, setCsvData] = useState<DeviceEntry[]>([])
   const [textareaValue, setTextareaValue] = useState("")
   const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set())
   const [defaultAmount, setDefaultAmount] = useState("1")
+  const [page, setPage] = useState(1)
+  const [onlyUnfrozen, setOnlyUnfrozen] = useState(false)
 
   const stakeNfts = useStakeNfts()
 
   // Create DAS RPC instance
-  const dasRpc = rpcUrl ? createDasRpc(rpcUrl) : undefined
+  let dasRpc: Rpc<DasApi>;
+
+  switch (cluster.cluster) {
+    case 'mainnet':
+      dasRpc = createDasRpc(import.meta.env.VITE_HELIUS_MAINNET_RPC_URL)
+      break;
+    case 'devnet':
+      dasRpc = createDasRpc(import.meta.env.VITE_HELIUS_DEVNET_RPC_URL)
+      break;
+    default:
+      throw new Error(`Unsupported cluster: ${cluster.cluster}`)
+  }
 
   const userAssets = useUserAssetsForStakePool({
     stakePoolAddress: stakePoolAddress ? address(stakePoolAddress) : undefined,
-    dasRpc: dasRpc
+    dasRpc,
+    page,
+    onlyUnfrozen,
   })
 
   const handleTextareaChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -149,16 +163,6 @@ export function StakeNftsForm() {
   return (
     <Card title="Stake NFTs">
       <form onSubmit={handleSubmit} className="space-y-4">
-
-        <InputWithLabel
-          label="DAS RPC URL"
-          name="rpcUrl"
-          value={rpcUrl}
-          onChange={(e) => setRpcUrl(e.target.value)}
-          placeholder="https://mainnet.helius-rpc.com/?api-key=<your-api-key>"
-          required
-        />
-
         <div className="space-y-2">
           <label className="text-sm font-medium">Stake Pool</label>
           <select
@@ -195,6 +199,11 @@ export function StakeNftsForm() {
           <p className="text-sm text-red-500">Error loading stake pools: {stakePools.error.message}</p>
         )}
 
+        <p className="flex items-center gap-2">
+          <label className="text-sm font-medium">Only Unfrozen</label>
+          <input type="checkbox" checked={onlyUnfrozen} onChange={(e) => setOnlyUnfrozen(e.target.checked)} />
+        </p>
+
         {stakePoolAddress && (
           <div className="space-y-2">
             <label className="text-sm font-medium">Your Assets for Selected Collection</label>
@@ -204,15 +213,22 @@ export function StakeNftsForm() {
             {userAssets.error && (
               <p className="text-sm text-red-500">Error loading assets: {userAssets.error.message}</p>
             )}
+            {userAssets.isFetched && (
+              <div className="flex justify-center items-center gap-4 mt-4">
+                <Button type="button" onClick={() => setPage(p => p - 1)} disabled={page <= 1}>Previous</Button>
+                <span>Page {page}</span>
+                <Button type="button" onClick={() => setPage(p => p + 1)} disabled={!userAssets.data || userAssets.data.length < 100}>Next</Button>
+              </div>
+            )}
             {userAssets.data && userAssets.data.length > 0 ? (
               <div className="border rounded-md overflow-hidden max-h-64 overflow-y-auto">
                 <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
+                  <thead className="sticky top-0 z-10 bg-gray-50">
                     <tr>
                       <th className="px-3 py-2 text-left font-medium">
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" onClick={() => handleSelectAll(true)}>All</Button>
-                          <Button size="sm" variant="outline" onClick={() => handleSelectAll(false)}>None</Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => handleSelectAll(true)}>All</Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => handleSelectAll(false)}>None</Button>
                         </div>
                       </th>
                       <th className="px-3 py-2 text-left font-medium">Asset Address</th>

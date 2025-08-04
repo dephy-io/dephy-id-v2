@@ -56,9 +56,7 @@ export function CreateProduct() {
 }
 
 export function ListProducts() {
-  const { account } = useWalletUi()
-  assertIsAddress(account!.address)
-  const listProducts = useListProducts({ vendor: account!.address })
+  const listProducts = useListProducts({})
 
   if (!listProducts.isFetched) {
     return <div>Loading...</div>
@@ -66,13 +64,30 @@ export function ListProducts() {
 
   return (
     <Card title="Products">
-      <ul>
-        {listProducts.data?.map((product) => (
-          <li key={product.pubkey.toString()}>
-            <Link to={`/dephy-id/${product.account.collection}`}>{product.account.collection}</Link>
-          </li>
-        ))}
-      </ul>
+      <div className="border rounded-md overflow-hidden max-h-96 overflow-y-auto">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 z-10 bg-gray-50">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium">Collection</th>
+              <th className="px-3 py-2 text-left font-medium">Vendor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {listProducts.data?.map((product) => (
+              <tr key={product.pubkey}>
+                <td className="px-3 py-2">
+                  <Link className="link" to={`/dephy-id/${product.account.collection}`}>
+                    {product.account.collection}
+                  </Link>
+                </td>
+                <td className="px-3 py-2">
+                  {product.account.vendor}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </Card>
   )
 }

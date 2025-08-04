@@ -9,6 +9,7 @@ import {
 } from "gill";
 import * as splToken from 'gill/programs/token'
 import { fetchMint } from 'gill/programs/token'
+import { useProgramIds } from "~/lib/program-ids";
 
 export function useAdminAccount() {
   const { client } = useWalletUi()
@@ -98,13 +99,14 @@ export function useStakePools() {
   const { cluster } = useWalletUiCluster()
   const base64Encoder = getBase64Encoder()
   const stakePoolDecoder = dephyIdStakePool.getStakePoolAccountDecoder()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useQuery({
     queryKey: ['stake-pool', 'stake-pools', { cluster }],
     queryFn: async () => {
       const discriminator = getBase58Decoder().decode(dephyIdStakePool.STAKE_POOL_ACCOUNT_DISCRIMINATOR)
       const rawAccounts = await client.rpc.getProgramAccounts(
-        dephyIdStakePool.DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
+        dephyIdStakePoolProgramId,
         {
           encoding: 'base64',
           filters: [{
@@ -209,13 +211,14 @@ export function useUnstakeDephyId({ nftStake }: { nftStake: Account<dephyIdStake
 export function useNftStakes({ stakePoolAddress }: { stakePoolAddress: Address }) {
   const { client } = useWalletUi()
   const { cluster } = useWalletUiCluster()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useQuery({
     queryKey: ['stake-pool', 'nft-stakes', { cluster }],
     queryFn: async () => {
       const discriminator = getBase58Decoder().decode(dephyIdStakePool.NFT_STAKE_ACCOUNT_DISCRIMINATOR)
       const rawAccounts = await client.rpc.getProgramAccounts(
-        dephyIdStakePool.DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
+        dephyIdStakePoolProgramId,
         {
           encoding: 'base64',
           filters: [{
@@ -262,13 +265,14 @@ export function useNftStake({ nftStakeAddress }: { nftStakeAddress: Address }) {
 export function useUserStakes({ nftStakeAddress }: { nftStakeAddress: Address }) {
   const { client } = useWalletUi()
   const { cluster } = useWalletUiCluster()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useQuery({
     queryKey: ['stake-pool', 'user-stakes', { cluster, nftStakeAddress }],
     queryFn: async () => {
       const discriminator = getBase58Decoder().decode(dephyIdStakePool.USER_STAKE_ACCOUNT_DISCRIMINATOR)
       const rawAccounts = await client.rpc.getProgramAccounts(
-        dephyIdStakePool.DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS,
+        dephyIdStakePoolProgramId,
         {
           encoding: 'base64',
           filters: [{

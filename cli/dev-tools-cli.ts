@@ -9,6 +9,11 @@ import * as dephyId from '../clients/dephy-id/js/src/index.js';
 import * as dephyIdStakePool from '../clients/dephy-id-stake-pool/js/src/index.js';
 import * as mplCore from '../deps/mpl-core/js/src/index.js'
 import { createSolanaContext } from "./common.js"
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
+import { dasApi } from '@metaplex-foundation/digital-asset-standard-api'
+import { publicKey } from '@metaplex-foundation/umi'
+import { das } from '@metaplex-foundation/mpl-core-das';
+import { AssetResult } from '@metaplex-foundation/mpl-core-das/dist/src/types.js'
 
 
 type Device = {
@@ -73,16 +78,16 @@ cli.command('dump-devices')
 
       console.log(`Fetched a total of ${allDevices.length} devices.`)
 
-      const lines = ['DevicePubkey,OwnerPubkey']
+      const lines = ['DeviceSeed,OwnerPubkey']
 
       for (const device of allDevices) {
         if (options.onlyOnline && device.status !== 2) {
           continue
         }
 
-        const devicePubkey = addressCodec.decode(b16Encoder.encode(device.pubkey))
+        const deviceSeed = addressCodec.decode(b16Encoder.encode(device.pubkey))
         const owner = JSON.parse(device.owner) as DeviceOwner
-        lines.push(`${devicePubkey},${owner.solana_address}`)
+        lines.push(`${deviceSeed},${owner.solana_address}`)
       }
 
       const csv = lines.join('\n')
@@ -94,6 +99,61 @@ cli.command('dump-devices')
     }
   })
 
+
+cli.command('dump-devices-das')
+  .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'localnet')
+  .requiredOption('-p, --product <product>', 'Product asset address')
+  .requiredOption('--owner <owner>', 'Owner address')
+  .requiredOption('--outfile <outfile>', 'Output file')
+  .option('--only-unfrozen', 'Only output unfrozen devices', false)
+  .action(async (options) => {
+    const { url: urlOrMoniker } = options
+    const umi = createUmi(urlOrMoniker).use(dasApi())
+
+    const collection = publicKey(options.product)
+    const owner = publicKey(options.owner)
+
+    let devices: AssetResult[] = []
+
+    let cursor: string | undefined = undefined
+    let keepFetching = true
+
+    while (keepFetching) {
+      const result = await das.searchAssets(umi, {
+        owner,
+        grouping: ['collection', collection],
+        before: cursor,
+      })
+
+      for (const asset of result) {
+        devices.push(asset)
+
+        cursor = asset.publicKey
+      }
+
+      if (result.length === 0) {
+        keepFetching = false
+      }
+    }
+
+    const lines = ['DeviceSeed,OwnerPubkey']
+
+    for (const device of devices) {
+      const seed = device.attributes.attributeList.find(({ key }) => key === 'Seed')?.value
+      console.log(device.publicKey, seed)
+      if (options.onlyUnfrozen) {
+        if (device.permanentFreezeDelegate?.frozen) {
+          console.log('frozen', device.publicKey)
+          continue
+        }
+      }
+      lines.push(`${seed},${owner}`)
+    }
+
+    const csv = lines.join('\n')
+    fs.writeFileSync(options.outfile, csv)
+    console.log(`Successfully wrote ${devices.length} devices to ${options.outfile}.`)
+  })
 
 
 cli.command('create-dev-devices')

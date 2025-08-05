@@ -24,7 +24,7 @@ export function StakeNftsForm() {
   const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set())
   const [defaultAmount, setDefaultAmount] = useState("1")
   const [page, setPage] = useState(1)
-  const [onlyUnfrozen, setOnlyUnfrozen] = useState(false)
+  const [onlyUnfrozen, setOnlyUnfrozen] = useState(true)
 
   const stakeNfts = useStakeNfts()
 
@@ -278,11 +278,9 @@ export function StakeNftsForm() {
             required
           />
           <p className="text-xs text-muted-foreground">
-            Format: device_address,amount (one per line, no header)
+            Format: device_address,amount (one per line, no header, amounts are in UI decimals)
           </p>
         </div>
-
-
 
         <Button
           type="submit"

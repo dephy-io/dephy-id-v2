@@ -98,8 +98,9 @@ export function useStakeNfts() {
           )
 
           // Add deposit instruction if amount is specified
-          const amount = BigInt(entry.amount)
-          if (amount > 0n) {
+          const uiAmount = Number(entry.amount)
+          if (uiAmount > 0n) {
+            const amount = splToken.tokenUiAmountToAmount(uiAmount, stakeTokenMint.data.decimals)
             ixs.push(
               await dephyIdStakePool.getDepositTokenInstructionAsync({
                 nftStake: nftStakeSigner.address,

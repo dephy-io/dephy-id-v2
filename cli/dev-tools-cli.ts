@@ -282,12 +282,13 @@ cli.command('stake-nfts')
     const devicesAndOwners: { deviceAddress: Address, owner: Address, amount: bigint | undefined }[] = []
 
     for (const line of csvFile.trim().split('\n').slice(1)) {
-      const [deviceAddress, owner, amount] = line.split(',')
+      const [deviceAddress, owner, uiAmount] = line.split(',')
+      const amount = uiAmount ? splToken.tokenUiAmountToAmount(Number(uiAmount), stakeTokenMint.data.decimals) : undefined;
 
       devicesAndOwners.push({
         deviceAddress: address(deviceAddress),
         owner: address(owner),
-        amount: overrideAmount ? overrideAmount : amount ? BigInt(amount) : undefined,
+        amount: overrideAmount || amount,
       })
     }
 

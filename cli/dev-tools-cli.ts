@@ -15,6 +15,7 @@ import { publicKey } from '@metaplex-foundation/umi'
 import { das } from '@metaplex-foundation/mpl-core-das';
 import { AssetResult } from '@metaplex-foundation/mpl-core-das/dist/src/types.js'
 import assert from 'node:assert'
+import {base58} from "@metaplex-foundation/umi/serializers";
 
 
 type Device = {
@@ -184,7 +185,7 @@ cli.command('create-dev-devices')
     const ownerOverrided = options.owner ? address(options.owner) : undefined
 
     const csvFile = fs.readFileSync(options.csv, { encoding: 'utf8' })
-    const devicesAndOwners: { deviceAddress: Address, deviceSeed: ReadonlyUint8Array, owner: Address }[] = []
+    const devicesAndOwners: { deviceAddress: Address, base58deviceAddress: string, deviceSeed: ReadonlyUint8Array, owner: Address }[] = []
 
     for (const line of csvFile.trim().split('\n').slice(1)) {
       const [deviceSeedStr, owner] = line.split(',')
@@ -197,6 +198,7 @@ cli.command('create-dev-devices')
 
       devicesAndOwners.push({
         deviceAddress: deviceAssetPda[0],
+        base58deviceAddress: deviceSeedStr,
         deviceSeed,
         owner: ownerOverrided || address(owner)
       })
@@ -205,13 +207,14 @@ cli.command('create-dev-devices')
     let ixs: IInstruction[] = []
     console.log('skip', skip)
     for (let i = skip; i < devicesAndOwners.length; i++) {
-      const { deviceAddress, deviceSeed, owner } = devicesAndOwners[i]
+      const { deviceAddress, base58deviceAddress, deviceSeed, owner } = devicesAndOwners[i]
       const deviceAsset = await ctx.rpc.getAccountInfo(deviceAddress, { encoding: 'base64' }).send()
 
       if (deviceAsset.value) {
         console.log('skip', deviceAddress)
       } else {
-        const name = deviceAddress.substring(0, 4) + '...' + deviceAddress.substring(deviceAddress.length - 4)
+        // const name = deviceAddress.substring(0, 4) + '...' + deviceAddress.substring(deviceAddress.length - 4)
+        const name = `${base58deviceAddress.slice(0, 8)}`
         ixs.push(
           await dephyId.getCreateDeviceInstructionAsync({
             payer: ctx.feePayer,
@@ -220,7 +223,7 @@ cli.command('create-dev-devices')
             productAsset,
             seed: deviceSeed,
             name,
-            uri: `https://workers.dephy.id/${deviceAddress}`,
+            uri: `https://workers.dephy.id/${base58deviceAddress}`,
           })
         )
         console.log('create', deviceAddress)

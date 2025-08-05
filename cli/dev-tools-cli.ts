@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 
 import { Command } from "@commander-js/extra-typings"
-import { Address, address, generateKeyPairSigner, getAddressCodec, getBase16Encoder, IInstruction } from "gill"
+import { Address, address, generateKeyPairSigner, getAddressCodec, getBase16Encoder, IInstruction, ReadonlyUint8Array } from "gill"
 import { loadKeypairSignerFromFile } from 'gill/node'
 import * as splToken from 'gill/programs/token'
 
@@ -14,6 +14,7 @@ import { dasApi } from '@metaplex-foundation/digital-asset-standard-api'
 import { publicKey } from '@metaplex-foundation/umi'
 import { das } from '@metaplex-foundation/mpl-core-das';
 import { AssetResult } from '@metaplex-foundation/mpl-core-das/dist/src/types.js'
+import assert from 'node:assert'
 
 
 type Device = {
@@ -101,6 +102,7 @@ cli.command('dump-devices')
 
 
 cli.command('dump-devices-das')
+  .description('Dump devices from DAS, output format: DeviceAddress,DeviceSeed,OwnerPubkey')
   .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'localnet')
   .requiredOption('-p, --product <product>', 'Product asset address')
   .requiredOption('--owner <owner>', 'Owner address')
@@ -136,27 +138,27 @@ cli.command('dump-devices-das')
       }
     }
 
-    const lines = ['DeviceSeed,OwnerPubkey']
+    const lines = ['DeviceAddress,DeviceSeed,OwnerPubkey']
 
     for (const device of devices) {
       const seed = device.attributes.attributeList.find(({ key }) => key === 'Seed')?.value
-      console.log(device.publicKey, seed)
       if (options.onlyUnfrozen) {
         if (device.permanentFreezeDelegate?.frozen) {
           console.log('frozen', device.publicKey)
           continue
         }
       }
-      lines.push(`${seed},${owner}`)
+      lines.push(`${device.publicKey},${seed},${owner}`)
     }
 
     const csv = lines.join('\n')
     fs.writeFileSync(options.outfile, csv)
-    console.log(`Successfully wrote ${devices.length} devices to ${options.outfile}.`)
+    console.log(`Successfully wrote ${lines.length - 1} devices to ${options.outfile}.`)
   })
 
 
 cli.command('create-dev-devices')
+  .description('Create devices from CSV file, format: DeviceAddress,DeviceSeed,OwnerPubkey')
   .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
   .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'localnet')
   .requiredOption('--csv <csvFile>', 'CSV file for all devices and owners')
@@ -182,30 +184,36 @@ cli.command('create-dev-devices')
     const ownerOverrided = options.owner ? address(options.owner) : undefined
 
     const csvFile = fs.readFileSync(options.csv, { encoding: 'utf8' })
-    const devicesAndOwners = csvFile.trim().split('\n').slice(1).map((line) => {
-      const [device, owner] = line.split(',')
+    const devicesAndOwners: { deviceAddress: Address, deviceSeed: ReadonlyUint8Array, owner: Address }[] = []
 
-      return {
-        deviceSeed: addressCodec.encode(address(device)),
-        owner: ownerOverrided || address(owner)
-      } as { deviceSeed: Uint8Array, owner: Address }
-    })
+    for (const line of csvFile.trim().split('\n').slice(1)) {
+      const [deviceAddress, deviceSeedStr, owner] = line.split(',')
+      const deviceSeed = addressCodec.encode(address(deviceSeedStr))
 
-    let ixs: IInstruction[] = []
-    console.log('skip', skip)
-    for (let i = skip; i < devicesAndOwners.length; i++) {
-      const { deviceSeed, owner } = devicesAndOwners[i]
       const deviceAssetPda = await dephyId.findDeviceAssetPda({
         productAsset,
         deviceSeed,
       })
       const pubkey = deviceAssetPda[0]
-      const deviceAsset = await ctx.rpc.getAccountInfo(pubkey, { encoding: 'base64' }).send()
+      assert.equal(pubkey, deviceAddress, 'device address does not match')
+
+      devicesAndOwners.push({
+        deviceAddress: address(deviceAddress),
+        deviceSeed,
+        owner: ownerOverrided || address(owner)
+      })
+    }
+
+    let ixs: IInstruction[] = []
+    console.log('skip', skip)
+    for (let i = skip; i < devicesAndOwners.length; i++) {
+      const { deviceAddress, deviceSeed, owner } = devicesAndOwners[i]
+      const deviceAsset = await ctx.rpc.getAccountInfo(deviceAddress, { encoding: 'base64' }).send()
 
       if (deviceAsset.value) {
-        console.log('skip', pubkey)
+        console.log('skip', deviceAddress)
       } else {
-        const name = pubkey.substring(0, 4) + '...' + pubkey.substring(pubkey.length - 4)
+        const name = deviceAddress.substring(0, 4) + '...' + deviceAddress.substring(deviceAddress.length - 4)
         ixs.push(
           await dephyId.getCreateDeviceInstructionAsync({
             payer: ctx.feePayer,
@@ -214,10 +222,10 @@ cli.command('create-dev-devices')
             productAsset,
             seed: deviceSeed,
             name,
-            uri: `https://workers.dephy.id/${pubkey}`,
+            uri: `https://workers.dephy.id/${deviceAddress}`,
           })
         )
-        console.log('create', pubkey)
+        console.log('create', deviceAddress)
       }
 
       if (ixs.length >= batch) {
@@ -238,6 +246,7 @@ cli.command('create-dev-devices')
 
 
 cli.command('stake-nfts')
+  .description('Stake NFTs from CSV file, format: DeviceAddress,OwnerPubkey,Amount')
   .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
   .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
   .requiredOption('--stake-pool <address>', 'Address of the stake pool')
@@ -270,39 +279,37 @@ cli.command('stake-nfts')
     }))[0]
 
     const csvFile = fs.readFileSync(options.csv, { encoding: 'utf8' })
-    const devicesAndOwners = csvFile.trim().split('\n').slice(1).map((line) => {
-      const [device, owner, amount] = line.split(',')
+    const devicesAndOwners: { deviceAddress: Address, owner: Address, amount: bigint | undefined }[] = []
 
-      return {
-        deviceSeed: addressCodec.encode(address(device)),
+    for (const line of csvFile.trim().split('\n').slice(1)) {
+      const [deviceAddress, owner, amount] = line.split(',')
+
+      devicesAndOwners.push({
+        deviceAddress: address(deviceAddress),
         owner: address(owner),
         amount: overrideAmount ? overrideAmount : amount ? BigInt(amount) : undefined,
-      } as { deviceSeed: Uint8Array, owner: Address, amount: bigint | undefined }
-    })
+      })
+    }
 
     let ixs: IInstruction[] = []
     for (let i = skip; i < devicesAndOwners.length; i++) {
-      const { deviceSeed, owner, amount } = devicesAndOwners[i]
-      const deviceAssetPda = await dephyId.findDeviceAssetPda({
-        productAsset,
-        deviceSeed,
-      })
+      const { deviceAddress, owner, amount } = devicesAndOwners[i]
 
       if (options.check) {
-        const asset = await mplCore.fetchAssetAccount(ctx.rpc, deviceAssetPda[0])
+        const asset = await mplCore.fetchAssetAccount(ctx.rpc, deviceAddress)
 
         if (asset.data.base.owner != ctx.feePayer.address) {
-          console.log('skip not owner', deviceAssetPda[0], asset.data.base.owner)
+          console.log('skip not owner', deviceAddress, asset.data.base.owner)
           continue
         }
 
         if (asset.data.plugins.freezeDelegate?.frozen) {
-          console.log('skip frozen', deviceAssetPda[0])
+          console.log('skip frozen', deviceAddress)
           continue
         }
       } else {
         if (owner != ctx.feePayer.address) {
-          console.log('skip', deviceAssetPda[0])
+          console.log('skip', deviceAddress)
           continue
         }
       }
@@ -315,7 +322,7 @@ cli.command('stake-nfts')
           nftStake: nftStakeSigner,
           stakeAuthority: ctx.feePayer,
           depositAuthority: ctx.feePayer.address,
-          mplCoreAsset: deviceAssetPda[0],
+          mplCoreAsset: deviceAddress,
           mplCoreCollection: productAsset,
           payer: ctx.feePayer,
         })
@@ -351,6 +358,7 @@ cli.command('stake-nfts')
 
 
 cli.command('batch-transfer')
+  .description('Transfer NFTs from CSV file, format: DeviceAddress,DestinationAddress')
   .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
   .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
   .requiredOption('--csv <csvFile>', 'CSV file for all devices and dest')
@@ -373,12 +381,12 @@ cli.command('batch-transfer')
 
     const csvFile = fs.readFileSync(options.csv, { encoding: 'utf8' })
     const devicesAndDest = csvFile.trim().split('\n').slice(1).map((line) => {
-      const [device, dest] = line.split(',')
+      const [deviceAddress, dest] = line.split(',')
 
       return {
-        deviceSeed: addressCodec.encode(address(device)),
+        deviceAddress: address(deviceAddress),
         dest: destOverrided || address(dest)
-      } as { deviceSeed: Uint8Array, dest: Address }
+      } as { deviceAddress: Address, dest: Address }
     })
 
     const productAccount = await mplCore.fetchCollectionAccount(ctx.rpc, productAsset)
@@ -389,21 +397,16 @@ cli.command('batch-transfer')
     let ixs: IInstruction[] = []
     let last = 0
     for (let i = skip; i < devicesAndDest.length; i++) {
-      const { deviceSeed, dest } = devicesAndDest[i]
-      const deviceAssetPda = await dephyId.findDeviceAssetPda({
-        productAsset,
-        deviceSeed,
-      })
-      const pubkey = deviceAssetPda[0]
-      const deviceAsset = await mplCore.fetchAssetAccount(ctx.rpc, pubkey)
+      const { deviceAddress, dest } = devicesAndDest[i]
+      const deviceAsset = await mplCore.fetchAssetAccount(ctx.rpc, deviceAddress)
 
       if (deviceAsset.data.base.owner == dest || (!hasPermanentTransferAuthority && deviceAsset.data.base.owner != ctx.feePayer.address)) {
-        console.log('skip', pubkey)
+        console.log('skip', deviceAddress)
       } else {
-        console.log('transfer', pubkey)
+        console.log('transfer', deviceAddress)
         ixs.push(
           mplCore.getTransferV1Instruction({
-            asset: pubkey,
+            asset: deviceAddress,
             collection: productAsset,
             payer: ctx.feePayer,
             newOwner: dest,

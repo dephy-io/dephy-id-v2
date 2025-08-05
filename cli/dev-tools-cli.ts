@@ -158,7 +158,7 @@ cli.command('dump-devices-das')
 
 
 cli.command('create-dev-devices')
-  .description('Create devices from CSV file, format: DeviceAddress,DeviceSeed,OwnerPubkey')
+  .description('Create devices from CSV file, format: DeviceSeed[,OwnerPubkey]')
   .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
   .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'localnet')
   .requiredOption('--csv <csvFile>', 'CSV file for all devices and owners')
@@ -187,18 +187,16 @@ cli.command('create-dev-devices')
     const devicesAndOwners: { deviceAddress: Address, deviceSeed: ReadonlyUint8Array, owner: Address }[] = []
 
     for (const line of csvFile.trim().split('\n').slice(1)) {
-      const [deviceAddress, deviceSeedStr, owner] = line.split(',')
+      const [deviceSeedStr, owner] = line.split(',')
       const deviceSeed = addressCodec.encode(address(deviceSeedStr))
 
       const deviceAssetPda = await dephyId.findDeviceAssetPda({
         productAsset,
         deviceSeed,
       })
-      const pubkey = deviceAssetPda[0]
-      assert.equal(pubkey, deviceAddress, 'device address does not match')
 
       devicesAndOwners.push({
-        deviceAddress: address(deviceAddress),
+        deviceAddress: deviceAssetPda[0],
         deviceSeed,
         owner: ownerOverrided || address(owner)
       })

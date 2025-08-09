@@ -27,7 +27,7 @@ export async function findDeviceAssetPda(
   config: { programAddress?: Address | undefined } = {}
 ): Promise<ProgramDerivedAddress> {
   const {
-    programAddress = 'PHy1dzzd8sso1R5t31WHX6JvAsZF9fvNgzxHbgnKHX4' as Address<'PHy1dzzd8sso1R5t31WHX6JvAsZF9fvNgzxHbgnKHX4'>,
+    programAddress = 'D1DdkvuK3V8kzxD5CSsx7JorEo3hMLw4L7Bvujv3pTD6' as Address<'D1DdkvuK3V8kzxD5CSsx7JorEo3hMLw4L7Bvujv3pTD6'>,
   } = config;
   return await getProgramDerivedAddress({
     programAddress,

@@ -27,7 +27,7 @@ import {
 } from '../instructions';
 
 export const DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS =
-  'PHYSJkZ4KNpK4Lp5pg89xfab5mSer9NxRfr6YzuRdNQ' as Address<'PHYSJkZ4KNpK4Lp5pg89xfab5mSer9NxRfr6YzuRdNQ'>;
+  'DSTKMXnJXgvViSkr6hciBaYsTpcduxZuF334WLrvEZmW' as Address<'DSTKMXnJXgvViSkr6hciBaYsTpcduxZuF334WLrvEZmW'>;
 
 export enum DephyIdStakePoolAccount {
   AdminAccount,
@@ -234,7 +234,7 @@ export function identifyDephyIdStakePoolInstruction(
 }
 
 export type ParsedDephyIdStakePoolInstruction<
-  TProgram extends string = 'PHYSJkZ4KNpK4Lp5pg89xfab5mSer9NxRfr6YzuRdNQ',
+  TProgram extends string = 'DSTKMXnJXgvViSkr6hciBaYsTpcduxZuF334WLrvEZmW',
 > =
   | ({
       instructionType: DephyIdStakePoolInstruction.AnnounceUpdateConfig;

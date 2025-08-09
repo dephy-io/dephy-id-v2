@@ -14,7 +14,6 @@ import { dasApi } from '@metaplex-foundation/digital-asset-standard-api'
 import { publicKey } from '@metaplex-foundation/umi'
 import { das } from '@metaplex-foundation/mpl-core-das';
 import { AssetResult } from '@metaplex-foundation/mpl-core-das/dist/src/types.js'
-import assert from 'node:assert'
 
 
 type Device = {

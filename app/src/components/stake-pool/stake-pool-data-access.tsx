@@ -24,6 +24,58 @@ export function useAdminAccount() {
   })
 }
 
+export function useUserNftStakesForPool({ stakePoolAddress, userAddress }: { stakePoolAddress: Address, userAddress: Address }) {
+  const { client } = useWalletUi()
+  const { cluster } = useWalletUiCluster()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
+
+  return useQuery({
+    queryKey: ['stake-pool', 'user-nft-stakes', { cluster, stakePoolAddress, userAddress }],
+    queryFn: async () => {
+      const discriminator = getBase58Decoder().decode(dephyIdStakePool.NFT_STAKE_ACCOUNT_DISCRIMINATOR)
+      const rawAccounts = await client.rpc.getProgramAccounts(
+        dephyIdStakePoolProgramId,
+        {
+          encoding: 'base64',
+          filters: [
+            {
+              memcmp: {
+                encoding: 'base58',
+                offset: 0n,
+                bytes: discriminator as unknown as Base58EncodedBytes,
+              }
+            },
+            {
+              memcmp: {
+                encoding: 'base58',
+                offset: 8n,
+                bytes: stakePoolAddress as unknown as Base58EncodedBytes,
+              }
+            },
+            {
+              memcmp: {
+                encoding: 'base58',
+                // depositAuthority starts after discriminator(8) + stakePool(32) + stakeAuthority(32)
+                offset: 8n + 32n + 32n,
+                bytes: userAddress as unknown as Base58EncodedBytes,
+              }
+            }
+          ]
+        }
+      ).send()
+
+      return rawAccounts.map((account) => {
+        const data = getBase64Encoder().encode(account.account.data[0])
+        return {
+          pubkey: account.pubkey,
+          account: dephyIdStakePool.getNftStakeAccountDecoder().decode(data),
+        }
+      })
+    },
+    enabled: !!stakePoolAddress && !!userAddress,
+  })
+}
+
 export function useInitialize() {
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const toastTransaction = useTransactionToast()

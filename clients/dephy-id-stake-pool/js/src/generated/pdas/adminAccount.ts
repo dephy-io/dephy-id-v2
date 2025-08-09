@@ -17,7 +17,7 @@ export async function findAdminAccountPda(
   config: { programAddress?: Address | undefined } = {}
 ): Promise<ProgramDerivedAddress> {
   const {
-    programAddress = 'PHYSJkZ4KNpK4Lp5pg89xfab5mSer9NxRfr6YzuRdNQ' as Address<'PHYSJkZ4KNpK4Lp5pg89xfab5mSer9NxRfr6YzuRdNQ'>,
+    programAddress = 'DSTKMXnJXgvViSkr6hciBaYsTpcduxZuF334WLrvEZmW' as Address<'DSTKMXnJXgvViSkr6hciBaYsTpcduxZuF334WLrvEZmW'>,
   } = config;
   return await getProgramDerivedAddress({
     programAddress,

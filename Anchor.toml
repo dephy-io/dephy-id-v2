@@ -5,8 +5,8 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-dephy_id = "PHy1dzzd8sso1R5t31WHX6JvAsZF9fvNgzxHbgnKHX4"
-dephy_id_stake_pool = "PHYSJkZ4KNpK4Lp5pg89xfab5mSer9NxRfr6YzuRdNQ"
+dephy_id = "D1DdkvuK3V8kzxD5CSsx7JorEo3hMLw4L7Bvujv3pTD6"
+dephy_id_stake_pool = "DSTKMXnJXgvViSkr6hciBaYsTpcduxZuF334WLrvEZmW"
 
 [registry]
 url = "https://api.apr.dev"

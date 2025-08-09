@@ -14,6 +14,70 @@ interface DeviceEntry {
   amount: string
 }
 
+
+export function useCreateNftStakesOnly() {
+  const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
+  const { client } = useWalletUi()
+
+  return useMutation({
+    mutationFn: async ({ stakePoolAddress, assets }: { stakePoolAddress: string, assets: string[] }) => {
+      const results: Array<{ device: string; status: 'success' | 'error'; error?: string }> = []
+
+      const stakePoolAddr = address(stakePoolAddress)
+      const stakePool = await dephyIdStakePool.fetchStakePoolAccount(client.rpc, stakePoolAddr)
+      const productAsset = stakePool.data.config.collection
+
+      let ixs: IInstruction[] = []
+
+      for (let i = 0; i < assets.length; i++) {
+        const deviceAddress = assets[i]
+        try {
+          const deviceAsset = await mplCore.fetchAssetAccount(client.rpc, address(deviceAddress))
+
+          if (deviceAsset.data.base.owner.toString() !== feePayer.address.toString()) {
+            throw new Error(`Device ${deviceAddress} is not owned by the connected wallet.`)
+          }
+
+          if (deviceAsset.data.plugins?.freezeDelegate?.frozen) {
+            throw new Error(`Device ${deviceAddress} is already staked (frozen).`)
+          }
+
+          const nftStakeSigner = await generateKeyPairSigner()
+
+          ixs.push(
+            await dephyIdStakePool.getCreateNftStakeInstructionAsync({
+              stakePool: stakePoolAddr,
+              nftStake: nftStakeSigner,
+              stakeAuthority: feePayer,
+              depositAuthority: feePayer.address,
+              mplCoreAsset: deviceAsset.address,
+              mplCoreCollection: productAsset,
+              payer: feePayer,
+            })
+          )
+
+          if (ixs.length >= 6) {
+            const signature = await sendAndConfirmIxs(ixs)
+            console.log('Transaction signature:', signature, i)
+            ixs = []
+          }
+
+          results.push({ device: deviceAddress, status: 'success' })
+        } catch (error) {
+          console.error(`Error staking device ${deviceAddress}:`, error)
+          results.push({ device: deviceAddress, status: 'error', error: error instanceof Error ? error.message : 'Unknown error' })
+        }
+      }
+
+      if (ixs.length > 0) {
+        const signature = await sendAndConfirmIxs(ixs)
+        console.log('Final transaction signature:', signature)
+      }
+
+      return { results, processedCount: results.length }
+    },
+  })
+}
 interface StakeNftsParams {
   stakePoolAddress: string
   queryClient: QueryClient
@@ -165,37 +229,41 @@ export function useUserAssetsForStakePool({
   dasRpc,
   page = 1,
   limit = 1000,
-  onlyUnfrozen = false,
+  staked = false,
 }: {
   stakePoolAddress?: Address
   dasRpc?: Rpc<DasApi>
   page?: number
   limit?: number
-  onlyUnfrozen?: boolean
+  staked?: boolean
 }) {
   const { account } = useWalletUiAccount()
 
   const stakePool = useStakePool({ stakePoolAddress })
 
   return useQuery<UserAsset[]>({
-    queryKey: ['user-assets', 'stake-pool-collection', { stakePoolAddress, userAddress: account?.address, page, limit, onlyUnfrozen }],
+    queryKey: ['user-assets', 'stake-pool-collection', { stakePoolAddress, userAddress: account?.address, page, limit, staked }],
     queryFn: async () => {
       if (!account?.address || !stakePool.data?.data.config.collection || !dasRpc) {
         return []
       }
 
       try {
-        // Use DAS RPC to search for assets owned by user in the specific collection
-        const response = await dasRpc.searchAssets({
+        // Build search args and omit 'frozen' when undefined (All)
+        const searchArgs: any = {
           ownerAddress: address(account.address),
           grouping: ["collection", stakePool.data.data.config.collection],
           page,
           limit,
-          frozen: onlyUnfrozen ? false : undefined,
           displayOptions: {
             showCollectionMetadata: false,
           }
-        }).send()
+        }
+        // Map staked => frozen for DAS
+        searchArgs.frozen = staked
+
+        // Use DAS RPC to search for assets owned by user in the specific collection
+        const response = await dasRpc.searchAssets(searchArgs).send()
 
         console.log("assets", response)
 
@@ -209,6 +277,8 @@ export function useUserAssetsForStakePool({
           seed: asset.plugins?.attributes?.data?.attribute_list?.find((attr: { key: string; value: string }) => attr.key === "Seed")?.value,
           frozen: asset.plugins?.freeze_delegate?.data.frozen,
         }))
+
+        console.log('fetched', assets.length, 'assets', '(staked filter =', staked, ')')
 
         return assets
       } catch (error) {

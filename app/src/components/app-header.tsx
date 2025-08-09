@@ -8,6 +8,7 @@ const links = [
   { label: 'DePHY ID', path: '/dephy-id' },
   { label: 'Stake Pool', path: '/stake-pool' },
   { label: 'Dev Tools', path: '/dev-tools' },
+  { label: 'NFT Stake Manager', path: '/nft-stake-manager' },
 ]
 
 export function AppHeader() {

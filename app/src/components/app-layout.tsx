@@ -17,8 +17,8 @@ const queryClient = new QueryClient({
 const config = createWalletUiConfig({
   clusters: [
     createSolanaMainnet(import.meta.env.VITE_HELIUS_MAINNET_RPC_URL),
-    createSolanaDevnet(),
-    // createSolanaLocalnet(),
+    createSolanaDevnet(import.meta.env.VITE_HELIUS_DEVNET_RPC_URL),
+    createSolanaLocalnet(),
   ]
 })
 

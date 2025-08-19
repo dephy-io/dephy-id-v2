@@ -1,6 +1,11 @@
 import fs from 'node:fs'
 
 import { Command } from "@commander-js/extra-typings"
+import { dasApi } from '@metaplex-foundation/digital-asset-standard-api'
+import { das } from '@metaplex-foundation/mpl-core-das';
+import { AssetResult } from '@metaplex-foundation/mpl-core-das/dist/src/types.js'
+import { publicKey } from '@metaplex-foundation/umi'
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import { Address, address, generateKeyPairSigner, getAddressCodec, getBase16Encoder, IInstruction, ReadonlyUint8Array } from "gill"
 import { loadKeypairSignerFromFile } from 'gill/node'
 import * as splToken from 'gill/programs/token'
@@ -9,11 +14,6 @@ import * as dephyId from '../clients/dephy-id/js/src/index.js';
 import * as dephyIdStakePool from '../clients/dephy-id-stake-pool/js/src/index.js';
 import * as mplCore from '../deps/mpl-core/js/src/index.js'
 import { createSolanaContext } from "./common.js"
-import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
-import { dasApi } from '@metaplex-foundation/digital-asset-standard-api'
-import { publicKey } from '@metaplex-foundation/umi'
-import { das } from '@metaplex-foundation/mpl-core-das';
-import { AssetResult } from '@metaplex-foundation/mpl-core-das/dist/src/types.js'
 
 
 type Device = {
@@ -114,7 +114,7 @@ cli.command('dump-devices-das')
     const collection = publicKey(options.product)
     const owner = publicKey(options.owner)
 
-    let devices: AssetResult[] = []
+    const devices: AssetResult[] = []
 
     let cursor: string | undefined = undefined
     let keepFetching = true

@@ -1,4 +1,4 @@
-import { ShowStakePool, StakeDephyId, ListNftStakes } from "~/components/stake-pool/stake-pool-ui";
+import { ShowStakePool, StakeDephyId, ListNftStakes, ManageStakePoolConfig } from "~/components/stake-pool/stake-pool-ui";
 import { useParams } from "react-router"
 import { assertIsAddress } from "gill"
 import { useWalletUiAccount } from "@wallet-ui/react"
@@ -23,6 +23,7 @@ export default function StakePoolDetail() {
       <ShowStakePool stakePool={stakePool.data!} mint={mint.data!} />
       {account && <StakeDephyId stakePoolAddress={params.address} />}
       <ListNftStakes stakePool={stakePool.data!} mint={mint.data!} />
+      <ManageStakePoolConfig stakePool={stakePool.data!} />
     </div>
   )
 }

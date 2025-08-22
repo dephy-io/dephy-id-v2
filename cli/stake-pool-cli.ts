@@ -412,4 +412,86 @@ cli
     console.dir(userStakes, { depth: null })
   })
 
+cli
+  .command('announce-update-config')
+  .description('Announce a pending update to a stake pool\'s config')
+  .requiredOption('--stake-pool <address>', 'Address of the stake pool')
+  .option('-a, --authority <path>', 'Path to authority keypair file (defaults to fee payer)')
+  .requiredOption('--max-stake-amount <amount>', 'New max stake amount (ui amount)')
+  .requiredOption('--config-review-time <seconds>', 'New config review time in seconds')
+  .action(async (options) => {
+    const stakePool = address(options.stakePool)
+    const authority = options.authority ? await loadKeypairSignerFromFile(options.authority) : ctx.feePayer
+    const maxStakeAmountUi = Number(options.maxStakeAmount)
+    const configReviewTime = Number(options.configReviewTime)
+
+    const stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(ctx.rpc, stakePool)
+    const stakeTokenMint = address(stakePoolAccount.data.config.stakeTokenMint)
+    const stakeTokenMintAccount = await splToken.fetchMint(ctx.rpc, stakeTokenMint)
+    splToken.assertIsSupportedTokenProgram(stakeTokenMintAccount.programAddress)
+    const maxStakeAmount = splToken.tokenUiAmountToAmount(maxStakeAmountUi, stakeTokenMintAccount.data.decimals)
+
+    const signature = await ctx.sendAndConfirmIxs([
+      await dephyIdStakePool.getAnnounceUpdateConfigInstructionAsync({
+        stakePool,
+        authority,
+        payer: ctx.feePayer,
+        args: {
+          maxStakeAmount,
+          configReviewTime,
+        },
+      }),
+    ])
+
+    console.log(`Announced config update for stake pool ${stakePool}`)
+    console.log(`  maxStakeAmount (raw): ${maxStakeAmount}`)
+    console.log(`  configReviewTime: ${configReviewTime} seconds`)
+    console.log(`Transaction: ${signature}`)
+  })
+
+
+cli
+  .command('confirm-update-config')
+  .description('Confirm the pending config update for a stake pool')
+  .requiredOption('--stake-pool <address>', 'Address of the stake pool')
+  .option('-a, --authority <path>', 'Path to authority keypair file (defaults to fee payer)')
+  .action(async (options) => {
+    const stakePool = address(options.stakePool)
+    const authority = options.authority ? await loadKeypairSignerFromFile(options.authority) : ctx.feePayer
+
+    const signature = await ctx.sendAndConfirmIxs([
+      await dephyIdStakePool.getConfirmUpdateConfigInstructionAsync({
+        stakePool,
+        authority,
+        payer: ctx.feePayer,
+      }),
+    ])
+
+    console.log(`Confirmed config update for stake pool ${stakePool}`)
+    console.log(`Transaction: ${signature}`)
+  })
+
+
+cli
+  .command('cancel-update-config')
+  .description('Cancel the pending config update for a stake pool')
+  .requiredOption('--stake-pool <address>', 'Address of the stake pool')
+  .option('-a, --authority <path>', 'Path to authority keypair file (defaults to fee payer)')
+  .action(async (options) => {
+    const stakePool = address(options.stakePool)
+    const authority = options.authority ? await loadKeypairSignerFromFile(options.authority) : ctx.feePayer
+
+    const signature = await ctx.sendAndConfirmIxs([
+      await dephyIdStakePool.getCancelUpdateConfigInstructionAsync({
+        stakePool,
+        authority,
+        payer: ctx.feePayer,
+      }),
+    ])
+
+    console.log(`Canceled config update for stake pool ${stakePool}`)
+    console.log(`Transaction: ${signature}`)
+  })
+
+
 await cli.parseAsync()

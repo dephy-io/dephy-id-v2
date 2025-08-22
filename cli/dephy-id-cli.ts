@@ -259,13 +259,26 @@ cli
   .command('list-devices-das <product>')
   .description('List all devices of the product, requires a endpoint with DAS support like helius.dev')
   .addOption(new Option('-f, --format <format>', 'output format, "js" | "json", default to "js"').choices(['js', 'json']).default('js'))
+  .option('--limit <limit>', 'limit')
+  .option('--before <before>', 'before')
   .action(async (product, options, cmd) => {
     const { url } = cmd.optsWithGlobals()
     const umi = createUmi(url).use(dasApi())
 
     const collection = publicKey(product)
 
-    const devices = await das.getAssetsByCollection(umi, { collection })
+    const input = { collection }
+
+    if (options.limit) {
+      input['limit'] = parseInt(options.limit)
+    }
+
+    if (options.before) {
+      const before = publicKey(options.before)
+      input['before'] = before
+    }
+
+    const devices = await das.getAssetsByCollection(umi, input)
     logWithFormat(devices, options.format)
   })
 

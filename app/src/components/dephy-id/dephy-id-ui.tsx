@@ -1,6 +1,6 @@
 import { useWalletUi } from "@wallet-ui/react"
 import { Button } from "../ui/button"
-import { useCreateDevice, useCreateProduct, useDephyAccount, useInitialize, useListProducts } from "./dephy-id-data-access"
+import { useCreateDevice, useCreateProduct, useDephyAccount, useDevice, useDevicesByCollection, useInitialize, useListProducts } from "./dephy-id-data-access"
 import { address, assertIsAddress, getAddressDecoder, getAddressEncoder, type Account, type Address } from "gill"
 import React from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
@@ -8,6 +8,7 @@ import { CommonCard as Card, InputWithLabel } from "../common-ui"
 import * as dephyId from "dephy-id-client"
 import * as mplCore from "mpl-core"
 import { Link } from "react-router"
+import { toJSON } from "~/lib/utils"
 
 export function Initialize() {
   const initialize = useInitialize()
@@ -55,9 +56,7 @@ export function CreateProduct() {
 }
 
 export function ListProducts() {
-  const { account } = useWalletUi()
-  assertIsAddress(account!.address)
-  const listProducts = useListProducts({ vendor: account!.address })
+  const listProducts = useListProducts({})
 
   if (!listProducts.isFetched) {
     return <div>Loading...</div>
@@ -65,13 +64,30 @@ export function ListProducts() {
 
   return (
     <Card title="Products">
-      <ul>
-        {listProducts.data?.map((product) => (
-          <li key={product.pubkey.toString()}>
-            <Link to={`/dephy-id/${product.account.collection}`}>{product.account.collection}</Link>
-          </li>
-        ))}
-      </ul>
+      <div className="border rounded-md overflow-hidden max-h-96 overflow-y-auto">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 z-10 bg-gray-50">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium">Collection</th>
+              <th className="px-3 py-2 text-left font-medium">Vendor</th>
+            </tr>
+          </thead>
+          <tbody>
+            {listProducts.data?.map((product) => (
+              <tr key={product.pubkey}>
+                <td className="px-3 py-2">
+                  <Link className="link" to={`/dephy-id/${product.account.collection}`}>
+                    {product.account.collection}
+                  </Link>
+                </td>
+                <td className="px-3 py-2">
+                  {product.account.vendor}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </Card>
   )
 }
@@ -94,6 +110,79 @@ export function ShowProduct({ product, collection }: { product: Account<dephyId.
       <p>Num Minted: {collection.data.base.numMinted}</p>
       <p>Current Size: {collection.data.base.currentSize}</p>
       <p>AppDatas 0: {vendor}</p>
+    </Card>
+  )
+}
+
+export function ShowDevice({ device }: { device: Account<mplCore.AssetAccount> }) {
+  // Extract seed from device attributes
+  const seedAttribute = device.data.plugins?.attributes?.attributeList?.find(
+    (attr: { key: string; value: string }) => attr.key === "Seed"
+  )
+
+  return (
+    <Card title="Device">
+      <p>Device Asset: {device.address}</p>
+      <p>Name: {device.data.base.name}</p>
+      <p>URI: {device.data.base.uri}</p>
+      <p>Owner: {device.data.base.owner}</p>
+      <p>Update Authority: {device.data.base.updateAuthority?.type} {device.data.base.updateAuthority?.address}</p>
+      {seedAttribute && (
+        <p>Seed: {seedAttribute.value}</p>
+      )}
+      {device.data.plugins?.freezeDelegate && (
+        <p>Frozen: {device.data.plugins.freezeDelegate.frozen ? 'Yes' : 'No'}</p>
+      )}
+      {device.data.plugins && (
+        <div className="mt-4">
+          <div>Plugins:</div>
+          {Object.entries(device.data.plugins).map(([key, value]) => (
+            <p key={key} className="font-mono">{key}: {toJSON(value)}</p>
+          ))}
+        </div>
+      )}
+    </Card>
+  )
+}
+
+export function ListDevices({
+  collectionAsset,
+  owner,
+  dasRpcUrl
+}: {
+  collectionAsset: Address,
+  owner?: Address,
+  dasRpcUrl?: string
+}) {
+  const devices = useDevicesByCollection({ collectionAsset, owner, dasRpcUrl })
+
+  return (
+    <Card title="Devices">
+      {devices.isLoading && (
+        <p className="text-sm text-gray-500">Loading devices...</p>
+      )}
+      {devices.error && (
+        <p className="text-sm text-red-500">Error loading devices: {devices.error.message}</p>
+      )}
+      {devices.data && devices.data.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-sm text-gray-600">{devices.data.length} device(s) found</p>
+          <div className="max-h-64 overflow-y-auto space-y-2">
+            {devices.data.map((device) => (
+              <div>
+                <Link
+                  to={`/dephy-id/${collectionAsset}/${device.address}`}
+                  className="text-blue-600 hover:text-blue-800 text-sm"
+                >
+                  {device.address}
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : devices.data && devices.data.length === 0 ? (
+        <p className="text-sm text-gray-500">No devices found for this product.</p>
+      ) : null}
     </Card>
   )
 }

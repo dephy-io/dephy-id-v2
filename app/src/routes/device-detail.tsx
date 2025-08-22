@@ -1,24 +1,20 @@
-import { useWalletUi } from "@wallet-ui/react";
-import { CreateDevice, CreateProduct, Initialize, ListProducts } from "~/components/dephy-id/dephy-id-ui";
+import { ShowDevice } from "~/components/dephy-id/dephy-id-ui";
+import { useParams } from "react-router"
+import { assertIsAddress } from "gill";
+import { useDevice, useMplCoreCollection } from "~/components/dephy-id/dephy-id-data-access";
 
-export default function DephyIdIndex() {
-  const { account } = useWalletUi()
+export default function DeviceDetail() {
+  const params = useParams() as { device: string }
+  assertIsAddress(params.device)
+  const device = useDevice({ deviceAsset: params.device })
 
-  if (!account) {
-    return (
-      <div>
-        <h1>Connect an account to start</h1>
-      </div>
-    )
+  if (!device.isFetched) {
+    return <div>Loading...</div>
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <h1>DePHY ID</h1>
-      <Initialize />
-      <CreateProduct />
-      <ListProducts />
-      <CreateDevice />
+      <ShowDevice device={device.data!} />
     </div>
   )
 }

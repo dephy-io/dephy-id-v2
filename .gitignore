@@ -1,4 +1,17 @@
 .anchor
+
+# Build artifacts
+/dist
+/build
+/out
+
+# Local Environment Variables
+.env.local
+.env.*.local
+
+# IDE files
+.idea
+.vscode
 .DS_Store
 target
 **/*.rs.bk

@@ -4,7 +4,7 @@ import { useInitialize, useAdminAccount, useCreateStakePool, useStakePools, useS
 import { Link, useParams } from "react-router"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
 import * as splToken from "gill/programs/token"
-import { useWalletUi } from "@wallet-ui/react"
+import { ellipsify, useWalletUi } from "@wallet-ui/react"
 import { useTokenAccounts } from "../account/account-data-access"
 import { CommonCard as Card, InputWithLabel } from "../common-ui"
 import { Select, SelectContent, SelectItem, SelectValue } from "../ui/select"
@@ -160,10 +160,8 @@ export function UnstakeDephyId({ nftStake }: { nftStake: Account<dephyIdStakePoo
   )
 }
 
-export function ListNftStakes() {
-  const params = useParams() as { address: string }
-  assertIsAddress(params.address)
-  const nftStakes = useNftStakes({ stakePoolAddress: params.address })
+export function ListNftStakes({ stakePool, mint }: { stakePool: Account<dephyIdStakePool.StakePoolAccount>, mint: Account<splToken.Mint> }) {
+  const nftStakes = useNftStakes({ stakePoolAddress: stakePool.address })
 
   if (!nftStakes.isFetched) {
     return <div>Loading...</div>
@@ -171,13 +169,40 @@ export function ListNftStakes() {
 
   return (
     <Card title="Nft Stakes">
-      <ul>
-        {nftStakes.data?.map((nftStake) => (
-          <li key={nftStake.pubkey.toString()}>
-            <Link to={`/nft-stake/${nftStake.pubkey}`}>{nftStake.pubkey}</Link>
-          </li>
-        ))}
-      </ul>
+      <div className="border rounded-md overflow-hidden max-h-96 overflow-y-auto">
+        <table className="w-full text-sm">
+          <thead className="sticky top-0 z-10 bg-gray-50">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium">NFT Stake</th>
+              <th className="px-3 py-2 text-left font-medium">Stake Authority</th>
+              <th className="px-3 py-2 text-left font-medium">NFT Token Account</th>
+              <th className="px-3 py-2 text-left font-medium">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            {nftStakes.data?.map((nftStake, index: number) => (
+              <tr key={nftStake.pubkey.toString()} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                <td className="px-3 py-2">
+                  <Link to={`/nft-stake/${nftStake.pubkey}`} className="text-blue-600 hover:text-blue-800">
+                    {ellipsify(nftStake.pubkey)}
+                  </Link>
+                </td>
+                <td className="px-3 py-2 font-mono">
+                  {ellipsify(nftStake.account.stakeAuthority)}
+                </td>
+                <td className="px-3 py-2 font-mono">
+                  <Link to={`/dephy-id/${stakePool.data.config.collection}/${nftStake.account.nftTokenAccount}`} className="text-blue-600 hover:text-blue-800">
+                    {ellipsify(nftStake.account.nftTokenAccount)}
+                  </Link>
+                </td>
+                <td className="px-3 py-2">
+                  {splToken.tokenAmountToUiAmount(nftStake.account.amount, mint.data.decimals)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </Card>
   )
 }

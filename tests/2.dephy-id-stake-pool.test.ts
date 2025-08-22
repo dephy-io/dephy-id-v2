@@ -4,6 +4,7 @@ import {
   airdropFactory,
   createSolanaClient, createTransaction, devnet,
   generateKeyPairSigner,
+  getAddressDecoder,
   getSignatureFromTransaction, IInstruction, isNone, isSolanaError, KeyPairSigner, lamports,
   signTransactionMessageWithSigners,
   some,
@@ -15,6 +16,7 @@ import * as dephyIdStakePool from '../clients/dephy-id-stake-pool/js/src/index.j
 import * as mplCore from '../deps/mpl-core/js/src/index.js'
 
 const payer = await generateKeyPairSigner()
+const zeroAddress = getAddressDecoder().decode(Buffer.alloc(32, 0))  // address('11111111111111111111111111111111')
 
 describe("dephy-id-stake-pool", () => {
   const { rpc, rpcSubscriptions, sendAndConfirmTransaction } = createSolanaClient({
@@ -122,8 +124,8 @@ describe("dephy-id-stake-pool", () => {
 
     tokenOwner1 = await generateKeyPairSigner()
     userTokenAddress1 = await splToken.getAssociatedTokenAccountAddress(stPhyMintAddress, tokenOwner1.address, splToken.TOKEN_2022_PROGRAM_ADDRESS)
-    await sendAndConfirmIxs([
-      ...splToken.getMintTokensInstructions({
+    await sendAndConfirmIxs(
+      splToken.getMintTokensInstructions({
         feePayer: payer,
         mint: stPhyMintAddress,
         mintAuthority: vendor,
@@ -132,7 +134,7 @@ describe("dephy-id-stake-pool", () => {
         amount: startingAmount,
         tokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
       })
-    ])
+    )
   })
 
 
@@ -387,6 +389,68 @@ describe("dephy-id-stake-pool", () => {
 
     stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(rpc, stakePoolAddress)
     assert.equal(stakePoolAccount.data.totalAmount, 0n, 'stakePool totalAmount')
+  })
+
+
+  it('multiple user deposit', async () => {
+    nftStake = await generateKeyPairSigner()
+    const tokenOwner2 = await generateKeyPairSigner()
+    const userTokenAddress2 = await splToken.getAssociatedTokenAccountAddress(stPhyMintAddress, tokenOwner2.address, splToken.TOKEN_2022_PROGRAM_ADDRESS)
+    await sendAndConfirmIxs(
+      splToken.getMintTokensInstructions({
+        feePayer: payer,
+        mint: stPhyMintAddress,
+        mintAuthority: vendor,
+        destination: tokenOwner2.address,
+        ata: userTokenAddress2,
+        amount: startingAmount,
+        tokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
+      })
+    )
+
+    // stake with none deposit authority
+    await sendAndConfirmIxs([
+      await dephyIdStakePool.getCreateNftStakeInstructionAsync({
+        stakePool: stakePoolAddress,
+        payer,
+        nftStake,
+        stakeAuthority: didOwner1,
+        depositAuthority: zeroAddress,  // no deposit authority
+        mplCoreAsset: did1Address,
+        mplCoreCollection: productAssetAddress,
+      })
+    ])
+
+    await sendAndConfirmIxs([
+      await dephyIdStakePool.getDepositTokenInstructionAsync({
+        stakePool: stakePoolAddress,
+        nftStake: nftStake.address,
+        user: tokenOwner1,
+        stakeTokenMint: stPhyMintAddress,
+        stakeTokenAccount: stakeTokenAddress,
+        userStakeTokenAccount: userTokenAddress1,
+        payer,
+        amount: depositAmount,
+        tokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
+      })
+    ])
+
+    await sendAndConfirmIxs([
+      await dephyIdStakePool.getDepositTokenInstructionAsync({
+        stakePool: stakePoolAddress,
+        nftStake: nftStake.address,
+        user: tokenOwner2,
+        stakeTokenMint: stPhyMintAddress,
+        stakeTokenAccount: stakeTokenAddress,
+        userStakeTokenAccount: userTokenAddress2,
+        payer,
+        amount: depositAmount,
+        tokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
+      })
+    ])
+
+    const stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(rpc, stakePoolAddress)
+    assert.equal(stakePoolAccount.data.totalAmount, depositAmount * 2n, 'totalAmount')
   })
 
 

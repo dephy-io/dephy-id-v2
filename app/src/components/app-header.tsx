@@ -7,6 +7,8 @@ const links = [
   { label: 'Account', path: '/account' },
   { label: 'DePHY ID', path: '/dephy-id' },
   { label: 'Stake Pool', path: '/stake-pool' },
+  { label: 'Dev Tools', path: '/dev-tools' },
+  { label: 'NFT Stake Manager', path: '/nft-stake-manager' },
 ]
 
 export function AppHeader() {
@@ -21,7 +23,7 @@ export function AppHeader() {
       <div className="mx-auto flex justify-between items-center">
         <div className="flex items-baseline gap-4">
           <Link to="/" className="text-xl hover:text-neutral-500 dark:hover:text-white">
-            <span>DePHY ID Demo UI</span>
+            <span>DePHY ID Lite</span>
           </Link>
           <div className="md:flex items-center">
             <ul className="flex gap-4 flex-nowrap items-center">

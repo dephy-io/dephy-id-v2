@@ -1,11 +1,11 @@
 import { address, assertIsAddress, type Account, type Address } from "gill"
 import { Button } from "../ui/button"
-import { useInitialize, useAdminAccount, useCreateStakePool, useStakePools, useStakePool, useStakeDephyId, useNftStakes, useNftStake, useUserStakes, useDeposit, useWithdraw, useUnstakeDephyId, useCloseNftStake } from "./stake-pool-data-access"
+import { useInitialize, useAdminAccount, useCreateStakePool, useStakePools, useStakePool, useStakeDephyId, useNftStakes, useNftStake, useUserStakes, useDeposit, useWithdraw, useUnstakeDephyId, useCloseNftStake, useAnnounceUpdateConfig, useConfirmUpdateConfig, useCancelUpdateConfig, useAnnouncedConfig } from "./stake-pool-data-access"
 import { Link, useParams } from "react-router"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
 import * as splToken from "gill/programs/token"
 import { ellipsify, useWalletUi } from "@wallet-ui/react"
-import { useTokenAccounts } from "../account/account-data-access"
+import { useTokenAccounts, useMint } from "../account/account-data-access"
 import { CommonCard as Card, InputWithLabel } from "../common-ui"
 import { Select, SelectContent, SelectItem, SelectValue } from "../ui/select"
 import { SelectTrigger } from "@radix-ui/react-select"
@@ -28,6 +28,76 @@ export function Initialize() {
         <div>Authority: {adminAccount.data.data.authority}</div> :
         <Button onClick={handleSubmit}>Initialize</Button>
       }
+    </Card>
+  )
+}
+
+export function ManageStakePoolConfig({ stakePool }: { stakePool: Account<dephyIdStakePool.StakePoolAccount> }) {
+  const announce = useAnnounceUpdateConfig({ stakePool })
+  const confirm = useConfirmUpdateConfig({ stakePool })
+  const cancel = useCancelUpdateConfig({ stakePool })
+  const announced = useAnnouncedConfig({ stakePool })
+  const mintQuery = useMint({ mintAddress: stakePool.data.config.stakeTokenMint })
+
+  const handleAnnounce = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const form = new FormData(event.currentTarget)
+    const maxStakeAmountUi = Number(form.get('maxStakeAmountUi') as string)
+    const configReviewTime = Number(form.get('configReviewTime') as string)
+    await announce.mutateAsync({ maxStakeAmountUi, configReviewTime })
+  }
+
+  return (
+    <Card title="Manage Stake Pool Config">
+      <div className="space-y-2">
+        <div className="text-sm text-gray-700">
+          Current Max Stake Amount:
+          {" "}
+          {mintQuery.data
+            ? `${splToken.tokenAmountToUiAmount(stakePool.data.config.maxStakeAmount, mintQuery.data.data.decimals)} (raw: ${stakePool.data.config.maxStakeAmount.toString()})`
+            : `${stakePool.data.config.maxStakeAmount.toString()} (loading mint...)`}
+        </div>
+        <div className="text-sm text-gray-700">Current Review Time (seconds): {stakePool.data.config.configReviewTime.toString()}</div>
+      </div>
+
+      <div className="mt-3">
+        <div className="font-medium">Announced Config</div>
+        {!announced.isFetched ? (
+          <div className="text-sm text-gray-500">Loading announced config...</div>
+        ) : announced.data && announced.data.exists ? (
+          <div className="mt-1 space-y-1 text-sm">
+            <div>Authority: {announced.data.data.authority}</div>
+            <div title={announced.data.data.timestamp.toString()}>
+              Timestamp: {new Date(Number(announced.data.data.timestamp) * 1000).toLocaleString()}
+            </div>
+            <div>
+              Proposed Max Stake Amount:
+              {" "}
+              {mintQuery.data
+                ? `${splToken.tokenAmountToUiAmount(
+                  typeof announced.data.data.config.maxStakeAmount === 'bigint'
+                    ? announced.data.data.config.maxStakeAmount
+                    : BigInt(announced.data.data.config.maxStakeAmount),
+                  mintQuery.data.data.decimals
+                )} (raw: ${announced.data.data.config.maxStakeAmount.toString()})`
+                : `${announced.data.data.config.maxStakeAmount.toString()} (loading mint...)`}
+            </div>
+            <div>Proposed Review Time (seconds): {announced.data.data.config.configReviewTime.toString()}</div>
+          </div>
+        ) : (
+          <div className="text-sm text-gray-500">No announced config.</div>
+        )}
+      </div>
+
+      <form onSubmit={handleAnnounce} className="mt-3 space-y-2">
+        <InputWithLabel id="maxStakeAmountUi" name="maxStakeAmountUi" type="number" label="New Max Stake Amount (UI)" />
+        <InputWithLabel id="configReviewTime" name="configReviewTime" type="number" label="New Config Review Time (seconds)" />
+        <div className="flex gap-2">
+          <Button type="submit" disabled={announce.isPending || announced.data?.exists}>AnnounceUpdateConfig</Button>
+          <Button type="button" onClick={() => confirm.mutateAsync()} disabled={confirm.isPending || !announced.data || !announced.data.exists}>ConfirmUpdateConfig</Button>
+          <Button type="button" onClick={() => cancel.mutateAsync()} disabled={cancel.isPending || !announced.data || !announced.data.exists}>CancelUpdateConfig</Button>
+        </div>
+      </form>
     </Card>
   )
 }

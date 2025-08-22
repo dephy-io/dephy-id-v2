@@ -24,6 +24,96 @@ export function useAdminAccount() {
   })
 }
 
+export function useAnnouncedConfig({ stakePool }: { stakePool: Account<dephyIdStakePool.StakePoolAccount> }) {
+  const { client } = useWalletUi()
+  const { cluster } = useWalletUiCluster()
+
+  return useQuery({
+    queryKey: ['stake-pool', 'announced-config', { cluster, stakePoolAddress: stakePool.address }],
+    queryFn: async () => {
+      const [announcedConfigPda] = await dephyIdStakePool.findAnnouncedConfigPda({ stakePool: stakePool.address })
+      return dephyIdStakePool.fetchMaybeAnnouncedConfigAccount(client.rpc, announcedConfigPda)
+    },
+  })
+}
+
+// --- Manage Stake Pool Config ---
+export function useAnnounceUpdateConfig({ stakePool }: { stakePool: Account<dephyIdStakePool.StakePoolAccount> }) {
+  const { client } = useWalletUi()
+  const { cluster } = useWalletUiCluster()
+  const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
+  const toastTransaction = useTransactionToast()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ maxStakeAmountUi, configReviewTime }: { maxStakeAmountUi: number, configReviewTime: number }) => {
+      const mint = await fetchMint(client.rpc, stakePool.data.config.stakeTokenMint)
+      const maxStakeAmount = splToken.tokenUiAmountToAmount(maxStakeAmountUi, mint.data.decimals)
+
+      return sendAndConfirmIxs([
+        await dephyIdStakePool.getAnnounceUpdateConfigInstructionAsync({
+          stakePool: stakePool.address,
+          authority: feePayer,
+          payer: feePayer,
+          args: { configReviewTime, maxStakeAmount },
+        })
+      ])
+    },
+    onSuccess: async (signature) => {
+      toastTransaction(signature)
+      queryClient.invalidateQueries({ queryKey: ['stake-pool', 'stake-pool', { cluster, stakePoolAddress: stakePool.address }] })
+      queryClient.invalidateQueries({ queryKey: ['stake-pool', 'announced-config', { cluster, stakePoolAddress: stakePool.address }] })
+    },
+  })
+}
+
+export function useConfirmUpdateConfig({ stakePool }: { stakePool: Account<dephyIdStakePool.StakePoolAccount> }) {
+  const { cluster } = useWalletUiCluster()
+  const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
+  const toastTransaction = useTransactionToast()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async () => {
+      return sendAndConfirmIxs([
+        await dephyIdStakePool.getConfirmUpdateConfigInstructionAsync({
+          stakePool: stakePool.address,
+          authority: feePayer,
+          payer: feePayer,
+        })
+      ])
+    },
+    onSuccess: async (signature) => {
+      toastTransaction(signature)
+      queryClient.invalidateQueries({ queryKey: ['stake-pool', 'stake-pool', { cluster, stakePoolAddress: stakePool.address }] })
+      queryClient.invalidateQueries({ queryKey: ['stake-pool', 'announced-config', { cluster, stakePoolAddress: stakePool.address }] })
+    },
+  })
+}
+
+export function useCancelUpdateConfig({ stakePool }: { stakePool: Account<dephyIdStakePool.StakePoolAccount> }) {
+  const { cluster } = useWalletUiCluster()
+  const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
+  const toastTransaction = useTransactionToast()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async () => {
+      return sendAndConfirmIxs([
+        await dephyIdStakePool.getCancelUpdateConfigInstructionAsync({
+          stakePool: stakePool.address,
+          authority: feePayer,
+          payer: feePayer,
+        })
+      ])
+    },
+    onSuccess: async (signature) => {
+      toastTransaction(signature)
+      queryClient.invalidateQueries({ queryKey: ['stake-pool', 'stake-pool', { cluster, stakePoolAddress: stakePool.address }] })
+      queryClient.invalidateQueries({ queryKey: ['stake-pool', 'announced-config', { cluster, stakePoolAddress: stakePool.address }] })
+    },
+  })
+}
 export function useUserNftStakesForPool({ stakePoolAddress, userAddress }: { stakePoolAddress: Address, userAddress: Address }) {
   const { client } = useWalletUi()
   const { cluster } = useWalletUiCluster()

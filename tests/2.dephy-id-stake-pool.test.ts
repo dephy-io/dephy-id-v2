@@ -461,7 +461,7 @@ describe("dephy-id-stake-pool", () => {
         authority: stakePoolAuthority,
         payer,
         args: {
-          configReviewTime: 3n,
+          configReviewTime: 2n,
           maxStakeAmount: 10000_000_000n,
         }
       })
@@ -475,7 +475,7 @@ describe("dephy-id-stake-pool", () => {
     const announcedConfig = await dephyIdStakePool.fetchAnnouncedConfigAccount(rpc, announcedConfigPda[0])
     assert.equal(announcedConfig.data.stakePool, stakePoolAddress)
     assert.equal(announcedConfig.data.authority, stakePoolAuthority.address)
-    assert.equal(announcedConfig.data.config.configReviewTime, 3n)
+    assert.equal(announcedConfig.data.config.configReviewTime, 2n)
     assert.equal(announcedConfig.data.config.maxStakeAmount, 10000_000_000n)
   })
 
@@ -503,7 +503,7 @@ describe("dephy-id-stake-pool", () => {
     ])
 
     const stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(rpc, stakePoolAddress)
-    assert.equal(stakePoolAccount.data.config.configReviewTime, 3n)
+    assert.equal(stakePoolAccount.data.config.configReviewTime, 2n)
     assert.equal(stakePoolAccount.data.config.maxStakeAmount, 10000_000_000n)
   })
 

@@ -50,6 +50,7 @@ pub fn process_confirm_update_config(ctx: Context<ConfirmUpdateConfig>) -> Resul
     let new_config = &announced_config.config;
 
     config.max_stake_amount = new_config.max_stake_amount;
+    config.config_review_time = new_config.config_review_time;
 
     Ok(())
 }

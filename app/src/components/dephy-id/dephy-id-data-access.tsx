@@ -10,11 +10,12 @@ import { useProgramIds } from "~/lib/program-ids"
 
 export function useDephyAccount() {
   const { client } = useWalletUi()
+  const { dephyIdProgramId } = useProgramIds()
 
   return useQuery({
     queryKey: ['dephy-id', 'dephy-account'],
     queryFn: async () => {
-      const [address] = await dephyId.findDephyAccountPda()
+      const [address] = await dephyId.findDephyAccountPda({ programAddress: dephyIdProgramId })
       return dephyId.fetchDephyAccount(client.rpc, address)
     },
   })
@@ -25,6 +26,7 @@ export function useInitialize() {
   const toastTransaction = useTransactionToast()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const queryClient = useQueryClient()
+  const { dephyIdProgramId } = useProgramIds()
 
   return useMutation({
     mutationKey: ['dephy-id', 'initialize', { cluster }],
@@ -33,6 +35,8 @@ export function useInitialize() {
         await dephyId.getInitializeInstructionAsync({
           payer: feePayer,
           authority: feePayer,
+        }, {
+          programAddress: dephyIdProgramId
         }),
       ])
     },
@@ -48,6 +52,7 @@ export function useCreateProduct() {
   const toastTransaction = useTransactionToast()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const queryClient = useQueryClient()
+  const { dephyIdProgramId } = useProgramIds()
 
   return useMutation({
     mutationKey: ['dephy-id', 'create-product', { cluster }],
@@ -59,6 +64,8 @@ export function useCreateProduct() {
           vendor: feePayer,
           payer: feePayer,
           plugins: [],
+        }, {
+          programAddress: dephyIdProgramId
         }),
       ])
     },
@@ -117,11 +124,12 @@ export function useListProducts({ vendor }: { vendor?: Address }) {
 
 export function useProduct({ productAsset }: { productAsset: Address }) {
   const { client } = useWalletUi()
+  const { dephyIdProgramId } = useProgramIds()
 
   return useQuery({
     queryKey: ['dephy-id', 'product', { productAsset }],
     queryFn: async () => {
-      const [productAddress] = await dephyId.findProductAccountPda({ productAsset })
+      const [productAddress] = await dephyId.findProductAccountPda({ productAsset }, { programAddress: dephyIdProgramId })
       return dephyId.fetchProductAccount(client.rpc, productAddress)
     },
   })
@@ -218,6 +226,7 @@ export function useCreateDevice() {
   const { cluster } = useWalletUiCluster()
   const toastTransaction = useTransactionToast()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
+  const { dephyIdProgramId } = useProgramIds()
 
   return useMutation({
     mutationKey: ['dephy-id', 'create-device', { cluster }],
@@ -231,6 +240,8 @@ export function useCreateDevice() {
           seed,
           mintAuthority: feePayer,
           payer: feePayer,
+        }, {
+          programAddress: dephyIdProgramId
         }),
       ])
     },

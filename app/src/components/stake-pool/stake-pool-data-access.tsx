@@ -14,11 +14,12 @@ import { useProgramIds } from "~/lib/program-ids";
 export function useAdminAccount() {
   const { client } = useWalletUi()
   const { cluster } = useWalletUiCluster()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useQuery({
     queryKey: ['stake-pool', 'admin-account', { cluster }],
     queryFn: async () => {
-      const [address] = await dephyIdStakePool.findAdminAccountPda()
+      const [address] = await dephyIdStakePool.findAdminAccountPda({ programAddress: dephyIdStakePoolProgramId })
       return dephyIdStakePool.fetchAdminAccount(client.rpc, address)
     },
   })
@@ -27,23 +28,24 @@ export function useAdminAccount() {
 export function useAnnouncedConfig({ stakePool }: { stakePool: Account<dephyIdStakePool.StakePoolAccount> }) {
   const { client } = useWalletUi()
   const { cluster } = useWalletUiCluster()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useQuery({
     queryKey: ['stake-pool', 'announced-config', { cluster, stakePoolAddress: stakePool.address }],
     queryFn: async () => {
-      const [announcedConfigPda] = await dephyIdStakePool.findAnnouncedConfigPda({ stakePool: stakePool.address })
+      const [announcedConfigPda] = await dephyIdStakePool.findAnnouncedConfigPda({ stakePool: stakePool.address }, { programAddress: dephyIdStakePoolProgramId })
       return dephyIdStakePool.fetchMaybeAnnouncedConfigAccount(client.rpc, announcedConfigPda)
     },
   })
 }
 
-// --- Manage Stake Pool Config ---
 export function useAnnounceUpdateConfig({ stakePool }: { stakePool: Account<dephyIdStakePool.StakePoolAccount> }) {
   const { client } = useWalletUi()
   const { cluster } = useWalletUiCluster()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const toastTransaction = useTransactionToast()
   const queryClient = useQueryClient()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
     mutationFn: async ({ maxStakeAmountUi, configReviewTime }: { maxStakeAmountUi: number, configReviewTime: number }) => {
@@ -56,6 +58,8 @@ export function useAnnounceUpdateConfig({ stakePool }: { stakePool: Account<deph
           authority: feePayer,
           payer: feePayer,
           args: { configReviewTime, maxStakeAmount },
+        }, {
+          programAddress: dephyIdStakePoolProgramId
         })
       ])
     },
@@ -72,6 +76,7 @@ export function useConfirmUpdateConfig({ stakePool }: { stakePool: Account<dephy
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const toastTransaction = useTransactionToast()
   const queryClient = useQueryClient()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
     mutationFn: async () => {
@@ -80,6 +85,8 @@ export function useConfirmUpdateConfig({ stakePool }: { stakePool: Account<dephy
           stakePool: stakePool.address,
           authority: feePayer,
           payer: feePayer,
+        }, {
+          programAddress: dephyIdStakePoolProgramId
         })
       ])
     },
@@ -96,6 +103,7 @@ export function useCancelUpdateConfig({ stakePool }: { stakePool: Account<dephyI
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const toastTransaction = useTransactionToast()
   const queryClient = useQueryClient()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
     mutationFn: async () => {
@@ -104,6 +112,8 @@ export function useCancelUpdateConfig({ stakePool }: { stakePool: Account<dephyI
           stakePool: stakePool.address,
           authority: feePayer,
           payer: feePayer,
+        }, {
+          programAddress: dephyIdStakePoolProgramId
         })
       ])
     },
@@ -170,6 +180,7 @@ export function useInitialize() {
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const toastTransaction = useTransactionToast()
   const queryClient = useQueryClient()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
     mutationFn: async () => {
@@ -177,6 +188,8 @@ export function useInitialize() {
         await dephyIdStakePool.getInitializeInstructionAsync({
           authority: feePayer,
           payer: feePayer,
+        }, {
+          programAddress: dephyIdStakePoolProgramId
         })
       ])
     },
@@ -192,6 +205,7 @@ export function useCreateStakePool() {
   const { client } = useWalletUi()
   const toastTransaction = useTransactionToast()
   const queryClient = useQueryClient()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
     mutationFn: async ({
@@ -226,6 +240,8 @@ export function useCreateStakePool() {
             maxStakeAmount: maxStakeAmountInSmallestUnits,
             configReviewTime,
           }
+        }, {
+          programAddress: dephyIdStakePoolProgramId
         })
       ])
     },
@@ -292,6 +308,7 @@ export function useStakeDephyId() {
   const toastTransaction = useTransactionToast()
   const { cluster } = useWalletUiCluster()
   const queryClient = useQueryClient()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
     mutationFn: async ({ stakePoolAddress, mplCoreAsset, depositAuthority }: { stakePoolAddress: Address, mplCoreAsset: Address, depositAuthority: Address }) => {
@@ -309,6 +326,8 @@ export function useStakeDephyId() {
           mplCoreAsset,
           mplCoreCollection,
           payer: feePayer,
+        }, {
+          programAddress: dephyIdStakePoolProgramId
         })
       ])
     },
@@ -325,6 +344,7 @@ export function useUnstakeDephyId({ nftStake }: { nftStake: Account<dephyIdStake
   const toastTransaction = useTransactionToast()
   const { cluster } = useWalletUiCluster()
   const queryClient = useQueryClient()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
     mutationFn: async () => {
@@ -340,6 +360,8 @@ export function useUnstakeDephyId({ nftStake }: { nftStake: Account<dephyIdStake
           mplCoreCollection: mplCoreCollection,
           mplCoreAsset: mplCoreAsset,
           payer: feePayer
+        }, {
+          programAddress: dephyIdStakePoolProgramId
         })
       ])
     },
@@ -464,6 +486,7 @@ export function useDeposit({ nftStake }: { nftStake: Account<dephyIdStakePool.Nf
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const toastTransaction = useTransactionToast()
   const queryClient = useQueryClient()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
     mutationFn: async ({ userStakeTokenAccount, amount }: { userStakeTokenAccount: Address, amount: number }) => {
@@ -478,6 +501,8 @@ export function useDeposit({ nftStake }: { nftStake: Account<dephyIdStakePool.Nf
           userStakeTokenAccount,
           payer: feePayer,
           amount,
+        }, {
+          programAddress: dephyIdStakePoolProgramId
         })
       ])
     },
@@ -494,6 +519,7 @@ export function useWithdraw({ userStake }: { userStake: Account<dephyIdStakePool
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const toastTransaction = useTransactionToast()
   const queryClient = useQueryClient()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
     mutationFn: async ({ userStakeTokenAccount, amount }: { userStakeTokenAccount: Address, amount: number }) => {
@@ -508,6 +534,8 @@ export function useWithdraw({ userStake }: { userStake: Account<dephyIdStakePool
           userStakeTokenAccount,
           payer: feePayer,
           amount,
+        }, {
+          programAddress: dephyIdStakePoolProgramId
         })
       ])
     },
@@ -525,6 +553,7 @@ export function useCloseNftStake({ nftStakeAddress }: { nftStakeAddress: Address
   const nftStake = useNftStake({ nftStakeAddress })
   const toastTransaction = useTransactionToast()
   const queryClient = useQueryClient()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
     mutationFn: async () => {
@@ -534,6 +563,8 @@ export function useCloseNftStake({ nftStakeAddress }: { nftStakeAddress: Address
           nftStake: nftStakeAddress,
           stakeAuthority: feePayer,
           payer: feePayer,
+        }, {
+          programAddress: dephyIdStakePoolProgramId
         })
       ])
     },

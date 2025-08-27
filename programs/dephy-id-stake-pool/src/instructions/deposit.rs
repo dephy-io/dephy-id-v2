@@ -5,8 +5,7 @@ use crate::{
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
-    spl_pod::option::Nullable, transfer_checked, Mint, TokenAccount, TokenInterface,
-    TransferChecked,
+    transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked,
 };
 
 #[derive(Accounts)]
@@ -55,13 +54,14 @@ pub fn process_deposit(ctx: Context<Deposit>, maybe_amount: Option<u64>) -> Resu
     let nft_stake = &mut ctx.accounts.nft_stake;
     let user_stake = &mut ctx.accounts.user_stake_account;
 
-    if nft_stake.deposit_authority.is_some() {
-        if ctx.accounts.user.key() != nft_stake.deposit_authority
-            && ctx.accounts.user.key() != nft_stake.stake_authority
-        {
-            return Err(ErrorCode::InvalidAuthority.into());
-        }
-    }
+    // no longer check deposit authority
+    // if nft_stake.deposit_authority.is_some() {
+    //     if ctx.accounts.user.key() != nft_stake.deposit_authority
+    //         && ctx.accounts.user.key() != nft_stake.stake_authority
+    //     {
+    //         return Err(ErrorCode::InvalidAuthority.into());
+    //     }
+    // }
 
     require_gt!(amount, 0, ErrorCode::InvalidAmount);
     require_gte!(

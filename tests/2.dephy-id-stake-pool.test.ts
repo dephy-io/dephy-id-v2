@@ -229,9 +229,6 @@ describe("dephy-id-stake-pool", () => {
     })
   })
 
-  // TODO: deposit from other than depositAuthority
-  // TODO: deposit amount out of range
-
   let userStakeAddress: Address
   const depositAmount = 1000_000_000n
   it('deposit', async () => {
@@ -346,6 +343,35 @@ describe("dephy-id-stake-pool", () => {
     assert.equal(userTokenAccount.data.amount, 0n)
   })
 
+  it('should fail to deposit when amount exceeds maxStakeAmount', async () => {
+    await sendAndConfirmIxs(
+      splToken.getMintTokensInstructions({
+        feePayer: payer,
+        mint: stPhyMintAddress,
+        mintAuthority: vendor,
+        destination: tokenOwner1.address,
+        ata: userTokenAddress1,
+        amount: 25_000_000_000n,
+        tokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
+      })
+    )
+
+    await assert.rejects(async () => {
+      await sendAndConfirmIxs([
+        await dephyIdStakePool.getDepositTokenInstructionAsync({
+          stakePool: stakePoolAddress,
+          nftStake: nftStake.address,
+          user: tokenOwner1,
+          stakeTokenMint: stPhyMintAddress,
+          stakeTokenAccount: stakeTokenAddress,
+          userStakeTokenAccount: userTokenAddress1,
+          payer,
+          amount: 20_000_000_001n,
+          tokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
+        })
+      ], { showError: false })
+    })
+  })
 
   it('unstake nft', async () => {
     await sendAndConfirmIxs([

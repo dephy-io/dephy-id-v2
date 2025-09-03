@@ -10,6 +10,7 @@ export default [
   route('stake-pool/:address', 'routes/stake-pool-detail.tsx'),
   route('stake-pool', 'routes/stake-pool-index.tsx'),
   route('dev-tools', 'routes/dev-tools.tsx'),
+  route('dodp-tools', 'routes/dodp-tools.tsx'),
   route('nft-stake/:address', 'routes/nft-stake-detail.tsx'),
   route('user-stake/:address', 'routes/user-stake-detail.tsx'),
   route('nft-stake-manager', 'routes/nft-stake-manager.tsx')

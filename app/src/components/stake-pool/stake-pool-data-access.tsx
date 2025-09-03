@@ -372,13 +372,13 @@ export function useUnstakeDephyId({ nftStake }: { nftStake: Account<dephyIdStake
   })
 }
 
-export function useNftStakes({ stakePoolAddress }: { stakePoolAddress: Address }) {
+export function useNftStakes({ stakePoolAddress }: { stakePoolAddress?: Address }) {
   const { client } = useWalletUi()
   const { cluster } = useWalletUiCluster()
   const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useQuery({
-    queryKey: ['stake-pool', 'nft-stakes', { cluster }],
+    queryKey: ['stake-pool', 'nft-stakes', stakePoolAddress, { cluster }],
     queryFn: async () => {
       const discriminator = getBase58Decoder().decode(dephyIdStakePool.NFT_STAKE_ACCOUNT_DISCRIMINATOR)
       const rawAccounts = await client.rpc.getProgramAccounts(
@@ -409,6 +409,7 @@ export function useNftStakes({ stakePoolAddress }: { stakePoolAddress: Address }
         }
       })
     },
+    enabled: !!stakePoolAddress,
   })
 }
 
@@ -430,6 +431,7 @@ export function useUserStakes({ nftStakeAddress }: { nftStakeAddress: Address })
   const { client } = useWalletUi()
   const { cluster } = useWalletUiCluster()
   const { dephyIdStakePoolProgramId } = useProgramIds()
+  const userStakeAccountDecoder = dephyIdStakePool.getUserStakeAccountDecoder()
 
   return useQuery({
     queryKey: ['stake-pool', 'user-stakes', { cluster, nftStakeAddress }],
@@ -459,13 +461,61 @@ export function useUserStakes({ nftStakeAddress }: { nftStakeAddress: Address })
         const data = getBase64Encoder().encode(account.account.data[0])
         return {
           pubkey: account.pubkey,
-          account: dephyIdStakePool.getUserStakeAccountDecoder().decode(data),
+          account: userStakeAccountDecoder.decode(data),
         }
       })
     },
   })
 }
 
+export function useUserStakesForPool({ stakePoolAddress }: { stakePoolAddress?: Address }) {
+  const { client, account } = useWalletUi()
+  const { cluster } = useWalletUiCluster()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
+  const userAddress = account?.address
+  const userStakeAccountDecoder = dephyIdStakePool.getUserStakeAccountDecoder()
+
+  return useQuery({
+    enabled: !!stakePoolAddress,
+    queryKey: ['stake-pool', 'user-stakes-for-pool', { cluster, stakePoolAddress }],
+    queryFn: async () => {
+      const discriminator = getBase58Decoder().decode(dephyIdStakePool.USER_STAKE_ACCOUNT_DISCRIMINATOR)
+      const rawAccounts = await client.rpc.getProgramAccounts(
+        dephyIdStakePoolProgramId,
+        {
+          encoding: 'base64',
+          filters: [{
+            memcmp: {
+              encoding: 'base58',
+              offset: 0n,
+              bytes: discriminator as unknown as Base58EncodedBytes,
+            }
+          }, {
+            memcmp: {
+              encoding: 'base58',
+              offset: 8n,
+              bytes: stakePoolAddress as unknown as Base58EncodedBytes,
+            }
+          }, {
+            memcmp: {
+              encoding: 'base58',
+              offset: 8n + 32n + 32n,
+              bytes: userAddress as unknown as Base58EncodedBytes,
+            }
+          }]
+        }
+      ).send()
+
+      return rawAccounts.map((account) => {
+        const data = getBase64Encoder().encode(account.account.data[0])
+        return {
+          pubkey: account.pubkey,
+          account: userStakeAccountDecoder.decode(data),
+        }
+      })
+    },
+  })
+}
 
 export function useUserStake({ userStakeAddress }: { userStakeAddress: Address }) {
   const { client } = useWalletUi()

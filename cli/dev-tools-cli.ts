@@ -6,7 +6,11 @@ import { das } from '@metaplex-foundation/mpl-core-das';
 import { AssetResult } from '@metaplex-foundation/mpl-core-das/dist/src/types.js'
 import { publicKey } from '@metaplex-foundation/umi'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
-import { Address, address, generateKeyPairSigner, getAddressCodec, getBase16Encoder, IInstruction, ReadonlyUint8Array } from "gill"
+import {
+  Address, address, generateKeyPairSigner, getAddressCodec,
+  getBase16Encoder, getBase58Decoder, getBase64Encoder,
+  type Base58EncodedBytes, IInstruction, ReadonlyUint8Array
+} from "gill"
 import { loadKeypairSignerFromFile } from 'gill/node'
 import * as splToken from 'gill/programs/token'
 
@@ -271,11 +275,11 @@ cli.command('stake-nfts')
       splToken.tokenUiAmountToAmount(Number(options.amount), stakeTokenMint.data.decimals) :
       undefined;
 
-    const userStakeTokenAccount = (await splToken.findAssociatedTokenPda({
+    const [userStakeTokenAccount] = (await splToken.findAssociatedTokenPda({
       mint: stakeTokenMint.address,
       owner: ctx.feePayer.address,
       tokenProgram: stakeTokenMint.programAddress,
-    }))[0]
+    }))
 
     const csvFile = fs.readFileSync(options.csv, { encoding: 'utf8' })
     const devicesAndOwners: { deviceAddress: Address, owner: Address, amount: bigint | undefined }[] = []
@@ -427,6 +431,325 @@ cli.command('batch-transfer')
       const signature = await ctx.sendAndConfirmIxs(ixs)
       console.log('Transaction signature:', signature)
     }
+  })
+
+
+cli.command('batch-adjust')
+  .description('Adjust deposits in batch')
+  .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
+  .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
+  .requiredOption('--stake-pool <address>', 'Address of the stake pool')
+  .requiredOption('--csv <csvFile>', 'CSV file for all devices and owners')
+  .option('--program-id <programId>', 'Program ID of the stake pool', dephyIdStakePool.DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS)
+  .option('--amount <amount>', 'Override amount of tokens for each deposit (ui amount)')
+  .option('--batch <batch>', 'batch size', '6')
+  .action(async (options) => {
+    const { keypair, url: urlOrMoniker } = options
+    const batch = Number(options.batch)
+    const programId = address(options.programId)
+
+    const ctx = await createSolanaContext({
+      keypair,
+      urlOrMoniker,
+    })
+
+    const stakePoolAddress = address(options.stakePool)
+    const stakePool = await dephyIdStakePool.fetchStakePoolAccount(ctx.rpc, stakePoolAddress)
+
+    const stakeTokenMint = await splToken.fetchMint(ctx.rpc, stakePool.data.config.stakeTokenMint)
+    const overrideAmount = options.amount ?
+      splToken.tokenUiAmountToAmount(Number(options.amount), stakeTokenMint.data.decimals) :
+      undefined;
+
+    const [userStakeTokenAccount] = (await splToken.findAssociatedTokenPda({
+      mint: stakeTokenMint.address,
+      owner: ctx.feePayer.address,
+      tokenProgram: stakeTokenMint.programAddress,
+    }))
+
+    const csvFile = fs.readFileSync(options.csv, { encoding: 'utf8' })
+    const devicesAndOwners: { nftStakeAddress: Address, amount: bigint | undefined }[] = []
+
+    for (const line of csvFile.trim().split('\n').slice(1)) {
+      const [nftStakeAddress, uiAmount] = line.split(',')
+      const amount = uiAmount ? splToken.tokenUiAmountToAmount(Number(uiAmount), stakeTokenMint.data.decimals) : undefined;
+
+      devicesAndOwners.push({
+        nftStakeAddress: address(nftStakeAddress),
+        amount: overrideAmount || amount,
+      })
+    }
+
+    let ixs: IInstruction[] = []
+    for (let i = 0; i < devicesAndOwners.length; i++) {
+      const { nftStakeAddress, amount: targetAmount } = devicesAndOwners[i]
+
+      const [userStakeAddress] = await dephyIdStakePool.findUserStakeAccountPda({
+        nftStake: nftStakeAddress,
+        user: ctx.feePayer.address,
+      }, { programAddress: programId })
+
+      const userStakeAccount = await dephyIdStakePool.fetchMaybeUserStakeAccount(ctx.rpc, userStakeAddress)
+      let amount = targetAmount
+
+      if (userStakeAccount.exists) {
+        if (targetAmount > userStakeAccount.data.amount) {
+          amount = targetAmount - userStakeAccount.data.amount
+          ixs.push(
+            await dephyIdStakePool.getDepositTokenInstructionAsync({
+              stakePool: stakePoolAddress,
+              nftStake: nftStakeAddress,
+              user: ctx.feePayer,
+              stakeTokenMint: stakeTokenMint.address,
+              stakeTokenAccount: stakePool.data.stakeTokenAccount,
+              userStakeTokenAccount: userStakeTokenAccount,
+              payer: ctx.feePayer,
+              amount,
+            })
+          )
+        } else if (targetAmount < userStakeAccount.data.amount) {
+          amount = userStakeAccount.data.amount - targetAmount
+          ixs.push(
+            await dephyIdStakePool.getWithdrawInstructionAsync({
+              stakePool: stakePoolAddress,
+              nftStake: nftStakeAddress,
+              user: ctx.feePayer,
+              stakeTokenMint: stakeTokenMint.address,
+              stakeTokenAccount: stakePool.data.stakeTokenAccount,
+              userStakeTokenAccount: userStakeTokenAccount,
+              payer: ctx.feePayer,
+              amount,
+            })
+          )
+        } else {
+          console.log('skip', nftStakeAddress)
+          continue
+        }
+      }
+
+      if (ixs.length >= batch) {
+        const signature = await ctx.sendAndConfirmIxs(ixs)
+        console.log('Transaction signature:', signature, i)
+        ixs = []
+      }
+    }
+
+    if (ixs.length > 0) {
+      const signature = await ctx.sendAndConfirmIxs(ixs)
+      console.log('Transaction signature:', signature)
+    }
+  })
+
+
+cli.command('calc-dodp')
+  .description('Calculate DODP adjustment plan')
+  .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
+  .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
+  .requiredOption('--stake-pool <address>', 'Address of the stake pool')
+  .option('--program-id <programId>', 'Program ID of the stake pool', dephyIdStakePool.DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS)
+  .option('--top-x <topX>', 'Output top X nftStake addresses by score', '10')
+  .option('--below-y <belowY>', 'Also output bottom Y nftStake addresses by score', '10')
+  .requiredOption('--out-top <outfile>', 'CSV file path for top X output')
+  .requiredOption('--out-below <outfile>', 'CSV file path for bottom Y output')
+  .action(async (options) => {
+
+    // fetch all scores
+    const DEPHY_API_URL = 'https://mainnet-tokenomic.dephy.dev'
+
+    const batch = 500
+    const allScores: {
+      worker_pubkey: string
+      uptime_120h: number
+      uptime_720h: number
+      self_staking_avg_7d: number
+      total_staking_avg_7d: number
+      score: number
+      date: string
+      created_at: string
+      updated_at: string
+      deviceSeed?: Uint8Array
+    }[] = []
+
+    let offset = 0
+    while (true) {
+      const url = new URL(`/api/v1/scores/daily`, DEPHY_API_URL)
+      url.searchParams.set('offset', String(offset))
+      url.searchParams.set('limit', String(batch))
+
+      const res = await Bun.fetch(url.toString(), {
+        method: 'GET',
+        headers: { Accept: 'application/json' },
+      })
+
+      const json = await res.json()
+      const page = (json.data as { scores?: any[]; total?: number }) ?? { scores: [], total: 0 }
+
+      const transformed = (page.scores ?? []).map((s) => {
+        const deviceSeedRO = b16Encoder.encode(s.worker_pubkey)
+        const deviceSeed = new Uint8Array(deviceSeedRO as any)
+        const workerBase58 = addressCodec.decode(deviceSeed)
+        return { ...s, worker_pubkey: workerBase58, deviceSeed }
+      })
+
+      allScores.push(...transformed)
+
+      if (transformed.length < batch) break
+      offset += batch
+    }
+
+    console.error(`Fetched ${allScores.length} device scores for the latest day`)
+
+    const { keypair, url: urlOrMoniker } = options
+    const programId = address(options.programId)
+    const ctx = await createSolanaContext({ keypair, urlOrMoniker })
+
+    const stakePoolAddress = address(options.stakePool)
+    const stakePool = await dephyIdStakePool.fetchStakePoolAccount(ctx.rpc, stakePoolAddress)
+    const collection = stakePool.data.config.collection
+
+    // NFT Stakes for pool
+    const discriminatorNftStake = getBase58Decoder().decode(dephyIdStakePool.NFT_STAKE_ACCOUNT_DISCRIMINATOR)
+    const rawNftStakeAccounts = await ctx.rpc.getProgramAccounts(
+      programId,
+      {
+        encoding: 'base64',
+        filters: [
+          {
+            memcmp: {
+              encoding: 'base58',
+              offset: 0n,
+              bytes: discriminatorNftStake as unknown as Base58EncodedBytes,
+            }
+          },
+          {
+            memcmp: {
+              encoding: 'base58',
+              offset: 8n,
+              bytes: stakePoolAddress as unknown as Base58EncodedBytes,
+            }
+          }
+        ]
+      }
+    ).send()
+
+    const nftStakes = rawNftStakeAccounts.map((account) => {
+      const data = getBase64Encoder().encode(account.account.data[0])
+      return {
+        pubkey: account.pubkey,
+        account: dephyIdStakePool.getNftStakeAccountDecoder().decode(data),
+      }
+    })
+
+    console.error(`Fetched ${nftStakes.length} NFT stake accounts for pool ${stakePoolAddress}`)
+
+    // User stakes for pool and current fee payer
+    const discriminatorUserStake = getBase58Decoder().decode(dephyIdStakePool.USER_STAKE_ACCOUNT_DISCRIMINATOR)
+    const userAddress = ctx.feePayer.address
+    const rawUserStakeAccounts = await ctx.rpc.getProgramAccounts(
+      programId,
+      {
+        encoding: 'base64',
+        filters: [
+          {
+            memcmp: {
+              encoding: 'base58',
+              offset: 0n,
+              bytes: discriminatorUserStake as unknown as Base58EncodedBytes,
+            }
+          },
+          {
+            memcmp: {
+              encoding: 'base58',
+              offset: 8n,
+              bytes: stakePoolAddress as unknown as Base58EncodedBytes,
+            }
+          },
+          {
+            memcmp: {
+              encoding: 'base58',
+              offset: 8n + 32n + 32n,
+              bytes: userAddress as unknown as Base58EncodedBytes,
+            }
+          }
+        ]
+      }
+    ).send()
+
+    const userStakes = rawUserStakeAccounts.map((account) => {
+      const data = getBase64Encoder().encode(account.account.data[0])
+      return {
+        pubkey: account.pubkey,
+        account: dephyIdStakePool.getUserStakeAccountDecoder().decode(data),
+      }
+    })
+
+    console.error(`Fetched ${userStakes.length} user stake accounts for pool ${stakePoolAddress} and user ${userAddress}`)
+
+    const deviceToAssetEntries = await Promise.all(
+      allScores.map(async (s) => {
+        try {
+          const [assetAddress] = await dephyId.findDeviceAssetPda({
+            productAsset: collection,
+            deviceSeed: new Uint8Array(s.deviceSeed as any),
+          })
+          return [s.worker_pubkey, assetAddress] as const
+        } catch (e) {
+          return [s.worker_pubkey, undefined] as const
+        }
+      })
+    )
+    const deviceToAsset = Object.fromEntries(
+      deviceToAssetEntries.filter(([, a]) => !!a) as [string, Address][]
+    ) as Record<string, Address>
+
+    const assetToNftStake: Record<string, { pubkey: Address, account: any }> = {}
+    for (const ns of nftStakes) {
+      assetToNftStake[String(ns.account.nftTokenAccount)] = { pubkey: ns.pubkey, account: ns.account }
+    }
+    const userStakeByNftStake: Record<string, { pubkey: Address, account: any }> = {}
+    for (const us of userStakes) {
+      userStakeByNftStake[String(us.account.nftStake)] = { pubkey: us.pubkey, account: us.account }
+    }
+
+    type RankedStake = {
+      nftStakeAddress?: Address
+      score: number
+    }
+
+    const rankedStakes: RankedStake[] = []
+    let matched = 0
+    for (const s of allScores) {
+      const asset = deviceToAsset[s.worker_pubkey]
+      const nftStake = asset ? assetToNftStake[String(asset)] : undefined
+      if (asset && nftStake) matched++
+      rankedStakes.push({
+        nftStakeAddress: nftStake?.pubkey,
+        score: s.score,
+      })
+    }
+
+    const topX = Number(options.topX)
+    const belowY = Number(options.belowY)
+    const present = [...rankedStakes]
+      .filter(j => !!j.nftStakeAddress)
+    const sortedDesc = [...present].sort((a, b) => b.score - a.score)
+
+    const top = sortedDesc.slice(0, topX)
+    const bottom = sortedDesc.slice(belowY)
+
+    const toCsv = (rows: { nftStakeAddress?: Address }[]) => {
+      const lines = ['nftStakeAddress']
+      for (const r of rows) lines.push(r.nftStakeAddress)
+      return lines.join('\n')
+    }
+
+    const topCsv = toCsv(top)
+    const bottomCsv = toCsv(bottom)
+
+    fs.writeFileSync(options.outTop, topCsv)
+    fs.writeFileSync(options.outBelow, bottomCsv)
+
+    console.error(`Wrote top ${top.length} to ${options.outTop} and bottom ${bottom.length} to ${options.outBelow}`)
   })
 
 

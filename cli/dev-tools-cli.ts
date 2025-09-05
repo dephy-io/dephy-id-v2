@@ -17,7 +17,7 @@ import * as splToken from 'gill/programs/token'
 import * as dephyId from '../clients/dephy-id/js/src/index.js';
 import * as dephyIdStakePool from '../clients/dephy-id-stake-pool/js/src/index.js';
 import * as mplCore from '../deps/mpl-core/js/src/index.js'
-import { createSolanaContext } from "./common.js"
+import { createSolanaContext, getProgramIds } from "./common.js"
 
 
 type Device = {
@@ -546,12 +546,14 @@ cli.command('calc-dodp')
   .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
   .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
   .requiredOption('--stake-pool <address>', 'Address of the stake pool')
-  .option('--program-id <programId>', 'Program ID of the stake pool', dephyIdStakePool.DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS)
-  .option('--top-x <topX>', 'Output top X nftStake addresses by score', '10')
-  .option('--below-y <belowY>', 'Also output bottom Y nftStake addresses by score', '10')
+  .option('--mainnet', 'Use mainnet program IDs', false)
+  .option('--top-x <topX>', 'Output top X nftStake addresses by score', '100')
+  .option('--below-y <belowY>', 'Also output all entries ranked below index Y (0-based) by score', '1000')
   .requiredOption('--out-top <outfile>', 'CSV file path for top X output')
-  .requiredOption('--out-below <outfile>', 'CSV file path for bottom Y output')
+  .requiredOption('--out-below <outfile>', 'CSV file path for below Y output')
   .action(async (options) => {
+    const { mainnet } = options
+    const { dephyIdProgramId, dephyIdStakePoolProgramId } = getProgramIds(mainnet)
 
     // fetch all scores
     const DEPHY_API_URL = 'https://mainnet-tokenomic.dephy.dev'
@@ -600,7 +602,6 @@ cli.command('calc-dodp')
     console.error(`Fetched ${allScores.length} device scores for the latest day`)
 
     const { keypair, url: urlOrMoniker } = options
-    const programId = address(options.programId)
     const ctx = await createSolanaContext({ keypair, urlOrMoniker })
 
     const stakePoolAddress = address(options.stakePool)
@@ -610,7 +611,7 @@ cli.command('calc-dodp')
     // NFT Stakes for pool
     const discriminatorNftStake = getBase58Decoder().decode(dephyIdStakePool.NFT_STAKE_ACCOUNT_DISCRIMINATOR)
     const rawNftStakeAccounts = await ctx.rpc.getProgramAccounts(
-      programId,
+      dephyIdStakePoolProgramId,
       {
         encoding: 'base64',
         filters: [
@@ -642,60 +643,15 @@ cli.command('calc-dodp')
 
     console.error(`Fetched ${nftStakes.length} NFT stake accounts for pool ${stakePoolAddress}`)
 
-    // User stakes for pool and current fee payer
-    const discriminatorUserStake = getBase58Decoder().decode(dephyIdStakePool.USER_STAKE_ACCOUNT_DISCRIMINATOR)
-    const userAddress = ctx.feePayer.address
-    const rawUserStakeAccounts = await ctx.rpc.getProgramAccounts(
-      programId,
-      {
-        encoding: 'base64',
-        filters: [
-          {
-            memcmp: {
-              encoding: 'base58',
-              offset: 0n,
-              bytes: discriminatorUserStake as unknown as Base58EncodedBytes,
-            }
-          },
-          {
-            memcmp: {
-              encoding: 'base58',
-              offset: 8n,
-              bytes: stakePoolAddress as unknown as Base58EncodedBytes,
-            }
-          },
-          {
-            memcmp: {
-              encoding: 'base58',
-              offset: 8n + 32n + 32n,
-              bytes: userAddress as unknown as Base58EncodedBytes,
-            }
-          }
-        ]
-      }
-    ).send()
-
-    const userStakes = rawUserStakeAccounts.map((account) => {
-      const data = getBase64Encoder().encode(account.account.data[0])
-      return {
-        pubkey: account.pubkey,
-        account: dephyIdStakePool.getUserStakeAccountDecoder().decode(data),
-      }
-    })
-
-    console.error(`Fetched ${userStakes.length} user stake accounts for pool ${stakePoolAddress} and user ${userAddress}`)
-
     const deviceToAssetEntries = await Promise.all(
       allScores.map(async (s) => {
-        try {
-          const [assetAddress] = await dephyId.findDeviceAssetPda({
-            productAsset: collection,
-            deviceSeed: new Uint8Array(s.deviceSeed as any),
-          })
-          return [s.worker_pubkey, assetAddress] as const
-        } catch (e) {
-          return [s.worker_pubkey, undefined] as const
-        }
+        const [assetAddress] = await dephyId.findDeviceAssetPda({
+          productAsset: collection,
+          deviceSeed: s.deviceSeed,
+        }, {
+          programAddress: dephyIdProgramId,
+        })
+        return [s.worker_pubkey, assetAddress] as const
       })
     )
     const deviceToAsset = Object.fromEntries(
@@ -704,11 +660,7 @@ cli.command('calc-dodp')
 
     const assetToNftStake: Record<string, { pubkey: Address, account: any }> = {}
     for (const ns of nftStakes) {
-      assetToNftStake[String(ns.account.nftTokenAccount)] = { pubkey: ns.pubkey, account: ns.account }
-    }
-    const userStakeByNftStake: Record<string, { pubkey: Address, account: any }> = {}
-    for (const us of userStakes) {
-      userStakeByNftStake[String(us.account.nftStake)] = { pubkey: us.pubkey, account: us.account }
+      assetToNftStake[String(ns.account.nftTokenAccount)] = ns
     }
 
     type RankedStake = {
@@ -717,11 +669,9 @@ cli.command('calc-dodp')
     }
 
     const rankedStakes: RankedStake[] = []
-    let matched = 0
     for (const s of allScores) {
       const asset = deviceToAsset[s.worker_pubkey]
       const nftStake = asset ? assetToNftStake[String(asset)] : undefined
-      if (asset && nftStake) matched++
       rankedStakes.push({
         nftStakeAddress: nftStake?.pubkey,
         score: s.score,
@@ -730,9 +680,8 @@ cli.command('calc-dodp')
 
     const topX = Number(options.topX)
     const belowY = Number(options.belowY)
-    const present = [...rankedStakes]
-      .filter(j => !!j.nftStakeAddress)
-    const sortedDesc = [...present].sort((a, b) => b.score - a.score)
+    const present = rankedStakes.filter(j => !!j.nftStakeAddress)
+    const sortedDesc = present.sort((a, b) => b.score - a.score)
 
     const top = sortedDesc.slice(0, topX)
     const bottom = sortedDesc.slice(belowY)
@@ -744,9 +693,9 @@ cli.command('calc-dodp')
     }
 
     const topCsv = toCsv(top)
-    const bottomCsv = toCsv(bottom)
-
     fs.writeFileSync(options.outTop, topCsv)
+
+    const bottomCsv = toCsv(bottom)
     fs.writeFileSync(options.outBelow, bottomCsv)
 
     console.error(`Wrote top ${top.length} to ${options.outTop} and bottom ${bottom.length} to ${options.outBelow}`)

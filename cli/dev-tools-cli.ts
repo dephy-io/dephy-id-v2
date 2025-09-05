@@ -440,13 +440,15 @@ cli.command('batch-adjust')
   .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
   .requiredOption('--stake-pool <address>', 'Address of the stake pool')
   .requiredOption('--csv <csvFile>', 'CSV file for all devices and owners')
-  .option('--program-id <programId>', 'Program ID of the stake pool', dephyIdStakePool.DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS)
+  .option('--mainnet', 'Use mainnet program IDs', false)
   .option('--amount <amount>', 'Override amount of tokens for each deposit (ui amount)')
   .option('--batch <batch>', 'batch size', '6')
+  .option('--dry-run', 'Do not send transactions; only print planned actions', false)
   .action(async (options) => {
-    const { keypair, url: urlOrMoniker } = options
+    const { keypair, url: urlOrMoniker, mainnet, dryRun } = options
     const batch = Number(options.batch)
-    const programId = address(options.programId)
+    const { dephyIdStakePoolProgramId } = getProgramIds(!!mainnet)
+    const programId = dephyIdStakePoolProgramId
 
     const ctx = await createSolanaContext({
       keypair,
@@ -495,6 +497,9 @@ cli.command('batch-adjust')
       if (userStakeAccount.exists) {
         if (targetAmount > userStakeAccount.data.amount) {
           amount = targetAmount - userStakeAccount.data.amount
+          if (dryRun) {
+            console.log('deposit', nftStakeAddress, amount)
+          }
           ixs.push(
             await dephyIdStakePool.getDepositTokenInstructionAsync({
               stakePool: stakePoolAddress,
@@ -509,6 +514,9 @@ cli.command('batch-adjust')
           )
         } else if (targetAmount < userStakeAccount.data.amount) {
           amount = userStakeAccount.data.amount - targetAmount
+          if (dryRun) {
+            console.log('withdraw', nftStakeAddress, amount)
+          }
           ixs.push(
             await dephyIdStakePool.getWithdrawInstructionAsync({
               stakePool: stakePoolAddress,
@@ -528,15 +536,23 @@ cli.command('batch-adjust')
       }
 
       if (ixs.length >= batch) {
-        const signature = await ctx.sendAndConfirmIxs(ixs)
-        console.log('Transaction signature:', signature, i)
+        if (dryRun) {
+          console.log('DRY RUN send batch', ixs.length)
+        } else {
+          const signature = await ctx.sendAndConfirmIxs(ixs)
+          console.log('Transaction signature:', signature, i)
+        }
         ixs = []
       }
     }
 
     if (ixs.length > 0) {
-      const signature = await ctx.sendAndConfirmIxs(ixs)
-      console.log('Transaction signature:', signature)
+      if (dryRun) {
+        console.log('DRY RUN send final batch', ixs.length)
+      } else {
+        const signature = await ctx.sendAndConfirmIxs(ixs)
+        console.log('Transaction signature:', signature)
+      }
     }
   })
 

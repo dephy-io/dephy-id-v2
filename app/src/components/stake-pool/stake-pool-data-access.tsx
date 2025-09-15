@@ -517,6 +517,58 @@ export function useUserStakesForPool({ stakePoolAddress }: { stakePoolAddress?: 
   })
 }
 
+export function useUserStakesForUser({ userAddress }: { userAddress: Address }) {
+  const { client } = useWalletUi()
+  const { cluster } = useWalletUiCluster()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
+  const userStakeAccountDecoder = dephyIdStakePool.getUserStakeAccountDecoder()
+
+  return useQuery({
+    queryKey: ['stake-pool', 'user-stakes-for-user', { cluster, userAddress }],
+    queryFn: async () => {
+      const discriminator = getBase58Decoder().decode(dephyIdStakePool.USER_STAKE_ACCOUNT_DISCRIMINATOR)
+      const rawAccounts = await client.rpc.getProgramAccounts(
+        dephyIdStakePoolProgramId,
+        {
+          encoding: 'base64',
+          filters: [{
+            memcmp: {
+              encoding: 'base58',
+              offset: 0n,
+              bytes: discriminator as unknown as Base58EncodedBytes,
+            }
+          }, {
+            memcmp: {
+              encoding: 'base58',
+              offset: 8n + 32n + 32n,
+              bytes: userAddress as unknown as Base58EncodedBytes,
+            }
+          }]
+        }
+      ).send()
+
+      const userStakes = rawAccounts.map((account) => {
+        const data = getBase64Encoder().encode(account.account.data[0])
+        return {
+          pubkey: account.pubkey,
+          account: userStakeAccountDecoder.decode(data),
+        }
+      })
+
+      const nftStakes = await dephyIdStakePool.fetchAllMaybeNftStakeAccount(client.rpc, userStakes.map((userStake) => userStake.account.nftStake))
+      const nftStakeMap = new Map(nftStakes.map((nftStake) => [nftStake.address, nftStake]))
+
+      return userStakes.map((userStake) => {
+        return {
+          ...userStake,
+          nftStake: nftStakeMap.get(userStake.account.nftStake),
+        }
+      })
+    },
+    enabled: !!userAddress,
+  })
+}
+
 export function useUserStake({ userStakeAddress }: { userStakeAddress: Address }) {
   const { client } = useWalletUi()
   const { cluster } = useWalletUiCluster()

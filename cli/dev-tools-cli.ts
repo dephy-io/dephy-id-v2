@@ -590,7 +590,7 @@ cli.command('calc-dodp')
 
     let offset = 0
     while (true) {
-      const url = new URL(`/api/v1/scores/daily`, DEPHY_API_URL)
+      const url = new URL(`/api/v1/scores/weekly`, DEPHY_API_URL)
       url.searchParams.set('offset', String(offset))
       url.searchParams.set('limit', String(batch))
 

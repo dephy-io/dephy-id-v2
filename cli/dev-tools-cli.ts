@@ -448,7 +448,6 @@ cli.command('batch-adjust')
     const { keypair, url: urlOrMoniker, mainnet, dryRun } = options
     const batch = Number(options.batch)
     const { dephyIdStakePoolProgramId } = getProgramIds(!!mainnet)
-    const programId = dephyIdStakePoolProgramId
 
     const ctx = await createSolanaContext({
       keypair,
@@ -491,7 +490,7 @@ cli.command('batch-adjust')
       const [userStakeAddress] = await dephyIdStakePool.findUserStakeAccountPda({
         nftStake: nftStakeAddress,
         user: ctx.feePayer.address,
-      }, { programAddress: programId })
+      }, { programAddress: dephyIdStakePoolProgramId })
 
       const userStakeAccount = await dephyIdStakePool.fetchMaybeUserStakeAccount(ctx.rpc, userStakeAddress)
       let amount = targetAmount
@@ -512,6 +511,8 @@ cli.command('batch-adjust')
               userStakeTokenAccount: userStakeTokenAccount,
               payer: ctx.feePayer,
               amount,
+            }, {
+              programAddress: dephyIdStakePoolProgramId
             })
           )
         } else if (targetAmount < userStakeAccount.data.amount) {
@@ -529,6 +530,8 @@ cli.command('batch-adjust')
               userStakeTokenAccount: userStakeTokenAccount,
               payer: ctx.feePayer,
               amount,
+            }, {
+              programAddress: dephyIdStakePoolProgramId
             })
           )
         } else {
@@ -548,6 +551,8 @@ cli.command('batch-adjust')
             userStakeTokenAccount: userStakeTokenAccount,
             payer: ctx.feePayer,
             amount,
+          }, {
+            programAddress: dephyIdStakePoolProgramId
           })
         )
       }

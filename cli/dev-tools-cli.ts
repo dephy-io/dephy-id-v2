@@ -482,6 +482,8 @@ cli.command('batch-adjust')
       })
     }
 
+    console.log('devicesAndOwners', devicesAndOwners.length)
+
     let ixs: IInstruction[] = []
     for (let i = 0; i < devicesAndOwners.length; i++) {
       const { nftStakeAddress, amount: targetAmount } = devicesAndOwners[i]
@@ -530,9 +532,24 @@ cli.command('batch-adjust')
             })
           )
         } else {
-          console.log('skip', nftStakeAddress)
-          continue
+          console.log('same amount, skip', nftStakeAddress)
         }
+      } else {
+        if (dryRun) {
+          console.log('new deposit', nftStakeAddress, amount)
+        }
+        ixs.push(
+          await dephyIdStakePool.getDepositTokenInstructionAsync({
+            stakePool: stakePoolAddress,
+            nftStake: nftStakeAddress,
+            user: ctx.feePayer,
+            stakeTokenMint: stakeTokenMint.address,
+            stakeTokenAccount: stakePool.data.stakeTokenAccount,
+            userStakeTokenAccount: userStakeTokenAccount,
+            payer: ctx.feePayer,
+            amount,
+          })
+        )
       }
 
       if (ixs.length >= batch) {

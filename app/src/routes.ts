@@ -13,5 +13,6 @@ export default [
   route('dodp-tools', 'routes/dodp-tools.tsx'),
   route('nft-stake/:address', 'routes/nft-stake-detail.tsx'),
   route('user-stake/:address', 'routes/user-stake-detail.tsx'),
-  route('nft-stake-manager', 'routes/nft-stake-manager.tsx')
+  route('user-stakes-for-user/:address', 'routes/user-stakes-for-user.tsx'),
+  route('nft-stake-manager', 'routes/nft-stake-manager.tsx'),
 ] satisfies RouteConfig;

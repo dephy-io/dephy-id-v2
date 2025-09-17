@@ -555,7 +555,18 @@ export function useUserStakesForUser({ userAddress }: { userAddress: Address }) 
         }
       })
 
-      const nftStakes = await dephyIdStakePool.fetchAllMaybeNftStakeAccount(client.rpc, userStakes.map((userStake) => userStake.account.nftStake))
+      // Fetch related NFT stakes in chunks to avoid exceeding RPC payload limits.
+      const nftStakeAddresses = userStakes.map((userStake) => userStake.account.nftStake)
+      const chunkSize = 100
+      const addressChunks: typeof nftStakeAddresses[] = []
+      for (let i = 0; i < nftStakeAddresses.length; i += chunkSize) {
+        addressChunks.push(nftStakeAddresses.slice(i, i + chunkSize))
+      }
+
+      const chunkResults = await Promise.all(
+        addressChunks.map((chunk) => dephyIdStakePool.fetchAllMaybeNftStakeAccount(client.rpc, chunk))
+      )
+      const nftStakes = chunkResults.flat()
       const nftStakeMap = new Map(nftStakes.map((nftStake) => [nftStake.address, nftStake]))
 
       return userStakes.map((userStake) => {
@@ -629,7 +640,7 @@ export function useWithdraw({ userStake }: { userStake: Account<dephyIdStakePool
       return sendAndConfirmIxs([
         await dephyIdStakePool.getWithdrawInstructionAsync({
           stakePool: userStake.data.stakePool,
-          nftStake: userStake.address,
+          nftStake: userStake.data.nftStake,
           user: feePayer,
           stakeTokenMint: stakePool.data.config.stakeTokenMint,
           stakeTokenAccount: stakePool.data.stakeTokenAccount,
@@ -643,7 +654,7 @@ export function useWithdraw({ userStake }: { userStake: Account<dephyIdStakePool
     },
     onSuccess: async (signature) => {
       toastTransaction(signature)
-      queryClient.invalidateQueries({ queryKey: ['stake-pool', 'nft-stakes', { cluster }] })
+      queryClient.invalidateQueries({ queryKey: ['stake-pool', 'nft-stake', { cluster, nftStakeAddress: userStake.data.nftStake }] })
       queryClient.invalidateQueries({ queryKey: ['stake-pool', 'user-stake', { cluster, userStakeAddress: userStake.address }] })
     },
   })

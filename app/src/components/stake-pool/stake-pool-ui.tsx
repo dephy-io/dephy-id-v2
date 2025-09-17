@@ -1,6 +1,6 @@
 import { address, assertIsAddress, type Account, type Address } from "gill"
 import { Button } from "../ui/button"
-import { useInitialize, useAdminAccount, useCreateStakePool, useStakePools, useStakePool, useStakeDephyId, useNftStakes, useNftStake, useUserStakes, useDeposit, useWithdraw, useUnstakeDephyId, useCloseNftStake, useAnnounceUpdateConfig, useConfirmUpdateConfig, useCancelUpdateConfig, useAnnouncedConfig } from "./stake-pool-data-access"
+import { useInitialize, useAdminAccount, useCreateStakePool, useStakePools, useStakePool, useStakeDephyId, useNftStakes, useNftStake, useUserStakes, useDeposit, useWithdraw, useUnstakeDephyId, useCloseNftStake, useAnnounceUpdateConfig, useConfirmUpdateConfig, useCancelUpdateConfig, useAnnouncedConfig, useUserStakesForUser } from "./stake-pool-data-access"
 import { Link, useParams } from "react-router"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
 import * as splToken from "gill/programs/token"
@@ -29,6 +29,76 @@ export function Initialize() {
         <Button onClick={handleSubmit}>Initialize</Button>
       }
     </Card>
+  )
+}
+
+export function UserStakesForUser({ userAddress }: { userAddress: Address }) {
+  const userStakesQuery = useUserStakesForUser({ userAddress })
+
+  if (!userStakesQuery.isFetched) {
+    return <div>Loading...</div>
+  }
+
+  const items = userStakesQuery.data ?? []
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Card title="User Stakes">
+        {items.length === 0 ? (
+          <div className="text-sm text-gray-500">No user stakes found for this user.</div>
+        ) : (
+          <div className="border rounded-md overflow-hidden max-h-96 overflow-y-auto">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 z-10 bg-gray-50">
+                <tr>
+                  <th className="px-3 py-2 text-left font-medium">User Stake</th>
+                  <th className="px-3 py-2 text-left font-medium">Stake Pool</th>
+                  <th className="px-3 py-2 text-left font-medium">NFT Stake</th>
+                  <th className="px-3 py-2 text-left font-medium">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((it, index) => (
+                  <UserStakeRow key={it.pubkey.toString()} it={it} zebra={index % 2 === 0} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
+    </div>
+  )
+}
+
+function UserStakeRow({ it, zebra }: { it: any, zebra: boolean }) {
+  const stakePool = useStakePool({ stakePoolAddress: it.account.stakePool })
+  const mint = useMint({ mintAddress: stakePool.data?.data.config.stakeTokenMint })
+
+  const amountUi = mint.data
+    ? splToken.tokenAmountToUiAmount(it.account.amount, mint.data.data.decimals)
+    : undefined
+
+  return (
+    <tr className={zebra ? 'bg-white' : 'bg-gray-50'}>
+      <td className="px-3 py-2">
+        <Link to={`/user-stake/${it.pubkey}`} className="text-blue-600 hover:text-blue-800">
+          {ellipsify(it.pubkey)}
+        </Link>
+      </td>
+      <td className="px-3 py-2 font-mono">
+        <Link to={`/stake-pool/${it.account.stakePool}`} className="text-blue-600 hover:text-blue-800">
+          {ellipsify(it.account.stakePool)}
+        </Link>
+      </td>
+      <td className="px-3 py-2 font-mono">
+        <Link to={`/nft-stake/${it.account.nftStake}`} className="text-blue-600 hover:text-blue-800">
+          {ellipsify(it.account.nftStake)}
+        </Link>
+      </td>
+      <td className="px-3 py-2">
+        {amountUi !== undefined ? amountUi : it.account.amount.toString()}
+      </td>
+    </tr>
   )
 }
 
@@ -419,6 +489,11 @@ export function ShowUserStake({ userStake, mint }: {
       <p>{params.address}</p>
       {userStake.data ? (
         <div>
+          <p>Address: {userStake.address}</p>
+          <p>Stake Pool: {userStake.data.stakePool}</p>
+          <p>NFT Stake:
+            <Link to={`/nft-stake/${userStake.data.nftStake}`}>{userStake.data.nftStake}</Link>
+          </p>
           <p>User: {userStake.data.user}</p>
           <p>Amount: {splToken.tokenAmountToUiAmount(userStake.data.amount, mint.data.decimals)}</p>
         </div>

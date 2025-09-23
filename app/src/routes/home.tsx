@@ -18,6 +18,7 @@ export default function Home() {
       <h1>Welcome</h1>
 
       {account && <Card title="Shortcuts">
+        <Link to={`/nft-stakes-for-user/${account.address}`}>My NFT Stakes</Link>
         <Link to={`/user-stakes-for-user/${account.address}`}>My User Stakes</Link>
       </Card>}
     </div>

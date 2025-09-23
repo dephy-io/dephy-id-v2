@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 import { getBase16Encoder, getAddressDecoder, type Address } from "gill"
 import { findDeviceAssetPda } from "dephy-id-client"
+import { useProgramIds } from "~/lib/program-ids"
 
 const DEPHY_API_URL = 'https://mainnet-tokenomic.dephy.dev'
 
@@ -93,6 +94,7 @@ export function useDeviceAssetMapping({
   collection?: Address
   scores?: Pick<DeviceScore, "worker_pubkey" | "deviceSeed">[]
 }) {
+  const { dephyIdProgramId } = useProgramIds()
   const seeds = (scores ?? [])
     .map((s) => (s.deviceSeed ? new Uint8Array(s.deviceSeed as any) : undefined))
     .filter(Boolean) as Uint8Array[]
@@ -106,6 +108,8 @@ export function useDeviceAssetMapping({
           const [assetAddress] = await findDeviceAssetPda({
             productAsset: collection as Address,
             deviceSeed: new Uint8Array(s.deviceSeed as any),
+          }, {
+            programAddress: dephyIdProgramId,
           })
           return [s.worker_pubkey, assetAddress] as const
         })

@@ -439,7 +439,7 @@ cli.command('batch-adjust')
   .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
   .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
   .requiredOption('--stake-pool <address>', 'Address of the stake pool')
-  .requiredOption('--csv <csvFile>', 'CSV file for all devices and owners')
+  .requiredOption('--csv <csvFile>', 'CSV file for all devices and owners, format: NftStakeAddress,Amount')
   .option('--mainnet', 'Use mainnet program IDs', false)
   .option('--amount <amount>', 'Override amount of tokens for each deposit (ui amount)')
   .option('--batch <batch>', 'batch size', '6')
@@ -473,11 +473,11 @@ cli.command('batch-adjust')
 
     for (const line of csvFile.trim().split('\n').slice(1)) {
       const [nftStakeAddress, uiAmount] = line.split(',')
-      const amount = uiAmount ? splToken.tokenUiAmountToAmount(Number(uiAmount), stakeTokenMint.data.decimals) : undefined;
+      const amount = overrideAmount || (uiAmount ? splToken.tokenUiAmountToAmount(Number(uiAmount), stakeTokenMint.data.decimals) : undefined);
 
       devicesAndOwners.push({
         nftStakeAddress: address(nftStakeAddress),
-        amount: overrideAmount || amount,
+        amount,
       })
     }
 
@@ -589,6 +589,9 @@ cli.command('calc-dodp')
   .option('--below-y <belowY>', 'Also output all entries ranked below index Y (0-based) by score', '1000')
   .requiredOption('--out-top <outfile>', 'CSV file path for top X output')
   .requiredOption('--out-below <outfile>', 'CSV file path for below Y output')
+  .requiredOption('--total-tokens <amount>', 'Total tokens (UI) to distribute among selected users')
+  .option('--user <address>', 'User address to evaluate existing deposits (defaults to fee payer)')
+  .option('--with-asset', 'Include asset address', false)
   .action(async (options) => {
     const { mainnet } = options
     const { dephyIdProgramId, dephyIdStakePoolProgramId } = getProgramIds(mainnet)
@@ -702,7 +705,9 @@ cli.command('calc-dodp')
     }
 
     type RankedStake = {
+      seed: string
       nftStakeAddress?: Address
+      assetAddress?: Address
       score: number
     }
 
@@ -711,22 +716,50 @@ cli.command('calc-dodp')
       const asset = deviceToAsset[s.worker_pubkey]
       const nftStake = asset ? assetToNftStake[String(asset)] : undefined
       rankedStakes.push({
+        seed: s.worker_pubkey,
         nftStakeAddress: nftStake?.pubkey,
+        assetAddress: asset,
         score: s.score,
       })
     }
 
+    const sortedAll = rankedStakes.slice().sort((a, b) => b.score - a.score)
+    const allLines = ['rank,score,seed,assetAddress,nftStakeAddress']
+    for (let i = 0; i < sortedAll.length; i++) {
+      const r = sortedAll[i]
+      allLines.push(
+        [i + 1, r.score, r.seed, r.assetAddress ?? '', r.nftStakeAddress ?? ''].join(',')
+      )
+    }
+    const allCsv = allLines.join('\n')
+    const outAll = 'dodp-all.csv'
+    fs.writeFileSync(outAll, allCsv)
+
     const topX = Number(options.topX)
     const belowY = Number(options.belowY)
+    if (Number.isNaN(topX) || Number.isNaN(belowY)) {
+      console.error('Invalid top-x or below-y: must be numbers')
+      process.exit(1)
+    }
+    if (belowY < topX) {
+      console.error(`Invalid range: below-y (${belowY}) must be >= top-x (${topX})`)
+      process.exit(1)
+    }
     const present = rankedStakes.filter(j => !!j.nftStakeAddress)
     const sortedDesc = present.sort((a, b) => b.score - a.score)
 
     const top = sortedDesc.slice(0, topX)
     const bottom = sortedDesc.slice(belowY)
 
-    const toCsv = (rows: { nftStakeAddress?: Address }[]) => {
-      const lines = ['nftStakeAddress']
-      for (const r of rows) lines.push(r.nftStakeAddress)
+    const toCsv = (rows: RankedStake[]) => {
+      const lines = []
+      if (options.withAsset) {
+        lines.push('nftStakeAddress,assetAddress')
+        for (const r of rows) lines.push(`${r.nftStakeAddress},${r.assetAddress}`)
+      } else {
+        lines.push('nftStakeAddress')
+        for (const r of rows) lines.push(r.nftStakeAddress)
+      }
       return lines.join('\n')
     }
 
@@ -736,7 +769,70 @@ cli.command('calc-dodp')
     const bottomCsv = toCsv(bottom)
     fs.writeFileSync(options.outBelow, bottomCsv)
 
+    console.error(`Wrote full ranked ${sortedAll.length} rows to ${outAll}`)
     console.error(`Wrote top ${top.length} to ${options.outTop} and bottom ${bottom.length} to ${options.outBelow}`)
+
+    const targetUser: Address = options.user ? address(options.user) : ctx.feePayer.address
+
+    const discriminatorUserStake = getBase58Decoder().decode(dephyIdStakePool.USER_STAKE_ACCOUNT_DISCRIMINATOR)
+    const userStakeAccounts = await ctx.rpc.getProgramAccounts(
+      dephyIdStakePoolProgramId,
+      {
+        encoding: 'base64',
+        filters: [
+          {
+            memcmp: {
+              encoding: 'base58',
+              offset: 0n,
+              bytes: discriminatorUserStake as unknown as Base58EncodedBytes,
+            }
+          },
+          {
+            memcmp: {
+              encoding: 'base58',
+              offset: 8n + 32n + 32n,
+              bytes: targetUser as unknown as Base58EncodedBytes,
+            }
+          }
+        ]
+      }
+    ).send()
+
+    const userStakeAccountDecoder = dephyIdStakePool.getUserStakeAccountDecoder()
+    const payerNftStakesWithDeposit = new Set<Address>()
+    for (const acc of userStakeAccounts) {
+      const data = getBase64Encoder().encode(acc.account.data[0])
+      const ua = userStakeAccountDecoder.decode(data)
+      if (ua.amount > 0n) {
+        payerNftStakesWithDeposit.add(ua.nftStake)
+      }
+    }
+
+    const between = sortedDesc.slice(topX, belowY)
+    const betweenWithDeposit: typeof between = []
+    for (const r of between) {
+      if (r.nftStakeAddress && payerNftStakesWithDeposit.has(r.nftStakeAddress)) {
+        betweenWithDeposit.push(r)
+      }
+    }
+
+    const counted = [...top, ...betweenWithDeposit]
+    const totalTokensUi = Number(options.totalTokens)
+    const avgUi = counted.length > 0 ? Math.round(totalTokensUi / counted.length) : 0
+
+    const planLines = ['NftStakeAddress,Amount']
+    const betweenWithoutDeposit = between.filter(r => !betweenWithDeposit.includes(r))
+    for (const r of [...betweenWithoutDeposit, ...bottom]) {
+      planLines.push(`${r.nftStakeAddress},0`)
+    }
+    for (const r of counted) {
+      planLines.push(`${r.nftStakeAddress},${avgUi}`)
+    }
+
+    const planCsv = planLines.join('\n')
+    const outPlan = 'dodp-plan.csv'
+    fs.writeFileSync(outPlan, planCsv)
+    console.error(`Wrote plan (${counted.length} counted, avg=${avgUi}) to ${outPlan}`)
   })
 
 

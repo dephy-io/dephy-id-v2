@@ -34,8 +34,6 @@ export function PositionManager() {
     scores: deviceScores.data?.scores,
   })
 
-  const assetToDevice = deviceAssetMapping.data?.assetToDevice || {}
-
   const deviceToScore = useMemo(() => {
     const m: Record<string, DeviceScore> = {}
     for (const s of deviceScores.data?.scores ?? []) {
@@ -45,8 +43,12 @@ export function PositionManager() {
   }, [deviceScores.data?.scores])
 
   const sortedStakes = useMemo(() => {
+    const assetToDevice = deviceAssetMapping.data?.assetToDevice || {}
     const items = (nftStakesQuery.data ?? [])
-      .filter((it) => Boolean(assetToDevice[it.account.nftTokenAccount]))
+      .filter((it) => {
+        const device = assetToDevice[it.account.nftTokenAccount]
+        return Boolean(device)
+      })
       .map((it) => {
         const device = assetToDevice[it.account.nftTokenAccount]
         const scoreObj = deviceToScore[device]
@@ -55,7 +57,7 @@ export function PositionManager() {
       })
     items.sort((a, b) => (b.scoreObj?.score ?? -Infinity) - (a.scoreObj?.score ?? -Infinity))
     return items
-  }, [nftStakesQuery.data, assetToDevice, deviceToScore, decimals])
+  }, [nftStakesQuery.data, deviceAssetMapping, deviceToScore, decimals])
 
   const userStakesByNftStake = useMemo(() => {
     const m: Record<string, UserStakeAccount> = {}
@@ -206,6 +208,7 @@ export function PositionManager() {
           <div className="text-sm font-medium">Device Scores, {deviceScores.data?.total} total</div>
           <DeviceScoreList
             data={deviceScores.data}
+            decimals={decimals}
             isLoading={deviceScores.isLoading}
             error={deviceScores.error}
           />
@@ -368,16 +371,19 @@ export function DeviceScoreList({
   data: overrideData,
   isLoading: overrideLoading,
   error: overrideError,
+  decimals,
 }: {
   batch?: number
   data?: DeviceScoresResponse
   isLoading?: boolean
   error?: unknown
+  decimals: number
 }) {
   const fetched = useDeviceScores({ batch })
   const data = overrideData ?? fetched.data
   const isLoading = overrideLoading ?? fetched.isLoading
   const error = overrideError ?? fetched.error
+
 
   return (
     <>
@@ -404,8 +410,8 @@ export function DeviceScoreList({
                   <td className="py-2 px-3">{s.score.toFixed(6)}</td>
                   <td className="py-2 px-3">{s.uptime_120h}</td>
                   <td className="py-2 px-3">{s.uptime_720h}</td>
-                  <td className="py-2 px-3">{s.self_staking_avg_7d}</td>
-                  <td className="py-2 px-3">{s.total_staking_avg_7d}</td>
+                  <td className="py-2 px-3">{splToken.tokenAmountToUiAmount(BigInt(s.self_staking_avg_7d), decimals)}</td>
+                  <td className="py-2 px-3">{splToken.tokenAmountToUiAmount(BigInt(s.total_staking_avg_7d), decimals)}</td>
                   <td className="py-2 px-3">{s.date}</td>
                 </tr>
               ))}

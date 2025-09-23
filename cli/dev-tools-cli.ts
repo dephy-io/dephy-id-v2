@@ -585,13 +585,10 @@ cli.command('calc-dodp')
   .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
   .requiredOption('--stake-pool <address>', 'Address of the stake pool')
   .option('--mainnet', 'Use mainnet program IDs', false)
-  .option('--top-x <topX>', 'Output top X nftStake addresses by score', '100')
-  .option('--below-y <belowY>', 'Also output all entries ranked below index Y (0-based) by score', '1000')
-  .requiredOption('--out-top <outfile>', 'CSV file path for top X output')
-  .requiredOption('--out-below <outfile>', 'CSV file path for below Y output')
+  .option('--top-x <topX>', 'Compute top X nftStake addresses by score', '100')
+  .option('--below-y <belowY>', 'Consider all entries ranked below rank Y by score', '1000')
   .requiredOption('--total-tokens <amount>', 'Total tokens (UI) to distribute among selected users')
   .option('--user <address>', 'User address to evaluate existing deposits (defaults to fee payer)')
-  .option('--with-asset', 'Include asset address', false)
   .action(async (options) => {
     const { mainnet } = options
     const { dephyIdProgramId, dephyIdStakePoolProgramId } = getProgramIds(mainnet)
@@ -751,26 +748,8 @@ cli.command('calc-dodp')
     const top = sortedDesc.slice(0, topX)
     const bottom = sortedDesc.slice(belowY)
 
-    const toCsv = (rows: RankedStake[]) => {
-      const lines = []
-      if (options.withAsset) {
-        lines.push('nftStakeAddress,assetAddress')
-        for (const r of rows) lines.push(`${r.nftStakeAddress},${r.assetAddress}`)
-      } else {
-        lines.push('nftStakeAddress')
-        for (const r of rows) lines.push(r.nftStakeAddress)
-      }
-      return lines.join('\n')
-    }
-
-    const topCsv = toCsv(top)
-    fs.writeFileSync(options.outTop, topCsv)
-
-    const bottomCsv = toCsv(bottom)
-    fs.writeFileSync(options.outBelow, bottomCsv)
-
     console.error(`Wrote full ranked ${sortedAll.length} rows to ${outAll}`)
-    console.error(`Wrote top ${top.length} to ${options.outTop} and bottom ${bottom.length} to ${options.outBelow}`)
+    console.error(`Computed top ${top.length} and bottom ${bottom.length} groups`)
 
     const targetUser: Address = options.user ? address(options.user) : ctx.feePayer.address
 

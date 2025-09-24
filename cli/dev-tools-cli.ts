@@ -641,7 +641,7 @@ cli.command('calc-dodp')
       offset += batch
     }
 
-    console.error(`Fetched ${allScores.length} device scores for the latest day`)
+    console.error(`Fetched ${allScores.length} device scores for the latest week`)
 
     const { keypair, url: urlOrMoniker } = options
     const ctx = await createSolanaContext({ keypair, urlOrMoniker })
@@ -809,6 +809,7 @@ cli.command('calc-dodp')
     const avgUi = counted.length > 0 ? Math.trunc(totalTokensUi / counted.length) : 0
 
     const planMap = new Map<Address, number>()
+    let withdrawCount = 0
 
     const betweenWithoutDeposit = between.filter(r => !betweenWithDeposit.includes(r))
     for (const r of bottom) {
@@ -819,6 +820,7 @@ cli.command('calc-dodp')
         }
         console.log('below y', key)
         planMap.set(key, 0)
+        withdrawCount += 1
       }
     }
 
@@ -826,10 +828,11 @@ cli.command('calc-dodp')
       if (r.nftStakeAddress) {
         const key = r.nftStakeAddress
         if (planMap.has(key)) {
-          console.warn('dup', key, planMap.get(key), avgUi)
+          console.warn('dup', key, planMap.get(key), 0)
         }
         console.log('between xy and no prev deposit', key)
-        planMap.set(key, avgUi)
+        planMap.set(key, 0)
+        withdrawCount += 1
       }
     }
 
@@ -840,6 +843,7 @@ cli.command('calc-dodp')
         }
         console.log('prev deposit but has no score', key)
         planMap.set(key, 0)
+        withdrawCount += 1
       }
     }
 
@@ -861,7 +865,9 @@ cli.command('calc-dodp')
     const planCsv = planLines.join('\n')
     const outPlan = 'dodp-plan.csv'
     fs.writeFileSync(outPlan, planCsv)
-    console.error(`Wrote plan (${counted.length} counted, avg=${avgUi}) to ${outPlan}`)
+    console.error(`Withdraw count: ${withdrawCount}`)
+    console.error(`Deposit count: ${counted.length}, each ${avgUi}`)
+    console.error(`Wrote plan ${sortedEntries.length} to ${outPlan}`)
   })
 
 

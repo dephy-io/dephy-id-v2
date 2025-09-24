@@ -538,23 +538,27 @@ cli.command('batch-adjust')
           console.log('same amount, skip', nftStakeAddress)
         }
       } else {
-        if (dryRun) {
-          console.log('new deposit', nftStakeAddress, amount)
+        if (amount > 0n) {
+          if (dryRun) {
+            console.log('new deposit', nftStakeAddress, amount)
+          }
+          ixs.push(
+            await dephyIdStakePool.getDepositTokenInstructionAsync({
+              stakePool: stakePoolAddress,
+              nftStake: nftStakeAddress,
+              user: ctx.feePayer,
+              stakeTokenMint: stakeTokenMint.address,
+              stakeTokenAccount: stakePool.data.stakeTokenAccount,
+              userStakeTokenAccount: userStakeTokenAccount,
+              payer: ctx.feePayer,
+              amount,
+            }, {
+              programAddress: dephyIdStakePoolProgramId
+            })
+          )
+        } else {
+          console.log('skip zero', nftStakeAddress)
         }
-        ixs.push(
-          await dephyIdStakePool.getDepositTokenInstructionAsync({
-            stakePool: stakePoolAddress,
-            nftStake: nftStakeAddress,
-            user: ctx.feePayer,
-            stakeTokenMint: stakeTokenMint.address,
-            stakeTokenAccount: stakePool.data.stakeTokenAccount,
-            userStakeTokenAccount: userStakeTokenAccount,
-            payer: ctx.feePayer,
-            amount,
-          }, {
-            programAddress: dephyIdStakePoolProgramId
-          })
-        )
       }
 
       if (ixs.length >= batch) {
@@ -720,6 +724,11 @@ cli.command('calc-dodp')
       })
     }
 
+    const nftStakeAddressesInScores = new Set<Address>()
+    for (const r of rankedStakes) {
+      if (r.nftStakeAddress) nftStakeAddressesInScores.add(r.nftStakeAddress)
+    }
+
     const sortedAll = rankedStakes.slice().sort((a, b) => b.score - a.score)
     const allLines = ['rank,score,seed,assetAddress,nftStakeAddress']
     for (let i = 0; i < sortedAll.length; i++) {
@@ -799,13 +808,54 @@ cli.command('calc-dodp')
     const totalTokensUi = Number(options.totalTokens)
     const avgUi = counted.length > 0 ? Math.trunc(totalTokensUi / counted.length) : 0
 
-    const planLines = ['NftStakeAddress,Amount']
+    const planMap = new Map<Address, number>()
+
     const betweenWithoutDeposit = between.filter(r => !betweenWithDeposit.includes(r))
-    for (const r of [...betweenWithoutDeposit, ...bottom]) {
-      planLines.push(`${r.nftStakeAddress},0`)
+    for (const r of bottom) {
+      if (r.nftStakeAddress) {
+        const key = r.nftStakeAddress
+        if (planMap.has(key)) {
+          console.warn('dup', key, planMap.get(key), 0)
+        }
+        console.log('below y', key)
+        planMap.set(key, 0)
+      }
     }
+
+    for (const r of betweenWithoutDeposit) {
+      if (r.nftStakeAddress) {
+        const key = r.nftStakeAddress
+        if (planMap.has(key)) {
+          console.warn('dup', key, planMap.get(key), avgUi)
+        }
+        console.log('between xy and no prev deposit', key)
+        planMap.set(key, avgUi)
+      }
+    }
+
+    for (const key of payerNftStakesWithDeposit) {
+      if (!nftStakeAddressesInScores.has(key)) {
+        if (planMap.has(key)) {
+          console.warn('dup', key, planMap.get(key), 0)
+        }
+        console.log('prev deposit but has no score', key)
+        planMap.set(key, 0)
+      }
+    }
+
     for (const r of counted) {
-      planLines.push(`${r.nftStakeAddress},${avgUi}`)
+      if (r.nftStakeAddress) {
+        if (planMap.has(r.nftStakeAddress)) {
+          console.warn('dup', r.nftStakeAddress, planMap.get(r.nftStakeAddress), avgUi)
+        }
+        planMap.set(r.nftStakeAddress, avgUi)
+      }
+    }
+
+    const planLines = ['NftStakeAddress,Amount']
+    const sortedEntries = Array.from(planMap.entries()).sort((a, b) => a[0].localeCompare(b[0]))
+    for (const [addr, amount] of sortedEntries) {
+      planLines.push(`${addr},${amount}`)
     }
 
     const planCsv = planLines.join('\n')

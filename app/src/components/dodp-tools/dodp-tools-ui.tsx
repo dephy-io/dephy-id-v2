@@ -11,6 +11,7 @@ import type { UserStakeAccount } from "dephy-id-stake-pool-client"
 import { useWalletUi } from "@wallet-ui/react"
 import { useSendAndConfirmIxs } from "~/lib/utils"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
+import { Link } from "react-router"
 
 
 export function PositionManager() {
@@ -289,7 +290,11 @@ export function PositionManager() {
                             />
                           </td>
                           <td className="px-3 py-2">{index + 1}</td>
-                          <td className="px-3 py-2">{ellipsify(it.pubkey)}</td>
+                          <td className="px-3 py-2">
+                            <Link to={`/nft-stake/${it.pubkey}`}>
+                              {ellipsify(it.pubkey)}
+                            </Link>
+                          </td>
                           <td className="px-3 py-2">{ellipsify(it.account.nftTokenAccount)}</td>
                           <td className="px-3 py-2">{ellipsify(device)}</td>
                           <td className="px-3 py-2">{scoreObj?.score.toFixed(8)}</td>

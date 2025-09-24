@@ -787,19 +787,19 @@ cli.command('calc-dodp')
     ).send()
 
     const userStakeAccountDecoder = dephyIdStakePool.getUserStakeAccountDecoder()
-    const payerNftStakesWithDeposit = new Set<Address>()
+    const userNftStakesWithDeposit = new Set<Address>()
     for (const acc of userStakeAccounts) {
       const data = getBase64Encoder().encode(acc.account.data[0])
       const ua = userStakeAccountDecoder.decode(data)
       if (ua.amount > 0n) {
-        payerNftStakesWithDeposit.add(ua.nftStake)
+        userNftStakesWithDeposit.add(ua.nftStake)
       }
     }
 
     const between = sortedDesc.slice(topX, belowY)
     const betweenWithDeposit: typeof between = []
     for (const r of between) {
-      if (r.nftStakeAddress && payerNftStakesWithDeposit.has(r.nftStakeAddress)) {
+      if (r.nftStakeAddress && userNftStakesWithDeposit.has(r.nftStakeAddress)) {
         betweenWithDeposit.push(r)
       }
     }
@@ -833,7 +833,7 @@ cli.command('calc-dodp')
       }
     }
 
-    for (const key of payerNftStakesWithDeposit) {
+    for (const key of userNftStakesWithDeposit) {
       if (!nftStakeAddressesInScores.has(key)) {
         if (planMap.has(key)) {
           console.warn('dup', key, planMap.get(key), 0)
@@ -853,7 +853,7 @@ cli.command('calc-dodp')
     }
 
     const planLines = ['NftStakeAddress,Amount']
-    const sortedEntries = Array.from(planMap.entries()).sort((a, b) => a[0].localeCompare(b[0]))
+    const sortedEntries = Array.from(planMap.entries()).sort((a, b) => a[1] - b[1])
     for (const [addr, amount] of sortedEntries) {
       planLines.push(`${addr},${amount}`)
     }

@@ -797,7 +797,7 @@ cli.command('calc-dodp')
 
     const counted = [...top, ...betweenWithDeposit]
     const totalTokensUi = Number(options.totalTokens)
-    const avgUi = counted.length > 0 ? Math.round(totalTokensUi / counted.length) : 0
+    const avgUi = counted.length > 0 ? Math.trunc(totalTokensUi / counted.length) : 0
 
     const planLines = ['NftStakeAddress,Amount']
     const betweenWithoutDeposit = between.filter(r => !betweenWithDeposit.includes(r))

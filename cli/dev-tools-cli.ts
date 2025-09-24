@@ -571,7 +571,7 @@ cli.command('batch-adjust')
         ixs = []
       }
 
-      await Bun.sleep(300)
+      // await Bun.sleep(300)
     }
 
     if (ixs.length > 0) {

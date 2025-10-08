@@ -7,9 +7,9 @@ import { AssetResult } from '@metaplex-foundation/mpl-core-das/dist/src/types.js
 import { publicKey } from '@metaplex-foundation/umi'
 import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import {
-  Address, address, generateKeyPairSigner, getAddressCodec,
+  Address, address, type Base58EncodedBytes, generateKeyPairSigner, getAddressCodec,
   getBase16Encoder, getBase58Decoder, getBase64Encoder,
-  type Base58EncodedBytes, IInstruction, ReadonlyUint8Array
+  IInstruction, ReadonlyUint8Array
 } from "gill"
 import { loadKeypairSignerFromFile } from 'gill/node'
 import * as splToken from 'gill/programs/token'

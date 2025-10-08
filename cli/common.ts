@@ -2,8 +2,8 @@ import {
   createSolanaClient, createTransaction, getSignatureFromTransaction,
   IInstruction, isSolanaError, signTransactionMessageWithSigners
 } from "gill";
-import { loadKeypairSignerFromFile } from "gill/node";
 import { address } from "gill";
+import { loadKeypairSignerFromFile } from "gill/node";
 
 
 export function getProgramIds(mainnet: boolean) {

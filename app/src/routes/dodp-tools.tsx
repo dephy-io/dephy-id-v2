@@ -1,4 +1,3 @@
-import React from "react"
 import { PositionManager } from "~/components/dodp-tools/dodp-tools-ui"
 
 export default function DodpTools() {

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
-import { getBase16Encoder, getAddressDecoder, type Address } from "gill"
 import { findDeviceAssetPda } from "dephy-id-client"
+import { type Address, getAddressDecoder, getBase16Encoder } from "gill"
+
 import { useProgramIds } from "~/lib/program-ids"
 
 const DEPHY_API_URL = 'https://mainnet-tokenomic.dephy.dev'

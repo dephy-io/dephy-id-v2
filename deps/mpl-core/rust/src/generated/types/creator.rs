@@ -11,10 +11,6 @@ use solana_pubkey::Pubkey;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Creator {
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
     pub address: Pubkey,
     pub percentage: u8,
 }

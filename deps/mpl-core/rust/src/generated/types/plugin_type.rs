@@ -28,4 +28,5 @@ pub enum PluginType {
     Autograph,
     BubblegumV2,
     FreezeExecute,
+    PermanentFreezeExecute,
 }

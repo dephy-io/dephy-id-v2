@@ -32,9 +32,7 @@ pub struct UnstakeNft<'info> {
 pub fn process_unstake_nft(ctx: Context<UnstakeNft>) -> Result<()> {
     msg!("unstake nft");
 
-    let nft_stake = &mut ctx.accounts.nft_stake;
-
-    require!(nft_stake.active, ErrorCode::NftStakeNotActive);
+    let _nft_stake = &mut ctx.accounts.nft_stake;
 
     mpl_core::instructions::UpdatePluginV1Cpi::new(
         &ctx.accounts.mpl_core_program.to_account_info(),
@@ -73,8 +71,6 @@ pub fn process_unstake_nft(ctx: Context<UnstakeNft>) -> Result<()> {
         },
     )
     .invoke()?;
-
-    nft_stake.active = false;
 
     ctx.accounts
         .nft_stake

@@ -14,10 +14,6 @@ use solana_pubkey::Pubkey;
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct BaseAssetV1 {
     pub key: Key,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
     pub owner: Pubkey,
     pub update_authority: UpdateAuthority,
     pub name: String,

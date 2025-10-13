@@ -1,7 +1,7 @@
 use crate::{
     constants::POOL_WALLET_SEED,
     error::ErrorCode,
-    state::{NftStakeAccount, StakePoolAccount},
+    state::{CreateNftStakeArgs, NftStakeAccount, StakePoolAccount},
 };
 use anchor_lang::prelude::*;
 
@@ -32,8 +32,13 @@ pub struct CreateNftStake<'info> {
     pub mpl_core_program: UncheckedAccount<'info>,
 }
 
-pub fn process_create_nft_stake(ctx: Context<CreateNftStake>) -> Result<()> {
+pub fn process_create_nft_stake(
+    ctx: Context<CreateNftStake>,
+    args: CreateNftStakeArgs,
+) -> Result<()> {
     msg!("create nft stake");
+
+    require_gte!(100, args.commision_rate, ErrorCode::InvalidCommisionRate);
 
     let stake_pool = &mut ctx.accounts.stake_pool;
 
@@ -70,7 +75,7 @@ pub fn process_create_nft_stake(ctx: Context<CreateNftStake>) -> Result<()> {
     nft_stake.deposit_authority = ctx.accounts.deposit_authority.key();
     nft_stake.nft_token_account = ctx.accounts.mpl_core_asset.key();
     nft_stake.amount = 0;
-    nft_stake.active = true;
+    nft_stake.commision_rate = args.commision_rate;
 
     Ok(())
 }

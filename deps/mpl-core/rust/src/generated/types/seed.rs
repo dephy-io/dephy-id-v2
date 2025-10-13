@@ -15,10 +15,6 @@ pub enum Seed {
     Owner,
     Recipient,
     Asset,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
     Address(Pubkey),
     Bytes(Vec<u8>),
 }

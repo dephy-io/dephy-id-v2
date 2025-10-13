@@ -12,14 +12,6 @@ use solana_pubkey::Pubkey;
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub enum RuleSet {
     None,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<Vec<serde_with::DisplayFromStr>>")
-    )]
     ProgramAllowList(Vec<Pubkey>),
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<Vec<serde_with::DisplayFromStr>>")
-    )]
     ProgramDenyList(Vec<Pubkey>),
 }

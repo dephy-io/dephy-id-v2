@@ -13,10 +13,6 @@ use solana_pubkey::Pubkey;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct Oracle {
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
     pub base_address: Pubkey,
     pub base_address_config: Option<ExtraAccount>,
     pub results_offset: ValidationResultsOffset,

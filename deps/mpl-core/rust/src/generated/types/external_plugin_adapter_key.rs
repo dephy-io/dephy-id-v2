@@ -13,21 +13,9 @@ use solana_pubkey::Pubkey;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub enum ExternalPluginAdapterKey {
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
     LifecycleHook(Pubkey),
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
     Oracle(Pubkey),
     AppData(PluginAuthority),
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
     LinkedLifecycleHook(Pubkey),
     LinkedAppData(PluginAuthority),
     DataSection(LinkedDataKey),

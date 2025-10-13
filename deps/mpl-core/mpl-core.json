@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "mpl_core_program",
   "instructions": [
     {
@@ -3130,6 +3130,18 @@
       }
     },
     {
+      "name": "PermanentFreezeExecute",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "frozen",
+            "type": "bool"
+          }
+        ]
+      }
+    },
+    {
       "name": "PermanentTransferDelegate",
       "type": {
         "kind": "struct",
@@ -4070,6 +4082,14 @@
                 "defined": "FreezeExecute"
               }
             ]
+          },
+          {
+            "name": "PermanentFreezeExecute",
+            "fields": [
+              {
+                "defined": "PermanentFreezeExecute"
+              }
+            ]
           }
         ]
       }
@@ -4129,6 +4149,9 @@
           },
           {
             "name": "FreezeExecute"
+          },
+          {
+            "name": "PermanentFreezeExecute"
           }
         ]
       }

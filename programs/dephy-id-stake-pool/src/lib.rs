@@ -43,8 +43,8 @@ pub mod dephy_id_stake_pool {
     }
 
     // Will only support MplCore
-    pub fn create_nft_stake(ctx: Context<CreateNftStake>) -> Result<()> {
-        process_create_nft_stake(ctx)
+    pub fn create_nft_stake(ctx: Context<CreateNftStake>, args: CreateNftStakeArgs) -> Result<()> {
+        process_create_nft_stake(ctx, args)
     }
 
     pub fn unstake_nft(ctx: Context<UnstakeNft>) -> Result<()> {

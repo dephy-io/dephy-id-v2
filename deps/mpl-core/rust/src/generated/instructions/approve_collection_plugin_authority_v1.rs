@@ -10,6 +10,8 @@ use crate::generated::types::PluginType;
 use anchor_lang::prelude::AnchorDeserialize;
 use anchor_lang::prelude::AnchorSerialize;
 
+pub const APPROVE_COLLECTION_PLUGIN_AUTHORITY_V1_DISCRIMINATOR: u8 = 9;
+
 /// Accounts.
 #[derive(Debug)]
 pub struct ApproveCollectionPluginAuthorityV1 {
@@ -68,9 +70,10 @@ impl ApproveCollectionPluginAuthorityV1 {
             ));
         }
         accounts.extend_from_slice(remaining_accounts);
-        let mut data =
-            borsh::to_vec(&ApproveCollectionPluginAuthorityV1InstructionData::new()).unwrap();
-        let mut args = borsh::to_vec(&args).unwrap();
+        let mut data = ApproveCollectionPluginAuthorityV1InstructionData::new()
+            .try_to_vec()
+            .unwrap();
+        let mut args = args.try_to_vec().unwrap();
         data.append(&mut args);
 
         solana_instruction::Instruction {
@@ -259,21 +262,18 @@ impl<'a, 'b> ApproveCollectionPluginAuthorityV1Cpi<'a, 'b> {
         }
     }
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke(&self) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], &[])
     }
     #[inline(always)]
     pub fn invoke_with_remaining_accounts(
         &self,
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
-    ) -> solana_program_entrypoint::ProgramResult {
+    ) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], remaining_accounts)
     }
     #[inline(always)]
-    pub fn invoke_signed(
-        &self,
-        signers_seeds: &[&[&[u8]]],
-    ) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(signers_seeds, &[])
     }
     #[allow(clippy::arithmetic_side_effects)]
@@ -283,7 +283,7 @@ impl<'a, 'b> ApproveCollectionPluginAuthorityV1Cpi<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
-    ) -> solana_program_entrypoint::ProgramResult {
+    ) -> solana_program_error::ProgramResult {
         let mut accounts = Vec::with_capacity(5 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(
             *self.collection.key,
@@ -323,9 +323,10 @@ impl<'a, 'b> ApproveCollectionPluginAuthorityV1Cpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let mut data =
-            borsh::to_vec(&ApproveCollectionPluginAuthorityV1InstructionData::new()).unwrap();
-        let mut args = borsh::to_vec(&self.__args).unwrap();
+        let mut data = ApproveCollectionPluginAuthorityV1InstructionData::new()
+            .try_to_vec()
+            .unwrap();
+        let mut args = self.__args.try_to_vec().unwrap();
         data.append(&mut args);
 
         let instruction = solana_instruction::Instruction {
@@ -467,15 +468,12 @@ impl<'a, 'b> ApproveCollectionPluginAuthorityV1CpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke(&self) -> solana_program_error::ProgramResult {
         self.invoke_signed(&[])
     }
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
-    pub fn invoke_signed(
-        &self,
-        signers_seeds: &[&[&[u8]]],
-    ) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
         let args = ApproveCollectionPluginAuthorityV1InstructionArgs {
             plugin_type: self
                 .instruction

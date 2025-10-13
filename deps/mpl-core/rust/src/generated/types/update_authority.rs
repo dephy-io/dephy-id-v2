@@ -12,14 +12,6 @@ use solana_pubkey::Pubkey;
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub enum UpdateAuthority {
     None,
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
     Address(Pubkey),
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
     Collection(Pubkey),
 }

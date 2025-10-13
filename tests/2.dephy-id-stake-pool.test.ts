@@ -203,6 +203,7 @@ describe("dephy-id-stake-pool", () => {
         depositAuthority: tokenOwner1.address,
         mplCoreAsset: did1Address,
         mplCoreCollection: productAssetAddress,
+        commisionRate: 20
       })
     ])
 
@@ -212,6 +213,7 @@ describe("dephy-id-stake-pool", () => {
     assert.equal(nftStakeAccount.data.depositAuthority, tokenOwner1.address, 'depositAuthority')
     assert.equal(nftStakeAccount.data.nftTokenAccount, did1Address, 'nftTokenAccount')
     assert.equal(nftStakeAccount.data.amount, 0n, 'amount')
+    assert.equal(nftStakeAccount.data.commisionRate, 20, 'commisionRate')
 
     const assetAccount = await mplCore.fetchAssetAccount(rpc, did1Address)
     assert(assetAccount.data.plugins.freezeDelegate?.frozen)
@@ -269,7 +271,7 @@ describe("dephy-id-stake-pool", () => {
     assert.equal(userTokenAccount.data.amount, startingAmount - depositAmount)
   })
 
-  it('close an active nft stake will fail', async () => {
+  it('close an non empty nft stake will fail', async () => {
     await assert.rejects(async () => {
       await sendAndConfirmIxs([
         await dephyIdStakePool.getCloseNftStakeInstructionAsync({
@@ -444,6 +446,7 @@ describe("dephy-id-stake-pool", () => {
         depositAuthority: zeroAddress,  // no deposit authority
         mplCoreAsset: did1Address,
         mplCoreCollection: productAssetAddress,
+        commisionRate: 0,
       })
     ])
 

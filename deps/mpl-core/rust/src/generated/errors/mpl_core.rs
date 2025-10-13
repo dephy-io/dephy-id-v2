@@ -165,14 +165,8 @@ pub enum MplCoreError {
     BlockedByBubblegumV2 = 0x32,
 }
 
-impl solana_program_error::PrintProgramError for MplCoreError {
-    fn print<E>(&self) {
-        solana_msg::msg!(&self.to_string());
-    }
-}
-
-impl<T> solana_decode_error::DecodeError<T> for MplCoreError {
-    fn type_of() -> &'static str {
-        "MplCoreError"
+impl From<MplCoreError> for solana_program_error::ProgramError {
+    fn from(e: MplCoreError) -> Self {
+        solana_program_error::ProgramError::Custom(e as u32)
     }
 }

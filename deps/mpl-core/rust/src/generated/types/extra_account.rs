@@ -39,10 +39,6 @@ pub enum ExtraAccount {
         is_writable: bool,
     },
     Address {
-        #[cfg_attr(
-            feature = "serde",
-            serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-        )]
         address: Pubkey,
         is_signer: bool,
         is_writable: bool,

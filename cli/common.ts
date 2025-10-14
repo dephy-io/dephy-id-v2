@@ -2,9 +2,23 @@ import {
   createSolanaClient, createTransaction, getSignatureFromTransaction,
   IInstruction, isSolanaError, signTransactionMessageWithSigners
 } from "gill";
+import { address } from "gill";
 import { loadKeypairSignerFromFile } from "gill/node";
 
 
+export function getProgramIds(mainnet: boolean) {
+  if (mainnet) {
+    return {
+      dephyIdProgramId: address('PHy1dzzd8sso1R5t31WHX6JvAsZF9fvNgzxHbgnKHX4'),
+      dephyIdStakePoolProgramId: address('PHYSJkZ4KNpK4Lp5pg89xfab5mSer9NxRfr6YzuRdNQ'),
+    }
+  } else {
+    return {
+      dephyIdProgramId: address('D1DdkvuK3V8kzxD5CSsx7JorEo3hMLw4L7Bvujv3pTD6'),
+      dephyIdStakePoolProgramId: address('DSTKMXnJXgvViSkr6hciBaYsTpcduxZuF334WLrvEZmW'),
+    }
+  }
+}
 
 export async function createSolanaContext({
   keypair,

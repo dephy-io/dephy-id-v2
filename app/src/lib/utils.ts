@@ -41,8 +41,8 @@ export function useSendAndConfirmIxs() {
   }
 }
 
-export function toJSON(obj: any) {
-  return JSON.stringify(obj, (key, value) => {
+export function toJSON(obj: object) {
+  return JSON.stringify(obj, (_key, value) => {
     if (typeof value === 'bigint') {
       return value.toString();
     }

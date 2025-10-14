@@ -1,12 +1,28 @@
-import { useWalletUi, useWalletUiCluster } from "@wallet-ui/react"
+import { useWalletUi, useWalletUiCluster, useWalletUiAccount } from "@wallet-ui/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { address, getBase58Decoder, getBase64Encoder, type Address, type Base58EncodedBytes, type GetProgramAccountsMemcmpFilter, type ReadonlyUint8Array } from "gill"
+import { address, getBase58Decoder, getBase64Encoder, type Address, type Base58EncodedBytes, type GetProgramAccountsMemcmpFilter, type ReadonlyUint8Array, type Rpc } from "gill"
 import * as dephyId from "dephy-id-client"
 import * as mplCore from "mpl-core"
-import { createDasRpc } from "~/lib/das"
+import { createDasRpc, type DasApi } from "~/lib/das"
 import { useTransactionToast } from '../use-transaction-toast'
 import { useSendAndConfirmIxs } from '~/lib/utils'
 import { useProgramIds } from "~/lib/program-ids"
+import { useMemo } from "react"
+
+export function useDasRpc(): Rpc<DasApi> {
+  const { cluster } = useWalletUiAccount()
+
+  return useMemo(() => {
+    switch (cluster.cluster) {
+      case 'mainnet':
+        return createDasRpc(import.meta.env.VITE_HELIUS_MAINNET_RPC_URL)
+      case 'devnet':
+        return createDasRpc(import.meta.env.VITE_HELIUS_DEVNET_RPC_URL)
+      default:
+        throw new Error(`Unsupported cluster: ${cluster.cluster}`)
+    }
+  }, [cluster.cluster])
+}
 
 export function useDephyAccount() {
   const { client } = useWalletUi()

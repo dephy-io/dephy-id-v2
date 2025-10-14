@@ -3,17 +3,18 @@ import { useEffect } from "react"
 import { Button } from "../ui/button"
 import { CommonCard as Card, InputWithLabel } from "../common-ui"
 import { useWalletUiAccount } from "@wallet-ui/react"
-import { useQueryClient } from "@tanstack/react-query"
-import { address, type Rpc } from "gill"
+import { useQueryClient, useQuery } from "@tanstack/react-query"
+import { address, type Instruction } from "gill"
 import { useStakeNfts, useUserAssetsForStakePool, useCreateNftStakesOnly, type UserAsset } from "./dev-tools-data-access"
 import { useStakePools, useUserNftStakesForPool, useStakePool } from "../stake-pool/stake-pool-data-access"
-import { createDasRpc, type DasApi } from "../../lib/das"
+import { useListProducts, useDasRpc } from "../dephy-id/dephy-id-data-access"
 import { Link } from "react-router"
 import { useMemo } from "react"
 import { ellipsify, useWalletUi } from "@wallet-ui/react"
 import * as splToken from 'gill/programs/token'
 import { useSendAndConfirmIxs } from "~/lib/utils"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
+import * as mplCore from "mpl-core"
 
 interface DeviceEntry {
   device: string
@@ -21,7 +22,7 @@ interface DeviceEntry {
 }
 
 export function StakeNftsForm() {
-  const { account, cluster } = useWalletUiAccount()
+  const { account } = useWalletUiAccount()
   const queryClient = useQueryClient()
   const stakePools = useStakePools()
   const [stakePoolAddress, setStakePoolAddress] = useState("")
@@ -33,20 +34,7 @@ export function StakeNftsForm() {
   const [stakedFilter, setStakedFilter] = useState<boolean>(false)
 
   const stakeNfts = useStakeNfts()
-
-  // Create DAS RPC instance
-  let dasRpc: Rpc<DasApi>;
-
-  switch (cluster.cluster) {
-    case 'mainnet':
-      dasRpc = createDasRpc(import.meta.env.VITE_HELIUS_MAINNET_RPC_URL)
-      break;
-    case 'devnet':
-      dasRpc = createDasRpc(import.meta.env.VITE_HELIUS_DEVNET_RPC_URL)
-      break;
-    default:
-      throw new Error(`Unsupported cluster: ${cluster.cluster}`)
-  }
+  const dasRpc = useDasRpc()
 
   const userAssets = useUserAssetsForStakePool({
     stakePoolAddress: stakePoolAddress ? address(stakePoolAddress) : undefined,
@@ -308,7 +296,6 @@ export function StakeNftsForm() {
 }
 
 export function BatchStakeNFTs() {
-  const { cluster } = useWalletUiAccount()
   const stakePools = useStakePools()
 
   const [stakePoolAddress, setStakePoolAddress] = useState("")
@@ -321,18 +308,7 @@ export function BatchStakeNFTs() {
   // Page size for auto-pagination
   const PAGE_LIMIT = 200
 
-  // Create DAS RPC instance
-  let dasRpc: Rpc<DasApi>
-  switch (cluster.cluster) {
-    case 'mainnet':
-      dasRpc = createDasRpc(import.meta.env.VITE_HELIUS_MAINNET_RPC_URL)
-      break
-    case 'devnet':
-      dasRpc = createDasRpc(import.meta.env.VITE_HELIUS_DEVNET_RPC_URL)
-      break
-    default:
-      throw new Error(`Unsupported cluster: ${cluster.cluster}`)
-  }
+  const dasRpc = useDasRpc()
 
   const pageAssets = useUserAssetsForStakePool({
     stakePoolAddress: stakePoolAddress ? address(stakePoolAddress) : undefined,
@@ -809,6 +785,266 @@ export function BatchAdjustTokens() {
   )
 }
 
+
+export function BatchTransferForm() {
+  const { account } = useWalletUiAccount()
+  const { client } = useWalletUi()
+  const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
+  const products = useListProducts({})
+  const [productAddress, setProductAddress] = useState("")
+  const [destAddress, setDestAddress] = useState("")
+  const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set())
+  const [isTransferring, setIsTransferring] = useState(false)
+  const [page, setPage] = useState(1)
+
+  const dasRpc = useDasRpc()
+
+  // Fetch user assets
+  const userAssets = useQuery<UserAsset[]>({
+    queryKey: ['user-assets', 'product-collection', { productAddress, userAddress: account?.address, page }],
+    queryFn: async () => {
+      if (!account?.address || !productAddress || !dasRpc) {
+        return []
+      }
+
+      try {
+        const searchArgs: any = {
+          ownerAddress: address(account.address),
+          grouping: ["collection", productAddress],
+          page,
+          limit: 100,
+          displayOptions: {
+            showCollectionMetadata: false,
+          }
+        }
+
+        const response = await dasRpc.searchAssets(searchArgs).send()
+
+        const assets = response.items.map((asset) => ({
+          address: asset.id,
+          name: asset.content?.metadata?.name,
+          collection: productAddress,
+          owner: account.address,
+          metadata: asset.content?.metadata,
+          seed: asset.plugins?.attributes?.data?.attribute_list?.find((attr: { key: string; value: string }) => attr.key === "Seed")?.value,
+          frozen: asset.plugins?.freeze_delegate?.data.frozen,
+        }))
+
+        return assets
+      } catch (error) {
+        console.error('Error fetching user assets:', error)
+        return []
+      }
+    },
+    enabled: !!account?.address && !!productAddress && !!dasRpc,
+  })
+
+  useEffect(() => {
+    setSelectedAssets(new Set())
+    setPage(1)
+  }, [productAddress])
+
+  const handleAssetSelection = (assetAddress: string, isChecked: boolean) => {
+    const newSelectedAssets = new Set(selectedAssets)
+    if (isChecked) {
+      newSelectedAssets.add(assetAddress)
+    } else {
+      newSelectedAssets.delete(assetAddress)
+    }
+    setSelectedAssets(newSelectedAssets)
+  }
+
+  const handleSelectAll = (isChecked: boolean) => {
+    if (!userAssets.data) return
+    if (isChecked) {
+      const unfrozenAssets = userAssets.data.filter((asset: UserAsset) => !asset.frozen)
+      setSelectedAssets(new Set(unfrozenAssets.map((asset: UserAsset) => asset.address)))
+    } else {
+      setSelectedAssets(new Set())
+    }
+  }
+
+  const unfrozenAssets = useMemo(() => {
+    return userAssets.data?.filter((asset: UserAsset) => !asset.frozen) ?? []
+  }, [userAssets.data])
+
+  const isAllSelected = unfrozenAssets.length > 0 && unfrozenAssets.every((asset: UserAsset) => selectedAssets.has(asset.address))
+
+  const handleTransfer = async () => {
+    if (!productAddress || !destAddress || selectedAssets.size === 0 || !client) return
+
+    try {
+      setIsTransferring(true)
+      const productAsset = address(productAddress)
+      const dest = address(destAddress)
+
+      let ixs: Instruction[] = []
+      let processed = 0
+
+      for (const deviceAddress of Array.from(selectedAssets)) {
+        try {
+          const deviceAsset = await mplCore.fetchAssetAccount(client.rpc, address(deviceAddress))
+
+          // Skip if already owned by destination or not owned by current user
+          if (deviceAsset.data.base.owner == dest || deviceAsset.data.base.owner != feePayer.address) {
+            console.log('skip', deviceAddress)
+            continue
+          }
+
+          console.log('transfer', deviceAddress)
+          ixs.push(
+            mplCore.getTransferV1Instruction({
+              asset: address(deviceAddress),
+              collection: productAsset,
+              payer: feePayer,
+              newOwner: dest,
+              authority: feePayer,
+            })
+          )
+
+          if (ixs.length >= 22) {
+            const signature = await sendAndConfirmIxs(ixs)
+            console.log('Transaction signature:', signature, processed)
+            ixs = []
+          }
+          processed++
+        } catch (error) {
+          console.error(`Error transferring ${deviceAddress}:`, error)
+        }
+      }
+
+      if (ixs.length > 0) {
+        const signature = await sendAndConfirmIxs(ixs)
+        console.log('Final transaction signature:', signature)
+      }
+
+      alert(`Transfer completed! Processed ${processed} assets.`)
+
+      await userAssets.refetch()
+      setSelectedAssets(new Set())
+    } catch (error) {
+      console.error('Transfer failed:', error)
+      alert('Transfer failed. Check console for details.')
+    } finally {
+      setIsTransferring(false)
+    }
+  }
+
+  return (
+    <Card title="Batch Transfer NFTs">
+      <div className="space-y-4">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Product (Collection)</label>
+          <select
+            value={productAddress}
+            onChange={(e) => setProductAddress(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            required
+          >
+            <option value="">Select a product</option>
+            {products.data?.map((product) => (
+              <option key={product.pubkey} value={product.account.collection}>
+                {product.account.collection}
+              </option>
+            ))}
+          </select>
+          {products.isLoading && (
+            <p className="text-sm text-gray-500">Loading products...</p>
+          )}
+          {products.error && (
+            <p className="text-sm text-red-500">Error loading products: {products.error.message}</p>
+          )}
+        </div>
+
+        <InputWithLabel
+          label="Destination Address"
+          name="destAddress"
+          value={destAddress}
+          onChange={(e) => setDestAddress(e.target.value)}
+          placeholder="Enter destination wallet address"
+          required
+        />
+
+        {productAddress && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Your Assets for Selected Collection</label>
+            {userAssets.isLoading && (
+              <p className="text-sm text-gray-500">Loading your assets...</p>
+            )}
+            {userAssets.error && (
+              <p className="text-sm text-red-500">Error loading assets: {userAssets.error.message}</p>
+            )}
+            {userAssets.isFetched && (
+              <div className="flex justify-center items-center gap-4 mt-4">
+                <Button type="button" onClick={() => setPage(p => p - 1)} disabled={page <= 1}>Previous</Button>
+                <span>Page {page}</span>
+                <Button type="button" onClick={() => setPage(p => p + 1)} disabled={!userAssets.data || userAssets.data.length < 100}>Next</Button>
+              </div>
+            )}
+            {userAssets.data && userAssets.data.length > 0 ? (
+              <div className="border rounded-md overflow-hidden max-h-64 overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 z-10 bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-medium">
+                        <div className="flex items-center gap-2">
+                          <Button type="button" size="sm" variant="outline" onClick={() => handleSelectAll(true)}>All</Button>
+                          <Button type="button" size="sm" variant="outline" onClick={() => handleSelectAll(false)}>None</Button>
+                        </div>
+                      </th>
+                      <th className="px-3 py-2 text-left font-medium">Asset Address</th>
+                      <th className="px-3 py-2 text-left font-medium">Seed</th>
+                      <th className="px-3 py-2 text-left font-medium">Frozen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userAssets.data.map((asset: UserAsset, index: number) => (
+                      <tr key={asset.address} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedAssets.has(asset.address)}
+                            onChange={(e) => handleAssetSelection(asset.address, e.target.checked)}
+                            className="rounded"
+                            disabled={asset.frozen}
+                          />
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs" title={asset.address}>
+                          <Link to={`/dephy-id/${asset.collection}/${asset.address}`} className="text-blue-600 hover:text-blue-800">
+                            {asset.address}
+                          </Link>
+                        </td>
+                        <td className="px-3 py-2 font-mono text-xs">
+                          {asset.seed}
+                        </td>
+                        <td className="px-3 py-2">
+                          {asset.frozen ? 'Yes' : 'No'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : userAssets.data && userAssets.data.length === 0 ? (
+              <p className="text-sm text-gray-500">No assets found for this collection.</p>
+            ) : null}
+          </div>
+        )}
+
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            onClick={handleTransfer}
+            disabled={!productAddress || !destAddress || selectedAssets.size === 0 || isTransferring}
+            className="w-full"
+          >
+            {isTransferring ? 'Transferring...' : `Transfer Selected (${selectedAssets.size})`}
+          </Button>
+        </div>
+      </div>
+    </Card>
+  )
+}
 
 export function BatchUnstakeNFTs() {
   const { account } = useWalletUiAccount()

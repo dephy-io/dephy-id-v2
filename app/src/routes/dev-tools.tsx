@@ -1,6 +1,6 @@
 import { CommonCard as Card } from "~/components/common-ui"
 import { useWalletUiAccount } from "@wallet-ui/react"
-import { StakeNftsForm } from "~/components/dev-tools/dev-tools-ui"
+import { BatchTransferForm, StakeNftsForm } from "~/components/dev-tools/dev-tools-ui"
 
 export default function DevTools() {
   const { account } = useWalletUiAccount()
@@ -21,6 +21,7 @@ export default function DevTools() {
       <h1 className="text-2xl font-bold">Dev Tools</h1>
 
       <StakeNftsForm />
+      <BatchTransferForm />
     </div>
   )
 }

@@ -9,7 +9,7 @@ import { createUmi } from '@metaplex-foundation/umi-bundle-defaults'
 import {
   Address, address, type Base58EncodedBytes, generateKeyPairSigner, getAddressCodec,
   getBase16Encoder, getBase58Decoder, getBase64Encoder,
-  IInstruction, ReadonlyUint8Array
+  Instruction, ReadonlyUint8Array
 } from "gill"
 import { loadKeypairSignerFromFile } from 'gill/node'
 import * as splToken from 'gill/programs/token'
@@ -36,6 +36,8 @@ type DeviceOwner = {
 
 const b16Encoder = getBase16Encoder()
 const addressCodec = getAddressCodec()
+
+const min = (a: bigint, b: bigint) => a < b ? a : b
 
 const cli = new Command()
   .name('dev-tools-cli')
@@ -206,7 +208,7 @@ cli.command('create-dev-devices')
       })
     }
 
-    let ixs: IInstruction[] = []
+    let ixs: Instruction[] = []
     console.log('skip', skip)
     for (let i = skip; i < devicesAndOwners.length; i++) {
       const { deviceAddress, base58deviceAddress, deviceSeed, owner } = devicesAndOwners[i]
@@ -295,7 +297,7 @@ cli.command('stake-nfts')
       })
     }
 
-    let ixs: IInstruction[] = []
+    let ixs: Instruction[] = []
     for (let i = skip; i < devicesAndOwners.length; i++) {
       const { deviceAddress, owner, amount } = devicesAndOwners[i]
 
@@ -398,7 +400,7 @@ cli.command('batch-transfer')
     console.log('hasPermanentTransferAuthority', hasPermanentTransferAuthority, devicesAndDest.length)
     console.log('skip', skip)
 
-    let ixs: IInstruction[] = []
+    let ixs: Instruction[] = []
     let last = 0
     for (let i = skip; i < devicesAndDest.length; i++) {
       const { deviceAddress, dest } = devicesAndDest[i]
@@ -483,7 +485,7 @@ cli.command('batch-adjust')
 
     console.log('devicesAndOwners', devicesAndOwners.length)
 
-    let ixs: IInstruction[] = []
+    let ixs: Instruction[] = []
     for (let i = 0; i < devicesAndOwners.length; i++) {
       const { nftStakeAddress, amount: targetAmount } = devicesAndOwners[i]
 
@@ -492,12 +494,14 @@ cli.command('batch-adjust')
         user: ctx.feePayer.address,
       }, { programAddress: dephyIdStakePoolProgramId })
 
+      const nftStakeAccount = await dephyIdStakePool.fetchNftStakeAccount(ctx.rpc, nftStakeAddress)
       const userStakeAccount = await dephyIdStakePool.fetchMaybeUserStakeAccount(ctx.rpc, userStakeAddress)
+      const maxAmount = stakePool.data.config.maxStakeAmount - nftStakeAccount.data.amount
       let amount = targetAmount
 
       if (userStakeAccount.exists) {
-        if (targetAmount > userStakeAccount.data.amount) {
-          amount = targetAmount - userStakeAccount.data.amount
+        if (maxAmount > 0n && targetAmount > userStakeAccount.data.amount) {
+          amount = min(targetAmount - userStakeAccount.data.amount, maxAmount)
           if (dryRun) {
             console.log('deposit', nftStakeAddress, amount)
           }
@@ -538,6 +542,7 @@ cli.command('batch-adjust')
           console.log('same amount, skip', nftStakeAddress)
         }
       } else {
+        amount = min(amount, maxAmount)
         if (amount > 0n) {
           if (dryRun) {
             console.log('new deposit', nftStakeAddress, amount)

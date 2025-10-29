@@ -494,9 +494,9 @@ cli.command('batch-adjust')
         user: ctx.feePayer.address,
       }, { programAddress: dephyIdStakePoolProgramId })
 
-      const nftStakeAccount = await dephyIdStakePool.fetchNftStakeAccount(ctx.rpc, nftStakeAddress)
+      const nftStakeAccount = await dephyIdStakePool.fetchMaybeNftStakeAccount(ctx.rpc, nftStakeAddress)
       const userStakeAccount = await dephyIdStakePool.fetchMaybeUserStakeAccount(ctx.rpc, userStakeAddress)
-      const maxAmount = stakePool.data.config.maxStakeAmount - nftStakeAccount.data.amount
+      const maxAmount = nftStakeAccount.exists ? stakePool.data.config.maxStakeAmount - nftStakeAccount.data.amount : 0n
       let amount = targetAmount
 
       if (userStakeAccount.exists) {

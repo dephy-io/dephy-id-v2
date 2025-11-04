@@ -7,7 +7,7 @@ import * as splToken from 'gill/programs/token'
 
 import * as dephyIdStakePool from '../clients/dephy-id-stake-pool/js/src/index.js'
 import * as mplCore from '../deps/mpl-core/js/src/index.js'
-import { createSolanaContext } from "./common.js"
+import { createSolanaContext, getProgramIds } from "./common.js"
 
 let ctx: Awaited<ReturnType<typeof createSolanaContext>>
 
@@ -31,13 +31,17 @@ cli
   .command('initialize')
   .description('Initialize DePHY stake pool program')
   .option('-a, --authority <path>', 'Path to authority keypair file')
+  .option('--mainnet', 'Use mainnet program IDs', false)
   .action(async (options) => {
     const authority = options.authority ? await loadKeypairSignerFromFile(options.authority) : ctx.feePayer;
+    const { dephyIdStakePoolProgramId } = getProgramIds(!!options.mainnet)
 
     const signature = await ctx.sendAndConfirmIxs([
       await dephyIdStakePool.getInitializeInstructionAsync({
         authority,
         payer: ctx.feePayer,
+      }, {
+        programAddress: dephyIdStakePoolProgramId
       }),
     ]);
 
@@ -54,6 +58,7 @@ cli
   .requiredOption('--collection <address>', 'Address of the collection')
   .option('--max-stake-amount <amount>', 'Maximum stake amount (ui amount)', '20000')
   .option('--config-review-time <seconds>', 'Config review time in seconds', '86400')
+  .option('--mainnet', 'Use mainnet program IDs', false)
   .action(async (options) => {
     const authority = options.authority ? await loadKeypairSignerFromFile(options.authority) : ctx.feePayer;
     const stakePoolAuthority = options.stakePoolAuthority ? address(options.stakePoolAuthority) : authority.address
@@ -62,6 +67,7 @@ cli
     const maxStakeAmount = Number(options.maxStakeAmount)
     const configReviewTime = Number(options.configReviewTime)
     const stakePoolSigner = await generateKeyPairSigner()
+    const { dephyIdStakePoolProgramId } = getProgramIds(!!options.mainnet)
 
     const adminAddress = (await dephyIdStakePool.findAdminAccountPda())[0]
     const adminAccount = await dephyIdStakePool.fetchAdminAccount(ctx.rpc, adminAddress)
@@ -86,6 +92,8 @@ cli
           configReviewTime,
         },
         stakeTokenProgram: stakeTokenMintAccount.programAddress,
+      }, {
+        programAddress: dephyIdStakePoolProgramId
       }),
     ])
 
@@ -105,12 +113,14 @@ cli
   .option('--stake-authority <path>', 'Path to the NFT owner\'s keypair file (stake authority), defaults to fee payer')
   .option('--deposit-authority <address>', 'Address of the deposit authority, defaults to stake authority')
   .requiredOption('--nft-asset <address>', 'Address of the DePHY ID NFT to stake (mpl_core_asset)')
+  .option('--mainnet', 'Use mainnet program IDs', false)
   .action(async (options) => {
     const stakePool = address(options.stakePool);
     const stakeAuthority = options.stakeAuthority ? await loadKeypairSignerFromFile(options.stakeAuthority) : ctx.feePayer;
     const depositAuthority = options.depositAuthority ? address(options.depositAuthority) : stakeAuthority.address
     const nftAsset = address(options.nftAsset);
     const nftStakeSigner = await generateKeyPairSigner();
+    const { dephyIdStakePoolProgramId } = getProgramIds(!!options.mainnet)
 
     const stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(ctx.rpc, stakePool)
     const collectionAccount = await mplCore.fetchCollectionAccount(ctx.rpc, stakePoolAccount.data.config.collection)
@@ -128,6 +138,8 @@ cli
         nftStake: nftStakeSigner,
         payer: ctx.feePayer,
         depositAuthority,
+      }, {
+        programAddress: dephyIdStakePoolProgramId
       }),
     ]);
 
@@ -146,10 +158,12 @@ cli
   .requiredOption('--amount <number>', 'Amount of tokens to deposit (ui amount)')
   .option('--user <path>', 'Path to the token owner\'s keypair file, defaults to fee payer')
   .option('--user-token-account <address>', 'Address of the user\'s token account for the stake token')
+  .option('--mainnet', 'Use mainnet program IDs', false)
   .action(async (options) => {
     const nftStake = address(options.nftStake)
     const user = options.user ? await loadKeypairSignerFromFile(options.user) : ctx.feePayer
     const amount = Number(options.amount)
+    const { dephyIdStakePoolProgramId } = getProgramIds(!!options.mainnet)
 
     const nftStakeAccount = await dephyIdStakePool.fetchNftStakeAccount(ctx.rpc, nftStake)
     const stakePoolAddress = nftStakeAccount.data.stakePool
@@ -179,6 +193,8 @@ cli
         amount: amountInSmallestUnits,
         payer: ctx.feePayer,
         tokenProgram: stakeTokenMintAccount.programAddress,
+      }, {
+        programAddress: dephyIdStakePoolProgramId
       }),
     ])
 
@@ -194,6 +210,7 @@ cli
   .requiredOption('--amount <number>', 'Amount of tokens to withdraw (ui amount)')
   .option('--user <path>', 'Path to the token owner\'s keypair file, defaults to fee payer')
   .option('--user-token-account <address>', 'Address of the user\'s token account to receive redeemed tokens')
+  .option('--mainnet', 'Use mainnet program IDs', false)
   .action(async (options) => {
     const nftStake = address(options.nftStake)
     const nftStakeAccount = await dephyIdStakePool.fetchNftStakeAccount(ctx.rpc, nftStake)
@@ -209,6 +226,7 @@ cli
       owner: user.address,
       tokenProgram: stakeTokenMintAccount.programAddress,
     }))[0];
+    const { dephyIdStakePoolProgramId } = getProgramIds(!!options.mainnet)
 
     const signature = await ctx.sendAndConfirmIxs([
       await dephyIdStakePool.getWithdrawInstructionAsync({
@@ -220,6 +238,8 @@ cli
         stakeTokenMint,
         stakeTokenAccount: stakePoolAccount.data.stakeTokenAccount,
         userStakeTokenAccount,
+      }, {
+        programAddress: dephyIdStakePoolProgramId
       }),
     ])
 
@@ -233,11 +253,13 @@ cli
   .description('Close an empty NFT stake account')
   .requiredOption('--nft-stake <address>', 'Address of the NFT stake account to close')
   .option('--stake-authority <path>', 'Path to the NFT owner\'s keypair file (stake authority), defaults to fee payer')
+  .option('--mainnet', 'Use mainnet program IDs', false)
   .action(async (options) => {
     const nftStake = address(options.nftStake);
     const nftStakeAccount = await dephyIdStakePool.fetchNftStakeAccount(ctx.rpc, nftStake)
     const stakePoolAddress = nftStakeAccount.data.stakePool
     const stakeAuthority = options.stakeAuthority ? await loadKeypairSignerFromFile(options.stakeAuthority) : ctx.feePayer;
+    const { dephyIdStakePoolProgramId } = getProgramIds(!!options.mainnet)
 
     const signature = await ctx.sendAndConfirmIxs([
       await dephyIdStakePool.getCloseNftStakeInstructionAsync({
@@ -245,6 +267,8 @@ cli
         nftStake,
         stakeAuthority,
         payer: ctx.feePayer,
+      }, {
+        programAddress: dephyIdStakePoolProgramId
       }),
     ]);
 
@@ -289,6 +313,7 @@ cli
   .option('--stake-authority <address>', 'Address of the stake authority')
   .option('--deposit-authority <address>', 'Address of the deposit authority')
   .option('--nft-token <address>', 'Address of the nft token')
+  .option('--mainnet', 'Use mainnet program IDs', false)
   .action(async (options) => {
     const filters: Parameters<typeof ctx.rpc.getProgramAccounts>[1]['filters'] = [
       {
@@ -340,7 +365,8 @@ cli
       })
     }
 
-    const rawAccounts = await ctx.rpc.getProgramAccounts(dephyIdStakePool.DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS, {
+    const { dephyIdStakePoolProgramId } = getProgramIds(!!options.mainnet)
+    const rawAccounts = await ctx.rpc.getProgramAccounts(dephyIdStakePoolProgramId, {
       encoding: 'base64',
       filters,
     }).send()
@@ -363,6 +389,7 @@ cli
   .description('List all nft stakes for a user')
   .option('--nft-stake <address>', 'Address of the nft stake account')
   .option('--user <address>', 'Address of the user')
+  .option('--mainnet', 'Use mainnet program IDs', false)
   .action(async (options) => {
     const filters: Parameters<typeof ctx.rpc.getProgramAccounts>[1]['filters'] = [
       {
@@ -394,7 +421,8 @@ cli
       })
     }
 
-    const rawAccounts = await ctx.rpc.getProgramAccounts(dephyIdStakePool.DEPHY_ID_STAKE_POOL_PROGRAM_ADDRESS, {
+    const { dephyIdStakePoolProgramId } = getProgramIds(!!options.mainnet)
+    const rawAccounts = await ctx.rpc.getProgramAccounts(dephyIdStakePoolProgramId, {
       encoding: 'base64',
       filters,
     }).send()
@@ -419,11 +447,13 @@ cli
   .option('-a, --authority <path>', 'Path to authority keypair file (defaults to fee payer)')
   .requiredOption('--max-stake-amount <amount>', 'New max stake amount (ui amount)')
   .requiredOption('--config-review-time <seconds>', 'New config review time in seconds')
+  .option('--mainnet', 'Use mainnet program IDs', false)
   .action(async (options) => {
     const stakePool = address(options.stakePool)
     const authority = options.authority ? await loadKeypairSignerFromFile(options.authority) : ctx.feePayer
     const maxStakeAmountUi = Number(options.maxStakeAmount)
     const configReviewTime = Number(options.configReviewTime)
+    const { dephyIdStakePoolProgramId } = getProgramIds(!!options.mainnet)
 
     const stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(ctx.rpc, stakePool)
     const stakeTokenMint = address(stakePoolAccount.data.config.stakeTokenMint)
@@ -440,6 +470,8 @@ cli
           maxStakeAmount,
           configReviewTime,
         },
+      }, {
+        programAddress: dephyIdStakePoolProgramId,
       }),
     ])
 
@@ -455,15 +487,19 @@ cli
   .description('Confirm the pending config update for a stake pool')
   .requiredOption('--stake-pool <address>', 'Address of the stake pool')
   .option('-a, --authority <path>', 'Path to authority keypair file (defaults to fee payer)')
+  .option('--mainnet', 'Use mainnet program IDs', false)
   .action(async (options) => {
     const stakePool = address(options.stakePool)
     const authority = options.authority ? await loadKeypairSignerFromFile(options.authority) : ctx.feePayer
+    const { dephyIdStakePoolProgramId } = getProgramIds(!!options.mainnet)
 
     const signature = await ctx.sendAndConfirmIxs([
       await dephyIdStakePool.getConfirmUpdateConfigInstructionAsync({
         stakePool,
         authority,
         payer: ctx.feePayer,
+      }, {
+        programAddress: dephyIdStakePoolProgramId,
       }),
     ])
 
@@ -477,15 +513,19 @@ cli
   .description('Cancel the pending config update for a stake pool')
   .requiredOption('--stake-pool <address>', 'Address of the stake pool')
   .option('-a, --authority <path>', 'Path to authority keypair file (defaults to fee payer)')
+  .option('--mainnet', 'Use mainnet program IDs', false)
   .action(async (options) => {
     const stakePool = address(options.stakePool)
     const authority = options.authority ? await loadKeypairSignerFromFile(options.authority) : ctx.feePayer
+    const { dephyIdStakePoolProgramId } = getProgramIds(!!options.mainnet)
 
     const signature = await ctx.sendAndConfirmIxs([
       await dephyIdStakePool.getCancelUpdateConfigInstructionAsync({
         stakePool,
         authority,
         payer: ctx.feePayer,
+      }, {
+        programAddress: dephyIdStakePoolProgramId,
       }),
     ])
 

@@ -15,6 +15,7 @@ import * as splToken from 'gill/programs/token'
 import { useSendAndConfirmIxs } from "~/lib/utils"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
 import * as mplCore from "mpl-core"
+import { useProgramIds } from "~/lib/program-ids"
 
 interface DeviceEntry {
   device: string
@@ -517,6 +518,7 @@ export function BatchAdjustTokens() {
   const queryClient = useQueryClient()
   const [targetUiAmount, setTargetUiAmount] = useState<string>("")
   const [isAdjusting, setIsAdjusting] = useState(false)
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   const userNftStakes = useUserNftStakesForPool({
     stakePoolAddress: stakePoolAddress ? address(stakePoolAddress) : ("" as any),
@@ -623,6 +625,8 @@ export function BatchAdjustTokens() {
             userStakeTokenAccount: ata,
             payer: feePayer,
             amount: delta,
+          }, {
+            programAddress: dephyIdStakePoolProgramId
           }))
         } else {
           // Need to withdraw (decrease to target)
@@ -636,6 +640,8 @@ export function BatchAdjustTokens() {
             userStakeTokenAccount: ata,
             payer: feePayer,
             amount: withdrawAmount,
+          }, {
+            programAddress: dephyIdStakePoolProgramId
           }))
         }
 
@@ -1055,6 +1061,7 @@ export function BatchUnstakeNFTs() {
   const [onlyZero, setOnlyZero] = useState(true)
   const [selectedNftStakes, setSelectedNftStakes] = useState<Set<string>>(new Set())
   const [isUnstaking, setIsUnstaking] = useState(false)
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   const userNftStakes = useUserNftStakesForPool({
     stakePoolAddress: (stakePoolAddress ? (address(stakePoolAddress) as any) : (undefined as any)),
@@ -1131,6 +1138,8 @@ export function BatchUnstakeNFTs() {
               mplCoreCollection,
               mplCoreAsset: it.account.nftTokenAccount,
               payer: feePayer,
+            }, {
+              programAddress: dephyIdStakePoolProgramId
             })
           })
         )

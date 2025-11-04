@@ -2,7 +2,7 @@ import { QueryClient, useMutation, useQuery } from "@tanstack/react-query"
 import { useWalletUi, useWalletUiAccount } from "@wallet-ui/react"
 import * as dephyId from "dephy-id-client"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
-import { type Address, address, generateKeyPairSigner, getAddressCodec, type IInstruction, type Rpc } from "gill"
+import { type Address, address, generateKeyPairSigner, getAddressCodec, type Instruction, type Rpc } from "gill"
 import * as splToken from 'gill/programs/token'
 import * as mplCore from "mpl-core";
 
@@ -10,6 +10,7 @@ import type { DasApi } from "~/lib/das"
 import { useSendAndConfirmIxs } from "~/lib/utils"
 
 import { useStakePool } from "../stake-pool/stake-pool-data-access"
+import { useProgramIds } from "~/lib/program-ids"
 
 interface DeviceEntry {
   device: string
@@ -20,6 +21,7 @@ interface DeviceEntry {
 export function useCreateNftStakesOnly() {
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const { client } = useWalletUi()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
     mutationFn: async ({ stakePoolAddress, assets }: { stakePoolAddress: string, assets: string[] }) => {
@@ -29,7 +31,7 @@ export function useCreateNftStakesOnly() {
       const stakePool = await dephyIdStakePool.fetchStakePoolAccount(client.rpc, stakePoolAddr)
       const productAsset = stakePool.data.config.collection
 
-      let ixs: IInstruction[] = []
+      let ixs: Instruction[] = []
 
       for (let i = 0; i < assets.length; i++) {
         const deviceAddress = assets[i]
@@ -55,6 +57,8 @@ export function useCreateNftStakesOnly() {
               mplCoreAsset: deviceAsset.address,
               mplCoreCollection: productAsset,
               payer: feePayer,
+            }, {
+              programAddress: dephyIdStakePoolProgramId
             })
           )
 
@@ -90,6 +94,7 @@ interface StakeNftsParams {
 export function useStakeNfts() {
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const { client } = useWalletUi()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
     mutationFn: async ({ stakePoolAddress, csvData }: StakeNftsParams) => {
@@ -111,7 +116,7 @@ export function useStakeNfts() {
       }))[0]
 
       const addressCodec = getAddressCodec()
-      let ixs: IInstruction[] = []
+      let ixs: Instruction[] = []
 
       for (let i = 0; i < csvData.length; i++) {
         const entry = csvData[i]
@@ -160,6 +165,8 @@ export function useStakeNfts() {
               mplCoreAsset: deviceAsset.address,
               mplCoreCollection: productAsset,
               payer: feePayer,
+            }, {
+              programAddress: dephyIdStakePoolProgramId
             })
           )
 
@@ -177,6 +184,8 @@ export function useStakeNfts() {
                 userStakeTokenAccount: userStakeTokenAccount,
                 payer: feePayer,
                 amount,
+              }, {
+                programAddress: dephyIdStakePoolProgramId
               })
             )
           }

@@ -56,7 +56,7 @@ export type UserStakeAccount = {
   lastDepositTimestamp: bigint;
 };
 
-export type UserStakeAccountArgs = {
+export type UserStakeAccountArgs_ = {
   stakePool: Address;
   nftStake: Address;
   user: Address;
@@ -64,7 +64,8 @@ export type UserStakeAccountArgs = {
   lastDepositTimestamp: number | bigint;
 };
 
-export function getUserStakeAccountEncoder(): FixedSizeEncoder<UserStakeAccountArgs> {
+/** Gets the encoder for {@link UserStakeAccountArgs_} account data. */
+export function getUserStakeAccountEncoder(): FixedSizeEncoder<UserStakeAccountArgs_> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -78,6 +79,7 @@ export function getUserStakeAccountEncoder(): FixedSizeEncoder<UserStakeAccountA
   );
 }
 
+/** Gets the decoder for {@link UserStakeAccount} account data. */
 export function getUserStakeAccountDecoder(): FixedSizeDecoder<UserStakeAccount> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
@@ -89,8 +91,9 @@ export function getUserStakeAccountDecoder(): FixedSizeDecoder<UserStakeAccount>
   ]);
 }
 
+/** Gets the codec for {@link UserStakeAccount} account data. */
 export function getUserStakeAccountCodec(): FixedSizeCodec<
-  UserStakeAccountArgs,
+  UserStakeAccountArgs_,
   UserStakeAccount
 > {
   return combineCodec(

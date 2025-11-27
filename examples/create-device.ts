@@ -9,7 +9,7 @@ import {
   getAddressEncoder,
   getCompiledTransactionMessageDecoder,
   getSignatureFromTransaction,
-  IInstruction,
+  Instruction,
   isSolanaError,
   partiallySignTransactionMessageWithSigners,
   pipe,
@@ -30,7 +30,7 @@ const client = createSolanaClient({
   urlOrMoniker: 'localnet',
 });
 
-const createTransactionWithIxs = async (instructions: IInstruction[]) => {
+const createTransactionWithIxs = async (instructions: Instruction[]) => {
   const latestBlockhash = (await client.rpc.getLatestBlockhash().send()).value
   const transaction = createTransaction({
     feePayer,
@@ -42,7 +42,7 @@ const createTransactionWithIxs = async (instructions: IInstruction[]) => {
   return transaction
 }
 
-const sendAndConfirmIxs = async (instructions: IInstruction[]) => {
+const sendAndConfirmIxs = async (instructions: Instruction[]) => {
   const transaction = await createTransactionWithIxs(instructions)
 
   return await sendAndConfirmTx(transaction)

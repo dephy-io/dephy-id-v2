@@ -35,6 +35,14 @@ export default {
       from: '@codama/renderers-js',
       args: [
         'clients/dephy-id-stake-pool/js/src/generated',
+        {
+          nameTransformers: {
+            // to avoid conflict with XXXArgs
+            dataArgsType: (name, { pascalCase }) => {
+              return `${pascalCase(name)}Args_`
+            }
+          }
+        }
       ]
     },
     // rust: {

@@ -40,7 +40,7 @@ import {
   getStakePoolConfigArgsDecoder,
   getStakePoolConfigArgsEncoder,
   type StakePoolConfigArgs,
-  type StakePoolConfigArgsArgs,
+  type StakePoolConfigArgsArgs_,
 } from '../types';
 
 export const ANNOUNCED_CONFIG_ACCOUNT_DISCRIMINATOR = new Uint8Array([
@@ -61,14 +61,15 @@ export type AnnouncedConfigAccount = {
   config: StakePoolConfigArgs;
 };
 
-export type AnnouncedConfigAccountArgs = {
+export type AnnouncedConfigAccountArgs_ = {
   stakePool: Address;
   authority: Address;
   timestamp: number | bigint;
-  config: StakePoolConfigArgsArgs;
+  config: StakePoolConfigArgsArgs_;
 };
 
-export function getAnnouncedConfigAccountEncoder(): FixedSizeEncoder<AnnouncedConfigAccountArgs> {
+/** Gets the encoder for {@link AnnouncedConfigAccountArgs_} account data. */
+export function getAnnouncedConfigAccountEncoder(): FixedSizeEncoder<AnnouncedConfigAccountArgs_> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -84,6 +85,7 @@ export function getAnnouncedConfigAccountEncoder(): FixedSizeEncoder<AnnouncedCo
   );
 }
 
+/** Gets the decoder for {@link AnnouncedConfigAccount} account data. */
 export function getAnnouncedConfigAccountDecoder(): FixedSizeDecoder<AnnouncedConfigAccount> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
@@ -94,8 +96,9 @@ export function getAnnouncedConfigAccountDecoder(): FixedSizeDecoder<AnnouncedCo
   ]);
 }
 
+/** Gets the codec for {@link AnnouncedConfigAccount} account data. */
 export function getAnnouncedConfigAccountCodec(): FixedSizeCodec<
-  AnnouncedConfigAccountArgs,
+  AnnouncedConfigAccountArgs_,
   AnnouncedConfigAccount
 > {
   return combineCodec(

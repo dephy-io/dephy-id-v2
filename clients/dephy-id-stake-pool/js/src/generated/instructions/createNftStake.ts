@@ -62,12 +62,10 @@ export type CreateNftStakeInstruction<
   TAccountMplCoreCollection extends string | AccountMeta<string> = string,
   TAccountPoolWallet extends string | AccountMeta<string> = string,
   TAccountPayer extends string | AccountMeta<string> = string,
-  TAccountSystemProgram extends
-    | string
-    | AccountMeta<string> = '11111111111111111111111111111111',
-  TAccountMplCoreProgram extends
-    | string
-    | AccountMeta<string> = 'CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d',
+  TAccountSystemProgram extends string | AccountMeta<string> =
+    '11111111111111111111111111111111',
+  TAccountMplCoreProgram extends string | AccountMeta<string> =
+    'CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d',
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -115,9 +113,9 @@ export type CreateNftStakeInstructionData = {
   commisionRate: number;
 };
 
-export type CreateNftStakeInstructionDataArgs = { commisionRate: number };
+export type CreateNftStakeInstructionDataArgs_ = { commisionRate: number };
 
-export function getCreateNftStakeInstructionDataEncoder(): FixedSizeEncoder<CreateNftStakeInstructionDataArgs> {
+export function getCreateNftStakeInstructionDataEncoder(): FixedSizeEncoder<CreateNftStakeInstructionDataArgs_> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -135,7 +133,7 @@ export function getCreateNftStakeInstructionDataDecoder(): FixedSizeDecoder<Crea
 }
 
 export function getCreateNftStakeInstructionDataCodec(): FixedSizeCodec<
-  CreateNftStakeInstructionDataArgs,
+  CreateNftStakeInstructionDataArgs_,
   CreateNftStakeInstructionData
 > {
   return combineCodec(
@@ -166,7 +164,7 @@ export type CreateNftStakeAsyncInput<
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   mplCoreProgram?: Address<TAccountMplCoreProgram>;
-  commisionRate: CreateNftStakeInstructionDataArgs['commisionRate'];
+  commisionRate: CreateNftStakeInstructionDataArgs_['commisionRate'];
 };
 
 export async function getCreateNftStakeInstructionAsync<
@@ -277,7 +275,7 @@ export async function getCreateNftStakeInstructionAsync<
       getAccountMeta(accounts.mplCoreProgram),
     ],
     data: getCreateNftStakeInstructionDataEncoder().encode(
-      args as CreateNftStakeInstructionDataArgs
+      args as CreateNftStakeInstructionDataArgs_
     ),
     programAddress,
   } as CreateNftStakeInstruction<
@@ -317,7 +315,7 @@ export type CreateNftStakeInput<
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   mplCoreProgram?: Address<TAccountMplCoreProgram>;
-  commisionRate: CreateNftStakeInstructionDataArgs['commisionRate'];
+  commisionRate: CreateNftStakeInstructionDataArgs_['commisionRate'];
 };
 
 export function getCreateNftStakeInstruction<
@@ -415,7 +413,7 @@ export function getCreateNftStakeInstruction<
       getAccountMeta(accounts.mplCoreProgram),
     ],
     data: getCreateNftStakeInstructionDataEncoder().encode(
-      args as CreateNftStakeInstructionDataArgs
+      args as CreateNftStakeInstructionDataArgs_
     ),
     programAddress,
   } as CreateNftStakeInstruction<

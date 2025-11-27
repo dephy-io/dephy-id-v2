@@ -1,12 +1,13 @@
 import { QueryClient, useMutation, useQuery } from "@tanstack/react-query"
-import { useWalletUi, useWalletUiAccount } from "@wallet-ui/react"
+import { useWalletUiAccount } from "@wallet-ui/react"
+import { useWalletUiGill } from "@wallet-ui/react-gill"
 import * as dephyId from "dephy-id-client"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
 import { type Address, address, generateKeyPairSigner, getAddressCodec, type Instruction, type Rpc } from "gill"
 import * as splToken from 'gill/programs/token'
 import * as mplCore from "mpl-core";
 
-import type { DasApi } from "~/lib/das"
+import type { DasApi, SearchAssetsRpcInput } from "~/lib/das"
 import { useSendAndConfirmIxs } from "~/lib/utils"
 
 import { useStakePool } from "../stake-pool/stake-pool-data-access"
@@ -20,11 +21,11 @@ interface DeviceEntry {
 
 export function useCreateNftStakesOnly() {
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
-    mutationFn: async ({ stakePoolAddress, assets }: { stakePoolAddress: string, assets: string[] }) => {
+    mutationFn: async ({ stakePoolAddress, assets, commisionRate }: { stakePoolAddress: string, assets: string[], commisionRate: number }) => {
       const results: Array<{ device: string; status: 'success' | 'error'; error?: string }> = []
 
       const stakePoolAddr = address(stakePoolAddress)
@@ -57,6 +58,7 @@ export function useCreateNftStakesOnly() {
               mplCoreAsset: deviceAsset.address,
               mplCoreCollection: productAsset,
               payer: feePayer,
+              commisionRate,
             }, {
               programAddress: dephyIdStakePoolProgramId
             })
@@ -89,15 +91,16 @@ interface StakeNftsParams {
   queryClient: QueryClient
   csvData: DeviceEntry[]
   userAddress: string
+  commisionRate: number
 }
 
 export function useStakeNfts() {
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
-    mutationFn: async ({ stakePoolAddress, csvData }: StakeNftsParams) => {
+    mutationFn: async ({ stakePoolAddress, csvData, commisionRate }: StakeNftsParams) => {
       const results = []
 
       // Fetch stake pool data
@@ -165,6 +168,7 @@ export function useStakeNfts() {
               mplCoreAsset: deviceAsset.address,
               mplCoreCollection: productAsset,
               payer: feePayer,
+              commisionRate,
             }, {
               programAddress: dephyIdStakePoolProgramId
             })
@@ -261,17 +265,16 @@ export function useUserAssetsForStakePool({
 
       try {
         // Build search args and omit 'frozen' when undefined (All)
-        const searchArgs: any = {
+        const searchArgs: SearchAssetsRpcInput = {
           ownerAddress: address(account.address),
           grouping: ["collection", stakePool.data.data.config.collection],
+          frozen: staked,
           page,
           limit,
           displayOptions: {
             showCollectionMetadata: false,
           }
         }
-        // Map staked => frozen for DAS
-        searchArgs.frozen = staked
 
         // Use DAS RPC to search for assets owned by user in the specific collection
         const response = await dasRpc.searchAssets(searchArgs).send()
@@ -282,7 +285,7 @@ export function useUserAssetsForStakePool({
         const assets = response.items.map((asset) => ({
           address: asset.id,
           name: asset.content?.metadata?.name,
-          collection: stakePool.data!.data.config.collection,
+          collection: stakePool.data.data.config.collection,
           owner: account.address,
           metadata: asset.content?.metadata,
           seed: asset.plugins?.attributes?.data?.attribute_list?.find((attr: { key: string; value: string }) => attr.key === "Seed")?.value,

@@ -5,7 +5,7 @@ import {
   createSolanaClient, createTransaction, devnet,
   generateKeyPairSigner,
   getAddressDecoder,
-  getSignatureFromTransaction, IInstruction, isNone, isSolanaError, KeyPairSigner, lamports,
+  getSignatureFromTransaction, Instruction, isNone, isSolanaError, KeyPairSigner, lamports,
   signTransactionMessageWithSigners,
   some,
 } from 'gill'
@@ -25,7 +25,7 @@ describe("dephy-id-stake-pool", () => {
 
   const airdrop = airdropFactory({ rpc, rpcSubscriptions })
 
-  const sendAndConfirmIxs = async (instructions: IInstruction[], config = { showError: true }) => {
+  const sendAndConfirmIxs = async (instructions: Instruction[], config = { showError: true }) => {
     const latestBlockhash = (await rpc.getLatestBlockhash().send()).value
 
     const transaction = createTransaction({

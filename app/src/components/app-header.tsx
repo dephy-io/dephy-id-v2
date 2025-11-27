@@ -43,8 +43,8 @@ export function AppHeader() {
         </div>
 
         <div className="md:flex items-center gap-4">
-          <WalletButton size="sm" />
-          <ClusterButton size="sm" />
+          <WalletButton />
+          <ClusterButton />
         </div>
       </div>
     </header>

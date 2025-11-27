@@ -7,6 +7,7 @@ export default [
       'sort-keys-fix/sort-keys-fix': 'off',
       'typescript-sort-keys/interface': 'off',
       '@typescript-eslint/sort-type-constituents': 'off',
+      'simple-import-sort/imports': 'off',
     }
   }
 ]

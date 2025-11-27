@@ -67,12 +67,10 @@ export type DepositTokenInstruction<
   TAccountUserStakeTokenAccount extends string | AccountMeta<string> = string,
   TAccountPoolWallet extends string | AccountMeta<string> = string,
   TAccountPayer extends string | AccountMeta<string> = string,
-  TAccountTokenProgram extends
-    | string
-    | AccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-  TAccountSystemProgram extends
-    | string
-    | AccountMeta<string> = '11111111111111111111111111111111',
+  TAccountTokenProgram extends string | AccountMeta<string> =
+    'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+  TAccountSystemProgram extends string | AccountMeta<string> =
+    '11111111111111111111111111111111',
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -121,11 +119,11 @@ export type DepositTokenInstructionData = {
   amount: Option<bigint>;
 };
 
-export type DepositTokenInstructionDataArgs = {
+export type DepositTokenInstructionDataArgs_ = {
   amount: OptionOrNullable<number | bigint>;
 };
 
-export function getDepositTokenInstructionDataEncoder(): Encoder<DepositTokenInstructionDataArgs> {
+export function getDepositTokenInstructionDataEncoder(): Encoder<DepositTokenInstructionDataArgs_> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -143,7 +141,7 @@ export function getDepositTokenInstructionDataDecoder(): Decoder<DepositTokenIns
 }
 
 export function getDepositTokenInstructionDataCodec(): Codec<
-  DepositTokenInstructionDataArgs,
+  DepositTokenInstructionDataArgs_,
   DepositTokenInstructionData
 > {
   return combineCodec(
@@ -176,7 +174,7 @@ export type DepositTokenAsyncInput<
   payer: TransactionSigner<TAccountPayer>;
   tokenProgram?: Address<TAccountTokenProgram>;
   systemProgram?: Address<TAccountSystemProgram>;
-  amount: DepositTokenInstructionDataArgs['amount'];
+  amount: DepositTokenInstructionDataArgs_['amount'];
 };
 
 export async function getDepositTokenInstructionAsync<
@@ -307,7 +305,7 @@ export async function getDepositTokenInstructionAsync<
       getAccountMeta(accounts.systemProgram),
     ],
     data: getDepositTokenInstructionDataEncoder().encode(
-      args as DepositTokenInstructionDataArgs
+      args as DepositTokenInstructionDataArgs_
     ),
     programAddress,
   } as DepositTokenInstruction<
@@ -350,7 +348,7 @@ export type DepositTokenInput<
   payer: TransactionSigner<TAccountPayer>;
   tokenProgram?: Address<TAccountTokenProgram>;
   systemProgram?: Address<TAccountSystemProgram>;
-  amount: DepositTokenInstructionDataArgs['amount'];
+  amount: DepositTokenInstructionDataArgs_['amount'];
 };
 
 export function getDepositTokenInstruction<
@@ -456,7 +454,7 @@ export function getDepositTokenInstruction<
       getAccountMeta(accounts.systemProgram),
     ],
     data: getDepositTokenInstructionDataEncoder().encode(
-      args as DepositTokenInstructionDataArgs
+      args as DepositTokenInstructionDataArgs_
     ),
     programAddress,
   } as DepositTokenInstruction<

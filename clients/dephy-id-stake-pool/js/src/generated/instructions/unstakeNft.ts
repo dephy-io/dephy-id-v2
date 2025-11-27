@@ -57,12 +57,10 @@ export type UnstakeNftInstruction<
   TAccountMplCoreAsset extends string | AccountMeta<string> = string,
   TAccountPoolWallet extends string | AccountMeta<string> = string,
   TAccountPayer extends string | AccountMeta<string> = string,
-  TAccountSystemProgram extends
-    | string
-    | AccountMeta<string> = '11111111111111111111111111111111',
-  TAccountMplCoreProgram extends
-    | string
-    | AccountMeta<string> = 'CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d',
+  TAccountSystemProgram extends string | AccountMeta<string> =
+    '11111111111111111111111111111111',
+  TAccountMplCoreProgram extends string | AccountMeta<string> =
+    'CoREENxT6tW1HoK8ypY1SxRMZTcVPm7R94rH4PZNhX7d',
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -103,9 +101,9 @@ export type UnstakeNftInstruction<
 
 export type UnstakeNftInstructionData = { discriminator: ReadonlyUint8Array };
 
-export type UnstakeNftInstructionDataArgs = {};
+export type UnstakeNftInstructionDataArgs_ = {};
 
-export function getUnstakeNftInstructionDataEncoder(): FixedSizeEncoder<UnstakeNftInstructionDataArgs> {
+export function getUnstakeNftInstructionDataEncoder(): FixedSizeEncoder<UnstakeNftInstructionDataArgs_> {
   return transformEncoder(
     getStructEncoder([['discriminator', fixEncoderSize(getBytesEncoder(), 8)]]),
     (value) => ({ ...value, discriminator: UNSTAKE_NFT_DISCRIMINATOR })
@@ -119,7 +117,7 @@ export function getUnstakeNftInstructionDataDecoder(): FixedSizeDecoder<UnstakeN
 }
 
 export function getUnstakeNftInstructionDataCodec(): FixedSizeCodec<
-  UnstakeNftInstructionDataArgs,
+  UnstakeNftInstructionDataArgs_,
   UnstakeNftInstructionData
 > {
   return combineCodec(

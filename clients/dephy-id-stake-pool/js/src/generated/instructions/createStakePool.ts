@@ -43,7 +43,7 @@ import {
   getStakePoolConfigArgsDecoder,
   getStakePoolConfigArgsEncoder,
   type StakePoolConfigArgs,
-  type StakePoolConfigArgsArgs,
+  type StakePoolConfigArgsArgs_,
 } from '../types';
 
 export const CREATE_STAKE_POOL_DISCRIMINATOR = new Uint8Array([
@@ -67,9 +67,8 @@ export type CreateStakePoolInstruction<
   TAccountPoolWallet extends string | AccountMeta<string> = string,
   TAccountStakeTokenAccount extends string | AccountMeta<string> = string,
   TAccountPayer extends string | AccountMeta<string> = string,
-  TAccountSystemProgram extends
-    | string
-    | AccountMeta<string> = '11111111111111111111111111111111',
+  TAccountSystemProgram extends string | AccountMeta<string> =
+    '11111111111111111111111111111111',
   TAccountStakeTokenProgram extends string | AccountMeta<string> = string,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
@@ -121,11 +120,11 @@ export type CreateStakePoolInstructionData = {
   args: StakePoolConfigArgs;
 };
 
-export type CreateStakePoolInstructionDataArgs = {
-  args: StakePoolConfigArgsArgs;
+export type CreateStakePoolInstructionDataArgs_ = {
+  args: StakePoolConfigArgsArgs_;
 };
 
-export function getCreateStakePoolInstructionDataEncoder(): FixedSizeEncoder<CreateStakePoolInstructionDataArgs> {
+export function getCreateStakePoolInstructionDataEncoder(): FixedSizeEncoder<CreateStakePoolInstructionDataArgs_> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -143,7 +142,7 @@ export function getCreateStakePoolInstructionDataDecoder(): FixedSizeDecoder<Cre
 }
 
 export function getCreateStakePoolInstructionDataCodec(): FixedSizeCodec<
-  CreateStakePoolInstructionDataArgs,
+  CreateStakePoolInstructionDataArgs_,
   CreateStakePoolInstructionData
 > {
   return combineCodec(
@@ -176,7 +175,7 @@ export type CreateStakePoolAsyncInput<
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   stakeTokenProgram: Address<TAccountStakeTokenProgram>;
-  args: CreateStakePoolInstructionDataArgs['args'];
+  args: CreateStakePoolInstructionDataArgs_['args'];
 };
 
 export async function getCreateStakePoolInstructionAsync<
@@ -308,7 +307,7 @@ export async function getCreateStakePoolInstructionAsync<
       getAccountMeta(accounts.stakeTokenProgram),
     ],
     data: getCreateStakePoolInstructionDataEncoder().encode(
-      args as CreateStakePoolInstructionDataArgs
+      args as CreateStakePoolInstructionDataArgs_
     ),
     programAddress,
   } as CreateStakePoolInstruction<
@@ -351,7 +350,7 @@ export type CreateStakePoolInput<
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   stakeTokenProgram: Address<TAccountStakeTokenProgram>;
-  args: CreateStakePoolInstructionDataArgs['args'];
+  args: CreateStakePoolInstructionDataArgs_['args'];
 };
 
 export function getCreateStakePoolInstruction<
@@ -453,7 +452,7 @@ export function getCreateStakePoolInstruction<
       getAccountMeta(accounts.stakeTokenProgram),
     ],
     data: getCreateStakePoolInstructionDataEncoder().encode(
-      args as CreateStakePoolInstructionDataArgs
+      args as CreateStakePoolInstructionDataArgs_
     ),
     programAddress,
   } as CreateStakePoolInstruction<

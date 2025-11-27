@@ -82,9 +82,9 @@ export type ConfirmUpdateConfigInstructionData = {
   discriminator: ReadonlyUint8Array;
 };
 
-export type ConfirmUpdateConfigInstructionDataArgs = {};
+export type ConfirmUpdateConfigInstructionDataArgs_ = {};
 
-export function getConfirmUpdateConfigInstructionDataEncoder(): FixedSizeEncoder<ConfirmUpdateConfigInstructionDataArgs> {
+export function getConfirmUpdateConfigInstructionDataEncoder(): FixedSizeEncoder<ConfirmUpdateConfigInstructionDataArgs_> {
   return transformEncoder(
     getStructEncoder([['discriminator', fixEncoderSize(getBytesEncoder(), 8)]]),
     (value) => ({
@@ -101,7 +101,7 @@ export function getConfirmUpdateConfigInstructionDataDecoder(): FixedSizeDecoder
 }
 
 export function getConfirmUpdateConfigInstructionDataCodec(): FixedSizeCodec<
-  ConfirmUpdateConfigInstructionDataArgs,
+  ConfirmUpdateConfigInstructionDataArgs_,
   ConfirmUpdateConfigInstructionData
 > {
   return combineCodec(

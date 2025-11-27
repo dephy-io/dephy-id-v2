@@ -44,7 +44,7 @@ import {
   getStakePoolConfigDecoder,
   getStakePoolConfigEncoder,
   type StakePoolConfig,
-  type StakePoolConfigArgs,
+  type StakePoolConfigArgs_,
 } from '../types';
 
 export const STAKE_POOL_ACCOUNT_DISCRIMINATOR = new Uint8Array([
@@ -66,15 +66,16 @@ export type StakePoolAccount = {
   totalAmount: bigint;
 };
 
-export type StakePoolAccountArgs = {
+export type StakePoolAccountArgs_ = {
   authority: Address;
   announcedConfig: OptionOrNullable<Address>;
-  config: StakePoolConfigArgs;
+  config: StakePoolConfigArgs_;
   stakeTokenAccount: Address;
   totalAmount: number | bigint;
 };
 
-export function getStakePoolAccountEncoder(): Encoder<StakePoolAccountArgs> {
+/** Gets the encoder for {@link StakePoolAccountArgs_} account data. */
+export function getStakePoolAccountEncoder(): Encoder<StakePoolAccountArgs_> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -88,6 +89,7 @@ export function getStakePoolAccountEncoder(): Encoder<StakePoolAccountArgs> {
   );
 }
 
+/** Gets the decoder for {@link StakePoolAccount} account data. */
 export function getStakePoolAccountDecoder(): Decoder<StakePoolAccount> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
@@ -99,8 +101,9 @@ export function getStakePoolAccountDecoder(): Decoder<StakePoolAccount> {
   ]);
 }
 
+/** Gets the codec for {@link StakePoolAccount} account data. */
 export function getStakePoolAccountCodec(): Codec<
-  StakePoolAccountArgs,
+  StakePoolAccountArgs_,
   StakePoolAccount
 > {
   return combineCodec(

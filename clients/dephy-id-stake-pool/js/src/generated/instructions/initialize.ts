@@ -48,9 +48,8 @@ export type InitializeInstruction<
   TAccountAdmin extends string | AccountMeta<string> = string,
   TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountPayer extends string | AccountMeta<string> = string,
-  TAccountSystemProgram extends
-    | string
-    | AccountMeta<string> = '11111111111111111111111111111111',
+  TAccountSystemProgram extends string | AccountMeta<string> =
+    '11111111111111111111111111111111',
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -76,9 +75,9 @@ export type InitializeInstruction<
 
 export type InitializeInstructionData = { discriminator: ReadonlyUint8Array };
 
-export type InitializeInstructionDataArgs = {};
+export type InitializeInstructionDataArgs_ = {};
 
-export function getInitializeInstructionDataEncoder(): FixedSizeEncoder<InitializeInstructionDataArgs> {
+export function getInitializeInstructionDataEncoder(): FixedSizeEncoder<InitializeInstructionDataArgs_> {
   return transformEncoder(
     getStructEncoder([['discriminator', fixEncoderSize(getBytesEncoder(), 8)]]),
     (value) => ({ ...value, discriminator: INITIALIZE_DISCRIMINATOR })
@@ -92,7 +91,7 @@ export function getInitializeInstructionDataDecoder(): FixedSizeDecoder<Initiali
 }
 
 export function getInitializeInstructionDataCodec(): FixedSizeCodec<
-  InitializeInstructionDataArgs,
+  InitializeInstructionDataArgs_,
   InitializeInstructionData
 > {
   return combineCodec(

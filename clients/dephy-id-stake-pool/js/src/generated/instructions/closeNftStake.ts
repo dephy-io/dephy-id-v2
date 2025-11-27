@@ -57,9 +57,8 @@ export type CloseNftStakeInstruction<
   TAccountStakeAuthority extends string | AccountMeta<string> = string,
   TAccountPoolWallet extends string | AccountMeta<string> = string,
   TAccountPayer extends string | AccountMeta<string> = string,
-  TAccountSystemProgram extends
-    | string
-    | AccountMeta<string> = '11111111111111111111111111111111',
+  TAccountSystemProgram extends string | AccountMeta<string> =
+    '11111111111111111111111111111111',
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -93,9 +92,9 @@ export type CloseNftStakeInstructionData = {
   discriminator: ReadonlyUint8Array;
 };
 
-export type CloseNftStakeInstructionDataArgs = {};
+export type CloseNftStakeInstructionDataArgs_ = {};
 
-export function getCloseNftStakeInstructionDataEncoder(): FixedSizeEncoder<CloseNftStakeInstructionDataArgs> {
+export function getCloseNftStakeInstructionDataEncoder(): FixedSizeEncoder<CloseNftStakeInstructionDataArgs_> {
   return transformEncoder(
     getStructEncoder([['discriminator', fixEncoderSize(getBytesEncoder(), 8)]]),
     (value) => ({ ...value, discriminator: CLOSE_NFT_STAKE_DISCRIMINATOR })
@@ -109,7 +108,7 @@ export function getCloseNftStakeInstructionDataDecoder(): FixedSizeDecoder<Close
 }
 
 export function getCloseNftStakeInstructionDataCodec(): FixedSizeCodec<
-  CloseNftStakeInstructionDataArgs,
+  CloseNftStakeInstructionDataArgs_,
   CloseNftStakeInstructionData
 > {
   return combineCodec(

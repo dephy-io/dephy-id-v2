@@ -1,4 +1,5 @@
-import { useWalletUi, useWalletUiCluster } from "@wallet-ui/react"
+import { useWalletUiCluster } from "@wallet-ui/react"
+import { useWalletUiGill } from "@wallet-ui/react-gill"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { airdropFactory, lamports, type Address } from "gill";
 import { useTransactionToast } from "../use-transaction-toast";
@@ -6,7 +7,7 @@ import * as splToken from "gill/programs/token"
 
 export function useGetBalance({ address }: { address: Address }) {
   const { cluster } = useWalletUiCluster()
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
 
   return useQuery({
     queryKey: ['get-balance', { cluster, address }],
@@ -20,7 +21,7 @@ export function useGetBalance({ address }: { address: Address }) {
 
 export function useRequestAirdrop({ address }: { address: Address }) {
   const { cluster } = useWalletUiCluster()
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const queryClient = useQueryClient()
   const toastTransaction = useTransactionToast()
   const airdrop = airdropFactory(client)
@@ -46,7 +47,7 @@ export function useRequestAirdrop({ address }: { address: Address }) {
 
 export function useGetSignatures({ address }: { address: Address }) {
   const { cluster } = useWalletUiCluster()
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
 
   return useQuery({
     queryKey: ['get-signatures', { cluster, address }],
@@ -57,7 +58,7 @@ export function useGetSignatures({ address }: { address: Address }) {
 
 export function useTokenAccounts({ mint, owner }: { mint: Address, owner: Address }) {
   const { cluster } = useWalletUiCluster()
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
 
   return useQuery({
     queryKey: ['get-token-accounts', { cluster, mint, owner }],
@@ -67,7 +68,7 @@ export function useTokenAccounts({ mint, owner }: { mint: Address, owner: Addres
 
 export function useMint({ mintAddress }: { mintAddress?: Address }) {
   const { cluster } = useWalletUiCluster()
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
 
   return useQuery({
     queryKey: ['get-mint', { cluster, mintAddress }],

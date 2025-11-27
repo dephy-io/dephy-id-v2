@@ -22,12 +22,12 @@ export type StakePoolConfigArgs = {
   maxStakeAmount: bigint;
 };
 
-export type StakePoolConfigArgsArgs = {
+export type StakePoolConfigArgsArgs_ = {
   configReviewTime: number | bigint;
   maxStakeAmount: number | bigint;
 };
 
-export function getStakePoolConfigArgsEncoder(): FixedSizeEncoder<StakePoolConfigArgsArgs> {
+export function getStakePoolConfigArgsEncoder(): FixedSizeEncoder<StakePoolConfigArgsArgs_> {
   return getStructEncoder([
     ['configReviewTime', getU64Encoder()],
     ['maxStakeAmount', getU64Encoder()],
@@ -42,7 +42,7 @@ export function getStakePoolConfigArgsDecoder(): FixedSizeDecoder<StakePoolConfi
 }
 
 export function getStakePoolConfigArgsCodec(): FixedSizeCodec<
-  StakePoolConfigArgsArgs,
+  StakePoolConfigArgsArgs_,
   StakePoolConfigArgs
 > {
   return combineCodec(

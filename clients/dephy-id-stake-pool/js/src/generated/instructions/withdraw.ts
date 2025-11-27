@@ -65,12 +65,10 @@ export type WithdrawInstruction<
   TAccountUserStakeTokenAccount extends string | AccountMeta<string> = string,
   TAccountPoolWallet extends string | AccountMeta<string> = string,
   TAccountPayer extends string | AccountMeta<string> = string,
-  TAccountSystemProgram extends
-    | string
-    | AccountMeta<string> = '11111111111111111111111111111111',
-  TAccountTokenProgram extends
-    | string
-    | AccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+  TAccountSystemProgram extends string | AccountMeta<string> =
+    '11111111111111111111111111111111',
+  TAccountTokenProgram extends string | AccountMeta<string> =
+    'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -119,11 +117,11 @@ export type WithdrawInstructionData = {
   amount: Option<bigint>;
 };
 
-export type WithdrawInstructionDataArgs = {
+export type WithdrawInstructionDataArgs_ = {
   amount: OptionOrNullable<number | bigint>;
 };
 
-export function getWithdrawInstructionDataEncoder(): Encoder<WithdrawInstructionDataArgs> {
+export function getWithdrawInstructionDataEncoder(): Encoder<WithdrawInstructionDataArgs_> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -141,7 +139,7 @@ export function getWithdrawInstructionDataDecoder(): Decoder<WithdrawInstruction
 }
 
 export function getWithdrawInstructionDataCodec(): Codec<
-  WithdrawInstructionDataArgs,
+  WithdrawInstructionDataArgs_,
   WithdrawInstructionData
 > {
   return combineCodec(
@@ -174,7 +172,7 @@ export type WithdrawAsyncInput<
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   tokenProgram?: Address<TAccountTokenProgram>;
-  amount: WithdrawInstructionDataArgs['amount'];
+  amount: WithdrawInstructionDataArgs_['amount'];
 };
 
 export async function getWithdrawInstructionAsync<
@@ -305,7 +303,7 @@ export async function getWithdrawInstructionAsync<
       getAccountMeta(accounts.tokenProgram),
     ],
     data: getWithdrawInstructionDataEncoder().encode(
-      args as WithdrawInstructionDataArgs
+      args as WithdrawInstructionDataArgs_
     ),
     programAddress,
   } as WithdrawInstruction<
@@ -348,7 +346,7 @@ export type WithdrawInput<
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
   tokenProgram?: Address<TAccountTokenProgram>;
-  amount: WithdrawInstructionDataArgs['amount'];
+  amount: WithdrawInstructionDataArgs_['amount'];
 };
 
 export function getWithdrawInstruction<
@@ -454,7 +452,7 @@ export function getWithdrawInstruction<
       getAccountMeta(accounts.tokenProgram),
     ],
     data: getWithdrawInstructionDataEncoder().encode(
-      args as WithdrawInstructionDataArgs
+      args as WithdrawInstructionDataArgs_
     ),
     programAddress,
   } as WithdrawInstruction<

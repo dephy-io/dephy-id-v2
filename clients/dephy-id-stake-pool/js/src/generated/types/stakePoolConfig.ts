@@ -27,14 +27,14 @@ export type StakePoolConfig = {
   configReviewTime: bigint;
 };
 
-export type StakePoolConfigArgs = {
+export type StakePoolConfigArgs_ = {
   collection: Address;
   stakeTokenMint: Address;
   maxStakeAmount: number | bigint;
   configReviewTime: number | bigint;
 };
 
-export function getStakePoolConfigEncoder(): FixedSizeEncoder<StakePoolConfigArgs> {
+export function getStakePoolConfigEncoder(): FixedSizeEncoder<StakePoolConfigArgs_> {
   return getStructEncoder([
     ['collection', getAddressEncoder()],
     ['stakeTokenMint', getAddressEncoder()],
@@ -53,7 +53,7 @@ export function getStakePoolConfigDecoder(): FixedSizeDecoder<StakePoolConfig> {
 }
 
 export function getStakePoolConfigCodec(): FixedSizeCodec<
-  StakePoolConfigArgs,
+  StakePoolConfigArgs_,
   StakePoolConfig
 > {
   return combineCodec(getStakePoolConfigEncoder(), getStakePoolConfigDecoder());

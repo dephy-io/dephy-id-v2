@@ -59,7 +59,7 @@ export type NftStakeAccount = {
   commisionRate: number;
 };
 
-export type NftStakeAccountArgs = {
+export type NftStakeAccountArgs_ = {
   stakePool: Address;
   stakeAuthority: Address;
   depositAuthority: Address;
@@ -68,7 +68,8 @@ export type NftStakeAccountArgs = {
   commisionRate: number;
 };
 
-export function getNftStakeAccountEncoder(): FixedSizeEncoder<NftStakeAccountArgs> {
+/** Gets the encoder for {@link NftStakeAccountArgs_} account data. */
+export function getNftStakeAccountEncoder(): FixedSizeEncoder<NftStakeAccountArgs_> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -83,6 +84,7 @@ export function getNftStakeAccountEncoder(): FixedSizeEncoder<NftStakeAccountArg
   );
 }
 
+/** Gets the decoder for {@link NftStakeAccount} account data. */
 export function getNftStakeAccountDecoder(): FixedSizeDecoder<NftStakeAccount> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
@@ -95,8 +97,9 @@ export function getNftStakeAccountDecoder(): FixedSizeDecoder<NftStakeAccount> {
   ]);
 }
 
+/** Gets the codec for {@link NftStakeAccount} account data. */
 export function getNftStakeAccountCodec(): FixedSizeCodec<
-  NftStakeAccountArgs,
+  NftStakeAccountArgs_,
   NftStakeAccount
 > {
   return combineCodec(getNftStakeAccountEncoder(), getNftStakeAccountDecoder());

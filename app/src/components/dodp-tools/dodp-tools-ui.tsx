@@ -8,7 +8,7 @@ import { useMint } from "../account/account-data-access"
 import { ellipsify } from "@wallet-ui/react"
 import { Button } from "../ui/button"
 import type { UserStakeAccount } from "dephy-id-stake-pool-client"
-import { useWalletUi } from "@wallet-ui/react"
+import { useWalletUiGill } from "@wallet-ui/react-gill"
 import { useSendAndConfirmIxs } from "~/lib/utils"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
 import { Link } from "react-router"
@@ -27,7 +27,7 @@ export function PositionManager() {
   const mintQuery = useMint({ mintAddress: stakePool.data?.data.config.stakeTokenMint })
   const userStakesQuery = useUserStakesForPool({ stakePoolAddress })
   const decimals = mintQuery.data?.data.decimals ?? 0
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
 
   const deviceAssetMapping = useDeviceAssetMapping({
@@ -275,7 +275,7 @@ export function PositionManager() {
                         <th className="px-3 py-2">Score</th>
                         <th className="px-3 py-2">Amount</th>
                         <th className="px-3 py-2">User Stake Amount</th>
-                        <th className="px-3 py-2">Active</th>
+                        <th className="px-3 py-2">Commission Rate (%)</th>
                       </tr>
                     </thead>
                     <tbody className="font-mono text-xs">
@@ -300,7 +300,7 @@ export function PositionManager() {
                           <td className="px-3 py-2">{scoreObj?.score.toFixed(8)}</td>
                           <td className="px-3 py-2">{uiAmount}</td>
                           <td className="px-3 py-2">{userStakesByNftStake[it.pubkey]?.amount ? splToken.tokenAmountToUiAmount(userStakesByNftStake[it.pubkey]?.amount, decimals) : '-'}</td>
-                          <td className="px-3 py-2">{it.account.active ? 'Yes' : 'No'}</td>
+                          <td className="px-3 py-2">{it.account.commisionRate}</td>
                         </tr>
                       ))}
                     </tbody>

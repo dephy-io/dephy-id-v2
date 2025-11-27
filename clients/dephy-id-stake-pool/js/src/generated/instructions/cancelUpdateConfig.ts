@@ -82,9 +82,9 @@ export type CancelUpdateConfigInstructionData = {
   discriminator: ReadonlyUint8Array;
 };
 
-export type CancelUpdateConfigInstructionDataArgs = {};
+export type CancelUpdateConfigInstructionDataArgs_ = {};
 
-export function getCancelUpdateConfigInstructionDataEncoder(): FixedSizeEncoder<CancelUpdateConfigInstructionDataArgs> {
+export function getCancelUpdateConfigInstructionDataEncoder(): FixedSizeEncoder<CancelUpdateConfigInstructionDataArgs_> {
   return transformEncoder(
     getStructEncoder([['discriminator', fixEncoderSize(getBytesEncoder(), 8)]]),
     (value) => ({ ...value, discriminator: CANCEL_UPDATE_CONFIG_DISCRIMINATOR })
@@ -98,7 +98,7 @@ export function getCancelUpdateConfigInstructionDataDecoder(): FixedSizeDecoder<
 }
 
 export function getCancelUpdateConfigInstructionDataCodec(): FixedSizeCodec<
-  CancelUpdateConfigInstructionDataArgs,
+  CancelUpdateConfigInstructionDataArgs_,
   CancelUpdateConfigInstructionData
 > {
   return combineCodec(

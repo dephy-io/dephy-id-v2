@@ -50,9 +50,10 @@ export type AdminAccount = {
   authority: Address;
 };
 
-export type AdminAccountArgs = { authority: Address };
+export type AdminAccountArgs_ = { authority: Address };
 
-export function getAdminAccountEncoder(): FixedSizeEncoder<AdminAccountArgs> {
+/** Gets the encoder for {@link AdminAccountArgs_} account data. */
+export function getAdminAccountEncoder(): FixedSizeEncoder<AdminAccountArgs_> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -62,6 +63,7 @@ export function getAdminAccountEncoder(): FixedSizeEncoder<AdminAccountArgs> {
   );
 }
 
+/** Gets the decoder for {@link AdminAccount} account data. */
 export function getAdminAccountDecoder(): FixedSizeDecoder<AdminAccount> {
   return getStructDecoder([
     ['discriminator', fixDecoderSize(getBytesDecoder(), 8)],
@@ -69,8 +71,9 @@ export function getAdminAccountDecoder(): FixedSizeDecoder<AdminAccount> {
   ]);
 }
 
+/** Gets the codec for {@link AdminAccount} account data. */
 export function getAdminAccountCodec(): FixedSizeCodec<
-  AdminAccountArgs,
+  AdminAccountArgs_,
   AdminAccount
 > {
   return combineCodec(getAdminAccountEncoder(), getAdminAccountDecoder());

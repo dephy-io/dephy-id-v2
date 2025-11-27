@@ -4,7 +4,7 @@ import {
   createSolanaClient, createTransaction, createTransactionMessage, devnet,
   fetchEncodedAccount, generateKeyPair, generateKeyPairSigner,
   getAddressDecoder, getAddressEncoder, getAddressFromPublicKey, getCompiledTransactionMessageDecoder,
-  getSignatureFromTransaction, IInstruction, isSolanaError, KeyPairSigner, lamports,
+  getSignatureFromTransaction, Instruction, isSolanaError, KeyPairSigner, lamports,
   partiallySignTransactionMessageWithSigners, pipe, setTransactionMessageFeePayer, setTransactionMessageLifetimeUsingBlockhash,
   signTransaction, signTransactionMessageWithSigners, transactionFromBase64, transactionToBase64,
 } from 'gill'
@@ -22,7 +22,7 @@ describe("dephy-id", () => {
 
   const airdrop = airdropFactory({ rpc, rpcSubscriptions })
 
-  const sendAndConfirmIxs = async (instructions: IInstruction[]) => {
+  const sendAndConfirmIxs = async (instructions: Instruction[]) => {
     const latestBlockhash = (await rpc.getLatestBlockhash().send()).value
 
     const transaction = createTransaction({

@@ -43,7 +43,7 @@ import {
   getStakePoolConfigArgsDecoder,
   getStakePoolConfigArgsEncoder,
   type StakePoolConfigArgs,
-  type StakePoolConfigArgsArgs,
+  type StakePoolConfigArgsArgs_,
 } from '../types';
 
 export const ANNOUNCE_UPDATE_CONFIG_DISCRIMINATOR = new Uint8Array([
@@ -62,9 +62,8 @@ export type AnnounceUpdateConfigInstruction<
   TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountAnnouncedConfig extends string | AccountMeta<string> = string,
   TAccountPayer extends string | AccountMeta<string> = string,
-  TAccountSystemProgram extends
-    | string
-    | AccountMeta<string> = '11111111111111111111111111111111',
+  TAccountSystemProgram extends string | AccountMeta<string> =
+    '11111111111111111111111111111111',
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -96,11 +95,11 @@ export type AnnounceUpdateConfigInstructionData = {
   args: StakePoolConfigArgs;
 };
 
-export type AnnounceUpdateConfigInstructionDataArgs = {
-  args: StakePoolConfigArgsArgs;
+export type AnnounceUpdateConfigInstructionDataArgs_ = {
+  args: StakePoolConfigArgsArgs_;
 };
 
-export function getAnnounceUpdateConfigInstructionDataEncoder(): FixedSizeEncoder<AnnounceUpdateConfigInstructionDataArgs> {
+export function getAnnounceUpdateConfigInstructionDataEncoder(): FixedSizeEncoder<AnnounceUpdateConfigInstructionDataArgs_> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', fixEncoderSize(getBytesEncoder(), 8)],
@@ -121,7 +120,7 @@ export function getAnnounceUpdateConfigInstructionDataDecoder(): FixedSizeDecode
 }
 
 export function getAnnounceUpdateConfigInstructionDataCodec(): FixedSizeCodec<
-  AnnounceUpdateConfigInstructionDataArgs,
+  AnnounceUpdateConfigInstructionDataArgs_,
   AnnounceUpdateConfigInstructionData
 > {
   return combineCodec(
@@ -142,7 +141,7 @@ export type AnnounceUpdateConfigAsyncInput<
   announcedConfig?: Address<TAccountAnnouncedConfig>;
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
-  args: AnnounceUpdateConfigInstructionDataArgs['args'];
+  args: AnnounceUpdateConfigInstructionDataArgs_['args'];
 };
 
 export async function getAnnounceUpdateConfigInstructionAsync<
@@ -220,7 +219,7 @@ export async function getAnnounceUpdateConfigInstructionAsync<
       getAccountMeta(accounts.systemProgram),
     ],
     data: getAnnounceUpdateConfigInstructionDataEncoder().encode(
-      args as AnnounceUpdateConfigInstructionDataArgs
+      args as AnnounceUpdateConfigInstructionDataArgs_
     ),
     programAddress,
   } as AnnounceUpdateConfigInstruction<
@@ -245,7 +244,7 @@ export type AnnounceUpdateConfigInput<
   announcedConfig: Address<TAccountAnnouncedConfig>;
   payer: TransactionSigner<TAccountPayer>;
   systemProgram?: Address<TAccountSystemProgram>;
-  args: AnnounceUpdateConfigInstructionDataArgs['args'];
+  args: AnnounceUpdateConfigInstructionDataArgs_['args'];
 };
 
 export function getAnnounceUpdateConfigInstruction<
@@ -308,7 +307,7 @@ export function getAnnounceUpdateConfigInstruction<
       getAccountMeta(accounts.systemProgram),
     ],
     data: getAnnounceUpdateConfigInstructionDataEncoder().encode(
-      args as AnnounceUpdateConfigInstructionDataArgs
+      args as AnnounceUpdateConfigInstructionDataArgs_
     ),
     programAddress,
   } as AnnounceUpdateConfigInstruction<

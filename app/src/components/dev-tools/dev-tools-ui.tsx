@@ -10,7 +10,8 @@ import { useStakePools, useUserNftStakesForPool, useStakePool } from "../stake-p
 import { useListProducts, useDasRpc } from "../dephy-id/dephy-id-data-access"
 import { Link } from "react-router"
 import { useMemo } from "react"
-import { ellipsify, useWalletUi } from "@wallet-ui/react"
+import { ellipsify } from "@wallet-ui/react"
+import { useWalletUiGill } from "@wallet-ui/react-gill"
 import * as splToken from 'gill/programs/token'
 import { useSendAndConfirmIxs } from "~/lib/utils"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
@@ -31,6 +32,7 @@ export function StakeNftsForm() {
   const [textareaValue, setTextareaValue] = useState("")
   const [selectedAssets, setSelectedAssets] = useState<Set<string>>(new Set())
   const [defaultAmount, setDefaultAmount] = useState("1")
+  const [commisionRate, setCommisionRate] = useState("0")
   const [page, setPage] = useState(1)
   const [stakedFilter, setStakedFilter] = useState<boolean>(false)
 
@@ -147,7 +149,8 @@ export function StakeNftsForm() {
         stakePoolAddress,
         queryClient,
         csvData,
-        userAddress: account.address
+        userAddress: account.address,
+        commisionRate: Number(commisionRate)
       })
     } catch (error) {
       console.error("Error staking NFTs:", error)
@@ -187,6 +190,18 @@ export function StakeNftsForm() {
           type="number"
           min="1"
           step="1"
+          required
+        />
+
+        <InputWithLabel
+          label="Commision Rate (0-100)"
+          name="commisionRate"
+          value={commisionRate}
+          onChange={(e) => setCommisionRate(e.target.value)}
+          placeholder="0"
+          type="number"
+          min="0"
+          max="100"
           required
         />
 
@@ -300,6 +315,7 @@ export function BatchStakeNFTs() {
   const stakePools = useStakePools()
 
   const [stakePoolAddress, setStakePoolAddress] = useState("")
+  const [commisionRate, setCommisionRate] = useState("0")
   const [page, setPage] = useState(1)
   const [allAssets, setAllAssets] = useState<UserAsset[]>([])
   const [isAutoLoading, setIsAutoLoading] = useState(false)
@@ -401,7 +417,7 @@ export function BatchStakeNFTs() {
       .map(a => a.address)
     if (targets.length === 0) return
     try {
-      const { results } = await createNftStakesOnly.mutateAsync({ stakePoolAddress, assets: targets })
+      const { results } = await createNftStakesOnly.mutateAsync({ stakePoolAddress, assets: targets, commisionRate: Number(commisionRate) })
       const success = results.filter(r => r.status === 'success').length
       const error = results.length - success
       alert(`Stake Selected finished. Success: ${success}, Errors: ${error}`)
@@ -440,6 +456,17 @@ export function BatchStakeNFTs() {
             <p className="text-sm text-red-500">Error loading stake pools: {stakePools.error.message}</p>
           )}
         </div>
+
+        <InputWithLabel
+          label="Commision Rate (0-100)"
+          name="commisionRate"
+          value={commisionRate}
+          onChange={(e) => setCommisionRate(e.target.value)}
+          placeholder="0"
+          type="number"
+          min="0"
+          max="100"
+        />
 
         {stakePoolAddress && (
           <div className="flex items-center gap-3">
@@ -513,7 +540,7 @@ export function BatchAdjustTokens() {
   const [stakePoolAddress, setStakePoolAddress] = useState("")
   const [selectedNftStakes, setSelectedNftStakes] = useState<Set<string>>(new Set())
   const [stakeTokenDecimals, setStakeTokenDecimals] = useState<number | undefined>(undefined)
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const queryClient = useQueryClient()
   const [targetUiAmount, setTargetUiAmount] = useState<string>("")
@@ -794,7 +821,7 @@ export function BatchAdjustTokens() {
 
 export function BatchTransferForm() {
   const { account } = useWalletUiAccount()
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const products = useListProducts({})
   const [productAddress, setProductAddress] = useState("")
@@ -1054,7 +1081,7 @@ export function BatchTransferForm() {
 
 export function BatchUnstakeNFTs() {
   const { account } = useWalletUiAccount()
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const stakePools = useStakePools()
   const [stakePoolAddress, setStakePoolAddress] = useState("")

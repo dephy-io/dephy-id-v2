@@ -48,6 +48,7 @@ const cli = new Command()
 cli.command('dump-devices')
   .requiredOption('-e, --endpoint <endpoint>', 'dephy workers endpoint')
   .requiredOption('-o, --outfile <outfile>', 'output file')
+  .option('--owner <owner>', 'override owner address')
   .option('--limit <limit>', 'fetch batch size', '1000')
   .option('--only-online', 'only output online devices', false)
   .action(async (options) => {
@@ -56,6 +57,7 @@ cli.command('dump-devices')
       let offset = 0
       let allDevices: Device[] = []
       let keepFetching = true
+      const ownerOverrided = options.owner ? address(options.owner) : undefined
 
       console.log(`Fetching devices in batches of ${batchLimit}...`)
 
@@ -92,8 +94,13 @@ cli.command('dump-devices')
         }
 
         const deviceSeed = addressCodec.decode(b16Encoder.encode(device.pubkey))
-        const owner = JSON.parse(device.owner) as DeviceOwner
-        lines.push(`${deviceSeed},${owner.solana_address}`)
+        let owner: Address
+        if (ownerOverrided) {
+          owner = ownerOverrided
+        } else {
+          owner = (JSON.parse(device.owner) as DeviceOwner).solana_address
+        }
+        lines.push(`${deviceSeed},${owner}`)
       }
 
       const csv = lines.join('\n')
@@ -251,17 +258,19 @@ cli.command('create-dev-devices')
 
 
 cli.command('stake-nfts')
-  .description('Stake NFTs from CSV file, format: DeviceAddress,OwnerPubkey,Amount')
+  .description('Stake NFTs from CSV file, format: DeviceAddress,OwnerPubkey,Amount,CommisionRate')
   .requiredOption('-k, --keypair <path>', 'Path to the fee payer keypair', '~/.config/solana/id.json')
   .requiredOption('-u --url <urlOrMoniker>', 'RPC endpoint url or moniker', 'http://127.0.0.1:8899')
   .requiredOption('--stake-pool <address>', 'Address of the stake pool')
   .requiredOption('--csv <csvFile>', 'CSV file for all devices and owners')
   .option('--amount <amount>', 'Override amount of tokens for each deposit (ui amount)')
+  .option('--commision-rate <rate>', 'Override commision rate (0-100)')
   .option('--check', 'Check the owner and if the devices are already staked', false)
   .option('--skip <skip>', 'skip lines', '0')
   .action(async (options) => {
     const { keypair, url: urlOrMoniker } = options
     const skip = Number(options.skip)
+    const overrideCommisionRate = options.commisionRate !== undefined ? Number(options.commisionRate) : undefined
 
     const ctx = await createSolanaContext({
       keypair,
@@ -284,22 +293,24 @@ cli.command('stake-nfts')
     }))
 
     const csvFile = fs.readFileSync(options.csv, { encoding: 'utf8' })
-    const devicesAndOwners: { deviceAddress: Address, owner: Address, amount: bigint | undefined }[] = []
+    const devicesAndOwners: { deviceAddress: Address, owner: Address, amount: bigint | undefined, commisionRate: number }[] = []
 
     for (const line of csvFile.trim().split('\n').slice(1)) {
-      const [deviceAddress, owner, uiAmount] = line.split(',')
+      const [deviceAddress, owner, uiAmount, csvCommisionRate] = line.split(',')
       const amount = uiAmount ? splToken.tokenUiAmountToAmount(Number(uiAmount), stakeTokenMint.data.decimals) : undefined;
+      const commisionRate = overrideCommisionRate ?? (csvCommisionRate ? Number(csvCommisionRate) : 0)
 
       devicesAndOwners.push({
         deviceAddress: address(deviceAddress),
         owner: address(owner),
         amount: overrideAmount || amount,
+        commisionRate,
       })
     }
 
     let ixs: Instruction[] = []
     for (let i = skip; i < devicesAndOwners.length; i++) {
-      const { deviceAddress, owner, amount } = devicesAndOwners[i]
+      const { deviceAddress, owner, amount, commisionRate } = devicesAndOwners[i]
 
       if (options.check) {
         const asset = await mplCore.fetchAssetAccount(ctx.rpc, deviceAddress)
@@ -331,6 +342,7 @@ cli.command('stake-nfts')
           mplCoreAsset: deviceAddress,
           mplCoreCollection: productAsset,
           payer: ctx.feePayer,
+          commisionRate,
         })
       )
 
@@ -608,7 +620,8 @@ cli.command('calc-dodp')
     const DEPHY_API_URL = 'https://mainnet-tokenomic.dephy.dev'
 
     const batch = 500
-    const allScores: {
+
+    type ScoreEntry = {
       worker_pubkey: string
       uptime_120h: number
       uptime_720h: number
@@ -618,8 +631,8 @@ cli.command('calc-dodp')
       date: string
       created_at: string
       updated_at: string
-      deviceSeed?: Uint8Array
-    }[] = []
+    }
+    const allScores: (ScoreEntry & { worker_pubkey: Address<string>, deviceSeed: Uint8Array })[] = []
 
     let offset = 0
     while (true) {
@@ -632,12 +645,12 @@ cli.command('calc-dodp')
         headers: { Accept: 'application/json' },
       })
 
-      const json = await res.json()
-      const page = (json.data as { scores?: any[]; total?: number }) ?? { scores: [], total: 0 }
+      const json = await res.json() as { data: { scores: ScoreEntry[], total: number } }
+      const page = json.data ?? { scores: [], total: 0 }
 
       const transformed = (page.scores ?? []).map((s) => {
         const deviceSeedRO = b16Encoder.encode(s.worker_pubkey)
-        const deviceSeed = new Uint8Array(deviceSeedRO as any)
+        const deviceSeed = new Uint8Array(deviceSeedRO)
         const workerBase58 = addressCodec.decode(deviceSeed)
         return { ...s, worker_pubkey: workerBase58, deviceSeed }
       })
@@ -704,16 +717,16 @@ cli.command('calc-dodp')
       })
     )
     const deviceToAsset = Object.fromEntries(
-      deviceToAssetEntries.filter(([, a]) => !!a) as [string, Address][]
-    ) as Record<string, Address>
+      deviceToAssetEntries.filter(([, a]) => !!a) as [Address, Address][]
+    ) as Record<Address, Address>
 
-    const assetToNftStake: Record<string, { pubkey: Address, account: any }> = {}
+    const assetToNftStake: Record<Address, { pubkey: Address, account: dephyIdStakePool.NftStakeAccount }> = {}
     for (const ns of nftStakes) {
-      assetToNftStake[String(ns.account.nftTokenAccount)] = ns
+      assetToNftStake[ns.account.nftTokenAccount] = ns
     }
 
     type RankedStake = {
-      seed: string
+      seed: Address
       nftStakeAddress?: Address
       assetAddress?: Address
       score: number
@@ -722,7 +735,7 @@ cli.command('calc-dodp')
     const rankedStakes: RankedStake[] = []
     for (const s of allScores) {
       const asset = deviceToAsset[s.worker_pubkey]
-      const nftStake = asset ? assetToNftStake[String(asset)] : undefined
+      const nftStake = asset ? assetToNftStake[asset] : undefined
       rankedStakes.push({
         seed: s.worker_pubkey,
         nftStakeAddress: nftStake?.pubkey,

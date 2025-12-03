@@ -16,10 +16,6 @@ use solana_pubkey::Pubkey;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug, Eq, PartialEq)]
 pub struct LinkedLifecycleHookInitInfo {
-    #[cfg_attr(
-        feature = "serde",
-        serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-    )]
     pub hooked_program: Pubkey,
     pub init_plugin_authority: Option<PluginAuthority>,
     pub lifecycle_checks: Vec<(HookableLifecycleEvent, ExternalCheckResult)>,

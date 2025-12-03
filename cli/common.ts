@@ -1,6 +1,6 @@
 import {
   createSolanaClient, createTransaction, getSignatureFromTransaction,
-  IInstruction, isSolanaError, signTransactionMessageWithSigners
+  Instruction, isSolanaError, signTransactionMessageWithSigners
 } from "gill";
 import { address } from "gill";
 import { loadKeypairSignerFromFile } from "gill/node";
@@ -36,7 +36,7 @@ export async function createSolanaContext({
   const sendAndConfirmTransaction = client.sendAndConfirmTransaction;
 
 
-  const sendAndConfirmIxs = async (instructions: IInstruction[]) => {
+  const sendAndConfirmIxs = async (instructions: Instruction[]) => {
     const latestBlockhash = (await rpc.getLatestBlockhash().send()).value
 
     const transaction = createTransaction({

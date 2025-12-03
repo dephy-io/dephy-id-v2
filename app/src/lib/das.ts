@@ -1,5 +1,5 @@
 import type { DasApiAssetInterface, DasApiAssetList, DasApiParamAssetSortBy, DisplayOptions, TokenType } from "@metaplex-foundation/digital-asset-standard-api";
-import { createDefaultRpcTransport, createRpc, createJsonRpcApi, type ClusterUrl, isOption, type OptionOrNullable, type Address, isJsonRpcPayload } from '@solana/kit';
+import { createDefaultRpcTransport, createRpc, createJsonRpcApi, type ClusterUrl, type OptionOrNullable, type Address } from '@solana/kit';
 
 
 type Pagination = {
@@ -126,7 +126,7 @@ export type SearchAssetsRpcInput = {
 
 type JsonRpcResponse<T> = {
   jsonrpc: string;
-  id: any;
+  id: number | string;
   result: T;
 }
 

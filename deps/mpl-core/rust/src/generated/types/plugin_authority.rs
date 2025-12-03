@@ -14,11 +14,5 @@ pub enum PluginAuthority {
     None,
     Owner,
     UpdateAuthority,
-    Address {
-        #[cfg_attr(
-            feature = "serde",
-            serde(with = "serde_with::As::<serde_with::DisplayFromStr>")
-        )]
-        address: Pubkey,
-    },
+    Address { address: Pubkey },
 }

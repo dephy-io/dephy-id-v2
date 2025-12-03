@@ -1,6 +1,7 @@
 import { useWalletAccountTransactionSendingSigner, useWalletUi, useWalletUiCluster } from "@wallet-ui/react"
+import { useWalletUiGill } from "@wallet-ui/react-gill"
 import { type ClassValue, clsx } from "clsx"
-import { createTransaction, getBase58Decoder, type IInstruction, isSolanaError, signAndSendTransactionMessageWithSigners } from "gill"
+import { createTransaction, getBase58Decoder, type Instruction, isSolanaError, signAndSendTransactionMessageWithSigners } from "gill"
 import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
@@ -8,12 +9,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function useSendAndConfirmIxs() {
-  const { client, account } = useWalletUi()
+  const { account } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
 
   const feePayer = useWalletAccountTransactionSendingSigner(account!, cluster.id)
 
-  const sendAndConfirmIxs = async (instructions: IInstruction[], config = { showError: true }) => {
+  const sendAndConfirmIxs = async (instructions: Instruction[], config = { showError: true }) => {
     const latestBlockhash = (await client.rpc.getLatestBlockhash().send()).value
 
     const transaction = createTransaction({

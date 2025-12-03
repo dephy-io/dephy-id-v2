@@ -8,6 +8,8 @@
 use anchor_lang::prelude::AnchorDeserialize;
 use anchor_lang::prelude::AnchorSerialize;
 
+pub const COLLECT_DISCRIMINATOR: u8 = 19;
+
 /// Accounts.
 #[derive(Debug)]
 pub struct Collect {
@@ -31,7 +33,7 @@ impl Collect {
         accounts.push(solana_instruction::AccountMeta::new(self.recipient1, false));
         accounts.push(solana_instruction::AccountMeta::new(self.recipient2, false));
         accounts.extend_from_slice(remaining_accounts);
-        let data = borsh::to_vec(&CollectInstructionData::new()).unwrap();
+        let data = CollectInstructionData::new().try_to_vec().unwrap();
 
         solana_instruction::Instruction {
             program_id: crate::MPL_CORE_ID,
@@ -149,21 +151,18 @@ impl<'a, 'b> CollectCpi<'a, 'b> {
         }
     }
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke(&self) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], &[])
     }
     #[inline(always)]
     pub fn invoke_with_remaining_accounts(
         &self,
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
-    ) -> solana_program_entrypoint::ProgramResult {
+    ) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(&[], remaining_accounts)
     }
     #[inline(always)]
-    pub fn invoke_signed(
-        &self,
-        signers_seeds: &[&[&[u8]]],
-    ) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
         self.invoke_signed_with_remaining_accounts(signers_seeds, &[])
     }
     #[allow(clippy::arithmetic_side_effects)]
@@ -173,7 +172,7 @@ impl<'a, 'b> CollectCpi<'a, 'b> {
         &self,
         signers_seeds: &[&[&[u8]]],
         remaining_accounts: &[(&'b solana_account_info::AccountInfo<'a>, bool, bool)],
-    ) -> solana_program_entrypoint::ProgramResult {
+    ) -> solana_program_error::ProgramResult {
         let mut accounts = Vec::with_capacity(2 + remaining_accounts.len());
         accounts.push(solana_instruction::AccountMeta::new(
             *self.recipient1.key,
@@ -190,7 +189,7 @@ impl<'a, 'b> CollectCpi<'a, 'b> {
                 is_writable: remaining_account.2,
             })
         });
-        let data = borsh::to_vec(&CollectInstructionData::new()).unwrap();
+        let data = CollectInstructionData::new().try_to_vec().unwrap();
 
         let instruction = solana_instruction::Instruction {
             program_id: crate::MPL_CORE_ID,
@@ -280,15 +279,12 @@ impl<'a, 'b> CollectCpiBuilder<'a, 'b> {
         self
     }
     #[inline(always)]
-    pub fn invoke(&self) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke(&self) -> solana_program_error::ProgramResult {
         self.invoke_signed(&[])
     }
     #[allow(clippy::clone_on_copy)]
     #[allow(clippy::vec_init_then_push)]
-    pub fn invoke_signed(
-        &self,
-        signers_seeds: &[&[&[u8]]],
-    ) -> solana_program_entrypoint::ProgramResult {
+    pub fn invoke_signed(&self, signers_seeds: &[&[&[u8]]]) -> solana_program_error::ProgramResult {
         let instruction = CollectCpi {
             __program: self.instruction.__program,
 

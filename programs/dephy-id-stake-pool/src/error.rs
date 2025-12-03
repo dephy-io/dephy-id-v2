@@ -24,4 +24,6 @@ pub enum ErrorCode {
     NftStakeNotActive,
     #[msg("Nft stake is active")]
     NftStakeIsActive,
+    #[msg("Invalid commision rate")]
+    InvalidCommisionRate,
 }

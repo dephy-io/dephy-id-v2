@@ -13,9 +13,10 @@ use crate::{
     BasePlugin, BubblegumV2Plugin, BurnDelegatePlugin, DataBlob, DataSectionWithData,
     EditionPlugin, ExternalPluginAdaptersList, ExternalRegistryRecordSafe, FreezeDelegatePlugin,
     FreezeExecutePlugin, ImmutableMetadataPlugin, LifecycleHookWithData, MasterEditionPlugin,
-    PermanentBurnDelegatePlugin, PermanentFreezeDelegatePlugin, PermanentTransferDelegatePlugin,
-    PluginRegistryV1Safe, PluginsList, RegistryRecordSafe, RoyaltiesPlugin, SolanaAccount,
-    TransferDelegatePlugin, UpdateDelegatePlugin, VerifiedCreatorsPlugin,
+    PermanentBurnDelegatePlugin, PermanentFreezeDelegatePlugin, PermanentFreezeExecutePlugin,
+    PermanentTransferDelegatePlugin, PluginRegistryV1Safe, PluginsList, RegistryRecordSafe,
+    RoyaltiesPlugin, SolanaAccount, TransferDelegatePlugin, UpdateDelegatePlugin,
+    VerifiedCreatorsPlugin,
 };
 
 /// Fetch the plugin from the registry.
@@ -349,6 +350,12 @@ pub(crate) fn registry_records_to_plugin_list(
                         acc.freeze_execute = Some(FreezeExecutePlugin {
                             base,
                             freeze_execute,
+                        })
+                    }
+                    Plugin::PermanentFreezeExecute(permanent_freeze_execute) => {
+                        acc.permanent_freeze_execute = Some(PermanentFreezeExecutePlugin {
+                            base,
+                            permanent_freeze_execute,
                         })
                     }
                 }

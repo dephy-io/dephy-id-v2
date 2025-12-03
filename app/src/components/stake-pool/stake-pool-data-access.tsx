@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
 import { useWalletUi, useWalletUiCluster } from "@wallet-ui/react"
+import { useWalletUiGill } from "@wallet-ui/react-gill"
 import { useSendAndConfirmIxs } from "~/lib/utils"
 import { useTransactionToast } from "../use-transaction-toast"
 import {
@@ -12,7 +13,7 @@ import { fetchMint } from 'gill/programs/token'
 import { useProgramIds } from "~/lib/program-ids";
 
 export function useAdminAccount() {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
   const { dephyIdStakePoolProgramId } = useProgramIds()
 
@@ -26,7 +27,7 @@ export function useAdminAccount() {
 }
 
 export function useAnnouncedConfig({ stakePool }: { stakePool: Account<dephyIdStakePool.StakePoolAccount> }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
   const { dephyIdStakePoolProgramId } = useProgramIds()
 
@@ -40,7 +41,7 @@ export function useAnnouncedConfig({ stakePool }: { stakePool: Account<dephyIdSt
 }
 
 export function useAnnounceUpdateConfig({ stakePool }: { stakePool: Account<dephyIdStakePool.StakePoolAccount> }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const toastTransaction = useTransactionToast()
@@ -125,7 +126,7 @@ export function useCancelUpdateConfig({ stakePool }: { stakePool: Account<dephyI
   })
 }
 export function useUserNftStakesForPool({ stakePoolAddress, userAddress }: { stakePoolAddress: Address, userAddress: Address }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
   const { dephyIdStakePoolProgramId } = useProgramIds()
 
@@ -202,7 +203,7 @@ export function useInitialize() {
 
 export function useCreateStakePool() {
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const toastTransaction = useTransactionToast()
   const queryClient = useQueryClient()
   const { dephyIdStakePoolProgramId } = useProgramIds()
@@ -253,7 +254,7 @@ export function useCreateStakePool() {
 }
 
 export function useStakePools() {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
   const base64Encoder = getBase64Encoder()
   const stakePoolDecoder = dephyIdStakePool.getStakePoolAccountDecoder()
@@ -289,7 +290,7 @@ export function useStakePools() {
 }
 
 export function useStakePool({ stakePoolAddress }: { stakePoolAddress?: Address }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
 
   return useQuery({
@@ -303,7 +304,7 @@ export function useStakePool({ stakePoolAddress }: { stakePoolAddress?: Address 
 
 
 export function useStakeDephyId() {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const toastTransaction = useTransactionToast()
   const { cluster } = useWalletUiCluster()
@@ -311,7 +312,7 @@ export function useStakeDephyId() {
   const { dephyIdStakePoolProgramId } = useProgramIds()
 
   return useMutation({
-    mutationFn: async ({ stakePoolAddress, mplCoreAsset, depositAuthority }: { stakePoolAddress: Address, mplCoreAsset: Address, depositAuthority: Address }) => {
+    mutationFn: async ({ stakePoolAddress, mplCoreAsset, depositAuthority, commisionRate }: { stakePoolAddress: Address, mplCoreAsset: Address, depositAuthority: Address, commisionRate: number }) => {
       const stakePool = await dephyIdStakePool.fetchStakePoolAccount(client.rpc, stakePoolAddress)
       const mplCoreCollection = stakePool.data.config.collection
 
@@ -326,6 +327,7 @@ export function useStakeDephyId() {
           mplCoreAsset,
           mplCoreCollection,
           payer: feePayer,
+          commisionRate
         }, {
           programAddress: dephyIdStakePoolProgramId
         })
@@ -339,7 +341,7 @@ export function useStakeDephyId() {
 }
 
 export function useUnstakeDephyId({ nftStake }: { nftStake: Account<dephyIdStakePool.NftStakeAccount> }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const toastTransaction = useTransactionToast()
   const { cluster } = useWalletUiCluster()
@@ -373,7 +375,7 @@ export function useUnstakeDephyId({ nftStake }: { nftStake: Account<dephyIdStake
 }
 
 export function useNftStakes({ stakePoolAddress }: { stakePoolAddress?: Address }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
   const { dephyIdStakePoolProgramId } = useProgramIds()
 
@@ -414,7 +416,7 @@ export function useNftStakes({ stakePoolAddress }: { stakePoolAddress?: Address 
 }
 
 export function useNftStakesForUser({ userAddress }: { userAddress: Address }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
   const { dephyIdStakePoolProgramId } = useProgramIds()
   const nftStakeAccountDecoder = dephyIdStakePool.getNftStakeAccountDecoder()
@@ -455,7 +457,7 @@ export function useNftStakesForUser({ userAddress }: { userAddress: Address }) {
 }
 
 export function useNftStake({ nftStakeAddress }: { nftStakeAddress: Address }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
 
   return useQuery({
@@ -468,7 +470,7 @@ export function useNftStake({ nftStakeAddress }: { nftStakeAddress: Address }) {
 
 
 export function useUserStakes({ nftStakeAddress }: { nftStakeAddress: Address }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
   const { dephyIdStakePoolProgramId } = useProgramIds()
   const userStakeAccountDecoder = dephyIdStakePool.getUserStakeAccountDecoder()
@@ -509,7 +511,8 @@ export function useUserStakes({ nftStakeAddress }: { nftStakeAddress: Address })
 }
 
 export function useUserStakesForPool({ stakePoolAddress }: { stakePoolAddress?: Address }) {
-  const { client, account } = useWalletUi()
+  const { account } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
   const { dephyIdStakePoolProgramId } = useProgramIds()
   const userAddress = account?.address
@@ -558,7 +561,7 @@ export function useUserStakesForPool({ stakePoolAddress }: { stakePoolAddress?: 
 }
 
 export function useUserStakesForUser({ userAddress }: { userAddress: Address }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
   const { dephyIdStakePoolProgramId } = useProgramIds()
   const userStakeAccountDecoder = dephyIdStakePool.getUserStakeAccountDecoder()
@@ -621,7 +624,7 @@ export function useUserStakesForUser({ userAddress }: { userAddress: Address }) 
 }
 
 export function useUserStake({ userStakeAddress }: { userStakeAddress: Address }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
 
   return useQuery({
@@ -634,7 +637,7 @@ export function useUserStake({ userStakeAddress }: { userStakeAddress: Address }
 
 
 export function useDeposit({ nftStake }: { nftStake: Account<dephyIdStakePool.NftStakeAccount> }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const toastTransaction = useTransactionToast()
@@ -667,7 +670,7 @@ export function useDeposit({ nftStake }: { nftStake: Account<dephyIdStakePool.Nf
 }
 
 export function useWithdraw({ userStake }: { userStake: Account<dephyIdStakePool.UserStakeAccount> }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { cluster } = useWalletUiCluster()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
   const toastTransaction = useTransactionToast()

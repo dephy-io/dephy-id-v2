@@ -1,4 +1,5 @@
-import { useWalletUi, useWalletUiCluster, useWalletUiAccount } from "@wallet-ui/react"
+import { useWalletUiCluster, useWalletUiAccount } from "@wallet-ui/react"
+import { useWalletUiGill } from "@wallet-ui/react-gill"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { address, getBase58Decoder, getBase64Encoder, type Address, type Base58EncodedBytes, type GetProgramAccountsMemcmpFilter, type ReadonlyUint8Array, type Rpc } from "gill"
 import * as dephyId from "dephy-id-client"
@@ -13,19 +14,19 @@ export function useDasRpc(): Rpc<DasApi> {
   const { cluster } = useWalletUiAccount()
 
   return useMemo(() => {
-    switch (cluster.cluster) {
-      case 'mainnet':
+    switch (cluster.id) {
+      case 'solana:mainnet':
         return createDasRpc(import.meta.env.VITE_HELIUS_MAINNET_RPC_URL)
-      case 'devnet':
+      case 'solana:devnet':
         return createDasRpc(import.meta.env.VITE_HELIUS_DEVNET_RPC_URL)
       default:
-        throw new Error(`Unsupported cluster: ${cluster.cluster}`)
+        throw new Error(`Unsupported cluster: ${cluster.id}`)
     }
-  }, [cluster.cluster])
+  }, [cluster.id])
 }
 
 export function useDephyAccount() {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { dephyIdProgramId } = useProgramIds()
 
   return useQuery({
@@ -94,7 +95,7 @@ export function useCreateProduct() {
 
 export function useListProducts({ vendor }: { vendor?: Address }) {
   const { cluster } = useWalletUiCluster()
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const base64Encoder = getBase64Encoder()
   const productDecoder = dephyId.getProductAccountDecoder()
   const discriminator = getBase58Decoder().decode(dephyId.PRODUCT_ACCOUNT_DISCRIMINATOR)
@@ -139,7 +140,7 @@ export function useListProducts({ vendor }: { vendor?: Address }) {
 
 
 export function useProduct({ productAsset }: { productAsset: Address }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
   const { dephyIdProgramId } = useProgramIds()
 
   return useQuery({
@@ -153,7 +154,7 @@ export function useProduct({ productAsset }: { productAsset: Address }) {
 
 
 export function useDevice({ deviceAsset }: { deviceAsset: Address }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
 
   return useQuery({
     queryKey: ['mpl-core', 'device', { deviceAsset }],
@@ -226,7 +227,7 @@ export function useDevicesByCollection({
 }
 
 export function useMplCoreCollection({ collectionAsset }: { collectionAsset?: Address }) {
-  const { client } = useWalletUi()
+  const client = useWalletUiGill()
 
   return useQuery({
     queryKey: ['mpl-core', 'collection', { collectionAsset }],

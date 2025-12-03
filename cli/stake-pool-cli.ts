@@ -114,11 +114,13 @@ cli
   .option('--deposit-authority <address>', 'Address of the deposit authority, defaults to stake authority')
   .requiredOption('--nft-asset <address>', 'Address of the DePHY ID NFT to stake (mpl_core_asset)')
   .option('--mainnet', 'Use mainnet program IDs', false)
+  .option('--commision-rate <rate>', 'Commision rate (0-100)', '0')
   .action(async (options) => {
     const stakePool = address(options.stakePool);
     const stakeAuthority = options.stakeAuthority ? await loadKeypairSignerFromFile(options.stakeAuthority) : ctx.feePayer;
     const depositAuthority = options.depositAuthority ? address(options.depositAuthority) : stakeAuthority.address
     const nftAsset = address(options.nftAsset);
+    const commisionRate = Number(options.commisionRate);
     const nftStakeSigner = await generateKeyPairSigner();
     const { dephyIdStakePoolProgramId } = getProgramIds(!!options.mainnet)
 
@@ -138,6 +140,7 @@ cli
         nftStake: nftStakeSigner,
         payer: ctx.feePayer,
         depositAuthority,
+        commisionRate,
       }, {
         programAddress: dephyIdStakePoolProgramId
       }),

@@ -25,7 +25,6 @@ pub fn process_close_nft_stake(ctx: Context<CloseNftStake>) -> Result<()> {
 
     let nft_stake = &ctx.accounts.nft_stake;
 
-    require!(!nft_stake.active, ErrorCode::NftStakeIsActive);
     require_eq!(nft_stake.amount, 0, ErrorCode::StakeNonEmpty);
 
     Ok(())

@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react"
 import { address, assertIsAddress, type Account, type Address } from "gill"
 import { Button } from "../ui/button"
 import { useInitialize, useAdminAccount, useCreateStakePool, useStakePools, useStakePool, useStakeDephyId, useNftStakes, useNftStake, useUserStakes, useDeposit, useWithdraw, useUnstakeDephyId, useCloseNftStake, useAnnounceUpdateConfig, useConfirmUpdateConfig, useCancelUpdateConfig, useAnnouncedConfig, useUserStakesForUser } from "./stake-pool-data-access"
@@ -221,14 +222,55 @@ export function ListStakePools() {
 
   return (
     <Card title="Stake Pools">
-      <ul>
-        {stakePools.data?.map((stakePool) => (
-          <li key={stakePool.pubkey.toString()}>
-            <Link to={`/stake-pool/${stakePool.pubkey}`}>{stakePool.pubkey}</Link>
-          </li>
-        ))}
-      </ul>
+      {stakePools.data?.length === 0 ? (
+        <div className="text-sm text-gray-500">No stake pools found.</div>
+      ) : (
+        <div className="border rounded-md overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 py-2 text-left font-medium">Stake Pool</th>
+                <th className="px-3 py-2 text-left font-medium">Collection</th>
+                <th className="px-3 py-2 text-left font-medium">Token Mint</th>
+                <th className="px-3 py-2 text-left font-medium">Max Stake Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stakePools.data?.map((stakePool, index) => (
+                <StakePoolRow key={stakePool.pubkey.toString()} stakePool={stakePool} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </Card>
+  )
+}
+
+function StakePoolRow({ stakePool }: { stakePool: { pubkey: string, account: dephyIdStakePool.StakePoolAccount } }) {
+  const mint = useMint({ mintAddress: stakePool.account.config.stakeTokenMint })
+
+  const maxStakeAmountUi = mint.data
+    ? splToken.tokenAmountToUiAmount(stakePool.account.config.maxStakeAmount, mint.data.data.decimals)
+    : undefined
+
+  return (
+    <tr>
+      <td className="px-3 py-2">
+        <Link to={`/stake-pool/${stakePool.pubkey}`} className="text-blue-600 hover:text-blue-800">
+          {ellipsify(stakePool.pubkey)}
+        </Link>
+      </td>
+      <td className="px-3 py-2 font-mono">
+        {ellipsify(stakePool.account.config.collection)}
+      </td>
+      <td className="px-3 py-2 font-mono">
+        {ellipsify(stakePool.account.config.stakeTokenMint)}
+      </td>
+      <td className="px-3 py-2">
+        {maxStakeAmountUi !== undefined ? maxStakeAmountUi : stakePool.account.config.maxStakeAmount.toString()}
+      </td>
+    </tr>
   )
 }
 
@@ -266,8 +308,9 @@ export function StakeDephyId({ stakePoolAddress }: { stakePoolAddress: Address }
     const formData = new FormData(event.currentTarget)
     const mplCoreAsset = address(formData.get('mplCoreAsset') as string)
     const depositAuthority = address(formData.get('depositAuthority') as string)
+    const commisionRate = Number(formData.get('commisionRate') as string)
 
-    stakeDephyId.mutateAsync({ stakePoolAddress, mplCoreAsset, depositAuthority })
+    stakeDephyId.mutateAsync({ stakePoolAddress, mplCoreAsset, depositAuthority, commisionRate })
   }
 
   return (
@@ -275,6 +318,7 @@ export function StakeDephyId({ stakePoolAddress }: { stakePoolAddress: Address }
       <Card title="Stake Dephy ID">
         <InputWithLabel type="text" id="mplCoreAsset" name="mplCoreAsset" label="MPL Core Asset" />
         <InputWithLabel type="text" id="depositAuthority" name="depositAuthority" label="Deposit Authority" />
+        <InputWithLabel type="number" id="commisionRate" name="commisionRate" label="Commision Rate (0-100)" defaultValue="0" min="0" max="100" />
         <Button type="submit">Stake Dephy ID</Button>
       </Card>
     </form>
@@ -302,13 +346,27 @@ export function UnstakeDephyId({ nftStake }: { nftStake: Account<dephyIdStakePoo
 
 export function ListNftStakes({ stakePool, mint }: { stakePool: Account<dephyIdStakePool.StakePoolAccount>, mint: Account<splToken.Mint> }) {
   const nftStakes = useNftStakes({ stakePoolAddress: stakePool.address })
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | null>(null)
+
+  const sortedNftStakes = useMemo(() => {
+    if (!nftStakes.data) return []
+    if (sortOrder === null) return nftStakes.data
+    return [...nftStakes.data].sort((a, b) => {
+      const diff = Number(a.account.amount - b.account.amount)
+      return sortOrder === 'asc' ? diff : -diff
+    })
+  }, [nftStakes.data, sortOrder])
+
+  const toggleSort = () => {
+    setSortOrder(prev => prev === null ? 'desc' : prev === 'desc' ? 'asc' : 'desc')
+  }
 
   if (!nftStakes.isFetched) {
     return <div>Loading...</div>
   }
 
   return (
-    <Card title="Nft Stakes">
+    <Card title={`Nft Stakes (${nftStakes.data?.length ?? 0})`}>
       <div className="border rounded-md overflow-hidden max-h-96 overflow-y-auto">
         <table className="w-full text-sm">
           <thead className="sticky top-0 z-10 bg-gray-50">
@@ -316,11 +374,13 @@ export function ListNftStakes({ stakePool, mint }: { stakePool: Account<dephyIdS
               <th className="px-3 py-2 text-left font-medium">NFT Stake</th>
               <th className="px-3 py-2 text-left font-medium">Stake Authority</th>
               <th className="px-3 py-2 text-left font-medium">NFT Token Account</th>
-              <th className="px-3 py-2 text-left font-medium">Amount</th>
+              <th className="px-3 py-2 text-left font-medium cursor-pointer select-none hover:bg-gray-100" onClick={toggleSort}>
+                Amount {sortOrder === 'asc' ? '↑' : sortOrder === 'desc' ? '↓' : '↕'}
+              </th>
             </tr>
           </thead>
           <tbody>
-            {nftStakes.data?.map((nftStake, index: number) => (
+            {sortedNftStakes.map((nftStake, index: number) => (
               <tr key={nftStake.pubkey.toString()} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                 <td className="px-3 py-2">
                   <Link to={`/nft-stake/${nftStake.pubkey}`} className="text-blue-600 hover:text-blue-800">
@@ -365,7 +425,7 @@ export function ShowNftStake({ nftStake, mint }: {
           <p>Stake Authority: {nftStake.data.stakeAuthority}</p>
           <p>Deposit Authority: {nftStake.data.depositAuthority}</p>
           <p>Stake Amount: {splToken.tokenAmountToUiAmount(nftStake.data.amount, mint.data.decimals)}</p>
-          <p>Active: {nftStake.data.active.toString()}</p>
+          <p>Commision Rate: {nftStake.data.commisionRate}</p>
         </div>
       ) : (
         <div>Nft Stake not found</div>

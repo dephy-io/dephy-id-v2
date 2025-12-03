@@ -1,4 +1,4 @@
-import { Address, downgradeRoleToNonSigner, IAccountMeta, IInstruction, IInstructionWithAccounts, TransactionSigner } from '@solana/kit';
+import { AccountMeta, Address, downgradeRoleToNonSigner, Instruction, InstructionWithAccounts, TransactionSigner } from '@solana/kit';
 
 import { getExecuteV1InstructionAsync } from '../generated';
 
@@ -16,7 +16,7 @@ export async function createExecuteIx({
   /** The collection to which the asset belongs */
   collection?: Address;
   /** The instruction to execute as the asset signer */
-  instruction: IInstruction;
+  instruction: Instruction;
   /** The account paying for the storage fees */
   payer: TransactionSigner;
 }) {
@@ -32,7 +32,7 @@ export async function createExecuteIx({
   const assetSigner = executeIx.accounts[2].address
 
   instruction.accounts?.forEach((a) => {
-    (executeIx as IInstructionWithAccounts<IAccountMeta[]>).accounts.push(
+    (executeIx as InstructionWithAccounts<AccountMeta[]>).accounts.push(
       a.address == assetSigner ? {
         address: assetSigner,
         role: downgradeRoleToNonSigner(a.role),

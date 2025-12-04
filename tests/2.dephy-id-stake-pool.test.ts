@@ -10,6 +10,7 @@ import {
   some,
 } from 'gill'
 import * as splToken from 'gill/programs/token'
+import { getCreateAccountInstruction } from 'gill/programs'
 
 import * as dephyId from '../clients/dephy-id/js/src/index.js'
 import * as dephyIdStakePool from '../clients/dephy-id-stake-pool/js/src/index.js'
@@ -105,22 +106,24 @@ describe("dephy-id-stake-pool", () => {
       })
     ])
 
-    await sendAndConfirmIxs(
-      splToken.getCreateTokenInstructions({
-        feePayer: payer,
-        mint: stPhyMintKeypair,
-        mintAuthority: vendor,
+    const mintSize = 82n;
+    const rent = await rpc.getMinimumBalanceForRentExemption(mintSize).send();
+
+    await sendAndConfirmIxs([
+      getCreateAccountInstruction({
+        payer,
+        newAccount: stPhyMintKeypair,
+        lamports: rent,
+        space: mintSize,
+        programAddress: splToken.TOKEN_2022_PROGRAM_ADDRESS,
+      }),
+      splToken.getInitializeMintInstruction({
+        mint: stPhyMintKeypair.address,
         decimals: 6,
-        metadata: {
-          name: 'DePHY Staking Token',
-          symbol: 'stPHY',
-          uri: '',
-          isMutable: false
-        },
-        metadataAddress: stPhyMintAddress,
-        tokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
-      })
-    )
+        mintAuthority: vendor.address,
+        freezeAuthority: null,
+      }, { programAddress: splToken.TOKEN_2022_PROGRAM_ADDRESS })
+    ])
 
     tokenOwner1 = await generateKeyPairSigner()
     userTokenAddress1 = await splToken.getAssociatedTokenAccountAddress(stPhyMintAddress, tokenOwner1.address, splToken.TOKEN_2022_PROGRAM_ADDRESS)

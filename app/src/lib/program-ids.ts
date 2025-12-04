@@ -4,8 +4,8 @@ import { address } from "gill";
 export function useProgramIds() {
   const { cluster } = useWalletUiCluster()
 
-  switch (cluster.cluster) {
-    case 'mainnet':
+  switch (cluster.id) {
+    case 'solana:mainnet':
       return {
         dephyIdProgramId: address('PHy1dzzd8sso1R5t31WHX6JvAsZF9fvNgzxHbgnKHX4'),
         dephyIdStakePoolProgramId: address('PHYSJkZ4KNpK4Lp5pg89xfab5mSer9NxRfr6YzuRdNQ'),

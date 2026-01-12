@@ -575,8 +575,8 @@ export function BatchAdjustTokens() {
   const items = userNftStakes.data ?? []
   const sortedItems = useMemo(() => {
     return [...items].sort((a, b) => {
-      const av = a.account.amount as bigint
-      const bv = b.account.amount as bigint
+      const av = a.account.amount
+      const bv = b.account.amount
       if (av !== bv) return bv > av ? 1 : -1
       return a.account.nftTokenAccount.localeCompare(b.account.nftTokenAccount)
     })
@@ -599,21 +599,32 @@ export function BatchAdjustTokens() {
 
   const totalNetDelta = useMemo(() => {
     try {
-      if (!stakeTokenDecimals) return 0n
+      if (!stakeTokenDecimals || !stakePool.data) return 0n
       const ui = Number(targetUiAmount)
       if (!isFinite(ui) || ui < 0) return 0n
       const target = splToken.tokenUiAmountToAmount(ui, stakeTokenDecimals)
+      const maxStakeAmount = stakePool.data.data.config.maxStakeAmount
       let net = 0n
       for (const it of items) {
         if (!selectedNftStakes.has(it.pubkey)) continue
-        const current = it.account.amount as bigint
-        net += target - current
+        const current = it.account.amount
+        let delta = target - current
+
+        if (delta > 0n) {
+          const remaining = maxStakeAmount - current
+          if (delta > remaining) {
+            delta = remaining
+          }
+          if (delta < 0n) delta = 0n
+        }
+
+        net += delta
       }
       return net
     } catch {
       return 0n
     }
-  }, [items, stakeTokenDecimals, targetUiAmount, Array.from(selectedNftStakes).join('|')])
+  }, [items, stakeTokenDecimals, targetUiAmount, Array.from(selectedNftStakes).join('|'), stakePool.data])
 
   const handleAdjustAllSelected = async () => {
     try {
@@ -633,28 +644,34 @@ export function BatchAdjustTokens() {
 
       let ixs: any[] = []
       const selectedSet = selectedNftStakes
+      const maxStakeAmount = stakePool.data.data.config.maxStakeAmount
       setIsAdjusting(true)
 
       for (const it of items) {
         if (!selectedSet.has(it.pubkey)) continue
-        const current = it.account.amount as bigint
+        const current = it.account.amount
         const delta = target - current
         if (delta === 0n) continue
 
         if (delta > 0n) {
           // Need to deposit (increase to target)
-          ixs.push(await dephyIdStakePool.getDepositTokenInstructionAsync({
-            nftStake: address(it.pubkey),
-            stakePool: address(stakePoolAddress),
-            user: feePayer,
-            stakeTokenMint,
-            stakeTokenAccount: stakePool.data.data.stakeTokenAccount,
-            userStakeTokenAccount: ata,
-            payer: feePayer,
-            amount: delta,
-          }, {
-            programAddress: dephyIdStakePoolProgramId
-          }))
+          const remaining = maxStakeAmount - current
+          const amount = delta > remaining ? remaining : delta
+
+          if (amount > 0n) {
+            ixs.push(await dephyIdStakePool.getDepositTokenInstructionAsync({
+              nftStake: address(it.pubkey),
+              stakePool: address(stakePoolAddress),
+              user: feePayer,
+              stakeTokenMint,
+              stakeTokenAccount: stakePool.data.data.stakeTokenAccount,
+              userStakeTokenAccount: ata,
+              payer: feePayer,
+              amount,
+            }, {
+              programAddress: dephyIdStakePoolProgramId
+            }))
+          }
         } else {
           // Need to withdraw (decrease to target)
           const withdrawAmount = -delta
@@ -1098,12 +1115,12 @@ export function BatchUnstakeNFTs() {
   const items = userNftStakes.data ?? []
   const filtered = useMemo(() => {
     if (!onlyZero) return items
-    return items.filter(it => (it.account.amount as bigint) === 0n)
+    return items.filter(it => it.account.amount === 0n)
   }, [items, onlyZero])
   const sorted = useMemo(() => {
     return [...filtered].sort((a, b) => {
-      const av = a.account.amount as bigint
-      const bv = b.account.amount as bigint
+      const av = a.account.amount
+      const bv = b.account.amount
       if (av !== bv) return bv > av ? 1 : -1
       return a.account.nftTokenAccount.localeCompare(b.account.nftTokenAccount)
     })

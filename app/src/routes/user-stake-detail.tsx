@@ -24,7 +24,7 @@ export default function UserStakeDetail() {
     <div className="flex flex-col gap-4">
       <h1>User Stake Detail</h1>
       <ShowUserStake userStake={userStake.data} mint={mint.data!} />
-      <Withdraw userStake={userStake.data} />
+      <Withdraw userStake={userStake.data} mint={mint.data!} />
     </div>
   )
 }

@@ -76,3 +76,14 @@ export function useMint({ mintAddress }: { mintAddress?: Address }) {
     enabled: !!mintAddress,
   })
 }
+
+export function useTokenAccount({ address }: { address?: Address }) {
+  const { cluster } = useWalletUiCluster()
+  const client = useWalletUiGill()
+
+  return useQuery({
+    queryKey: ['get-token-account', { cluster, address }],
+    queryFn: () => splToken.fetchToken(client.rpc, address!),
+    enabled: !!address,
+  })
+}

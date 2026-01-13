@@ -1,13 +1,13 @@
 import { useState, useMemo } from "react"
 import { address, assertIsAddress, type Account, type Address } from "gill"
 import { Button } from "../ui/button"
-import { useInitialize, useAdminAccount, useCreateStakePool, useStakePools, useStakePool, useStakeDephyId, useNftStakes, useNftStake, useUserStakes, useDeposit, useWithdraw, useUnstakeDephyId, useCloseNftStake, useAnnounceUpdateConfig, useConfirmUpdateConfig, useCancelUpdateConfig, useAnnouncedConfig, useUserStakesForUser } from "./stake-pool-data-access"
-import { Link, useParams } from "react-router"
+import { useInitialize, useAdminAccount, useCreateStakePool, useStakePools, useStakePool, useStakeDephyId, useNftStakes, useNftStake, useUserStakes, useDeposit, useWithdraw, useUnstakeDephyId, useCloseNftStake, useAnnounceUpdateConfig, useConfirmUpdateConfig, useCancelUpdateConfig, useAnnouncedConfig, useUserStakesForUser, usePoolWallet } from "./stake-pool-data-access"
+import { useParams } from "react-router"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
 import * as splToken from "gill/programs/token"
 import { ellipsify, useWalletUi } from "@wallet-ui/react"
-import { useTokenAccounts, useMint } from "../account/account-data-access"
-import { CommonCard as Card, InputWithLabel } from "../common-ui"
+import { useTokenAccounts, useMint, useTokenAccount } from "../account/account-data-access"
+import { CommonCard as Card, InputWithLabel, StyledLink as Link } from "../common-ui"
 import { Select, SelectContent, SelectItem, SelectValue } from "../ui/select"
 import { SelectTrigger } from "@radix-ui/react-select"
 
@@ -281,6 +281,8 @@ export function ShowStakePool({ stakePool, mint }: {
   const params = useParams() as { address: string }
   assertIsAddress(params.address)
 
+  const poolWallet = usePoolWallet({ stakePoolAddress: stakePool.address })
+
   return (
     <Card title="Stake Pool">
       <p>{params.address}</p>
@@ -291,6 +293,8 @@ export function ShowStakePool({ stakePool, mint }: {
           <p>Stake Token Mint: {stakePool.data.config.stakeTokenMint}</p>
           <p>Max Stake Amount: {splToken.tokenAmountToUiAmount(stakePool.data.config.maxStakeAmount, mint.data!.decimals)}</p>
           <p>Config Review Time: {stakePool.data.config.configReviewTime}</p>
+          <p>Total Staked: {splToken.tokenAmountToUiAmount(stakePool.data.totalAmount, mint.data!.decimals)}</p>
+          <p>Pool Wallet: {poolWallet.data ?? 'Loading...'}</p>
         </div>
       ) : (
         <div>Stake Pool not found</div>
@@ -420,7 +424,9 @@ export function ShowNftStake({ nftStake, mint }: {
       <p>{params.address}</p>
       {nftStake.data ? (
         <div>
-          <p>Stake Pool: {nftStake.data.stakePool}</p>
+          <p>Stake Pool:
+            <Link to={`/stake-pool/${nftStake.data.stakePool}`}>{nftStake.data.stakePool}</Link>
+          </p>
           <p>Nft Token Account: {nftStake.data.nftTokenAccount}</p>
           <p>Stake Authority: {nftStake.data.stakeAuthority}</p>
           <p>Deposit Authority: {nftStake.data.depositAuthority}</p>
@@ -479,12 +485,10 @@ export function Deposit({ nftStake }: { nftStake: Account<dephyIdStakePool.NftSt
   )
 }
 
-export function Withdraw({ userStake }: { userStake: Account<dephyIdStakePool.UserStakeAccount> }) {
+export function Withdraw({ userStake, mint }: { userStake: Account<dephyIdStakePool.UserStakeAccount>, mint: Account<splToken.Mint> }) {
   const withdraw = useWithdraw({ userStake })
-  const stakePool = useStakePool({ stakePoolAddress: userStake.data.stakePool })
-  const mint = stakePool.data!.data.config.stakeTokenMint
   const owner = address(userStake.data.user)
-  const tokenAccounts = useTokenAccounts({ mint, owner })
+  const tokenAccounts = useTokenAccounts({ mint: mint.address, owner })
 
   if (!tokenAccounts.isFetched) {
     return <div>Loading...</div>
@@ -510,7 +514,7 @@ export function Withdraw({ userStake }: { userStake: Account<dephyIdStakePool.Us
             </option>
           ))}
         </select>
-        <InputWithLabel label="Amount" id="amount" type="number" name="amount" />
+        <InputWithLabel label={`Amount (${splToken.tokenAmountToUiAmount(userStake.data.amount, mint.data.decimals)})`} id="amount" type="number" name="amount" />
         <Button type="submit">Withdraw</Button>
       </Card>
     </form>
@@ -550,7 +554,9 @@ export function ShowUserStake({ userStake, mint }: {
       {userStake.data ? (
         <div>
           <p>Address: {userStake.address}</p>
-          <p>Stake Pool: {userStake.data.stakePool}</p>
+          <p>Stake Pool:
+            <Link to={`/stake-pool/${userStake.data.stakePool}`}>{userStake.data.stakePool}</Link>
+          </p>
           <p>NFT Stake:
             <Link to={`/nft-stake/${userStake.data.nftStake}`}>{userStake.data.nftStake}</Link>
           </p>

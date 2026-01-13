@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react"
-import { CommonCard as Card } from "~/components/common-ui"
+import { CommonCard as Card, StyledLink as Link } from "~/components/common-ui"
 import { useDeviceScores, useDeviceAssetMapping, type DeviceScoresResponse, type DeviceScore } from "~/components/dodp-tools/dodp-tools-data-access"
 import { useNftStakes, useStakePool, useStakePools, useUserStakesForPool } from "~/components/stake-pool/stake-pool-data-access"
 import { address, type Address } from "gill"
@@ -11,7 +11,7 @@ import type { UserStakeAccount } from "dephy-id-stake-pool-client"
 import { useWalletUiGill } from "@wallet-ui/react-gill"
 import { useSendAndConfirmIxs } from "~/lib/utils"
 import * as dephyIdStakePool from "dephy-id-stake-pool-client"
-import { Link } from "react-router"
+import { useProgramIds } from "~/lib/program-ids"
 
 
 export function PositionManager() {
@@ -29,6 +29,7 @@ export function PositionManager() {
   const decimals = mintQuery.data?.data.decimals ?? 0
   const client = useWalletUiGill()
   const { feePayer, sendAndConfirmIxs } = useSendAndConfirmIxs()
+  const { dephyIdStakePoolProgramId } = useProgramIds()
 
   const deviceAssetMapping = useDeviceAssetMapping({
     collection: stakePool.data?.data.config.collection,
@@ -82,8 +83,8 @@ export function PositionManager() {
       const ui = Number(amountInput)
       if (!isFinite(ui) || ui < 0) return
       const target = splToken.tokenUiAmountToAmount(ui, decimals)
-
       const stakeTokenMint = stakePool.data.data.config.stakeTokenMint
+      const maxStakeAmount = stakePool.data.data.config.maxStakeAmount
       const mintAcc = await splToken.fetchMint(client.rpc, stakeTokenMint)
       const ata = (await splToken.findAssociatedTokenPda({
         mint: stakeTokenMint,
@@ -100,16 +101,23 @@ export function PositionManager() {
         if (delta === 0n) continue
 
         if (delta > 0n) {
-          ixs.push(await dephyIdStakePool.getDepositTokenInstructionAsync({
-            nftStake: address(it.pubkey),
-            stakePool: stakePoolAddress,
-            user: feePayer,
-            stakeTokenMint,
-            stakeTokenAccount: stakePool.data.data.stakeTokenAccount,
-            userStakeTokenAccount: ata,
-            payer: feePayer,
-            amount: delta,
-          }))
+          const remaining = maxStakeAmount - current
+          const amount = delta > remaining ? remaining : delta
+
+          if (amount > 0n) {
+            ixs.push(await dephyIdStakePool.getDepositTokenInstructionAsync({
+              nftStake: address(it.pubkey),
+              stakePool: stakePoolAddress,
+              user: feePayer,
+              stakeTokenMint,
+              stakeTokenAccount: stakePool.data.data.stakeTokenAccount,
+              userStakeTokenAccount: ata,
+              payer: feePayer,
+              amount: amount,
+            }, {
+              programAddress: dephyIdStakePoolProgramId
+            }))
+          }
         } else {
           const withdrawAmount = -delta
           ixs.push(await dephyIdStakePool.getWithdrawInstructionAsync({
@@ -121,6 +129,8 @@ export function PositionManager() {
             userStakeTokenAccount: ata,
             payer: feePayer,
             amount: withdrawAmount,
+          }, {
+            programAddress: dephyIdStakePoolProgramId
           }))
         }
 
@@ -176,6 +186,8 @@ export function PositionManager() {
           userStakeTokenAccount: ata,
           payer: feePayer,
           amount: amt,
+        }, {
+          programAddress: dephyIdStakePoolProgramId
         }))
 
         if (ixs.length >= BATCH_SIZE) {

@@ -7,6 +7,7 @@ import { useMemo, useState } from "react"
 import { RefreshCw } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { ExplorerLink } from "../cluster/cluster-ui"
+import { clusterIdToMoniker } from "../use-transaction-toast"
 
 
 export function AccountChecker() {
@@ -99,10 +100,10 @@ export function AccountTransactions({ address }: { address: Address }) {
                 {items?.map((item) => (
                   <TableRow key={item.signature}>
                     <TableHead className="font-mono">
-                      <ExplorerLink cluster={cluster.cluster} transaction={item.signature} label={ellipsify(item.signature, 8)} />
+                      <ExplorerLink cluster={clusterIdToMoniker(cluster.id)} transaction={item.signature} label={ellipsify(item.signature, 8)} />
                     </TableHead>
                     <TableCell className="font-mono text-right">
-                      <ExplorerLink cluster={cluster.cluster} block={item.slot.toString()} label={item.slot.toString()} />
+                      <ExplorerLink cluster={clusterIdToMoniker(cluster.id)} block={item.slot.toString()} label={item.slot.toString()} />
                     </TableCell>
                     <TableCell>{new Date(Number(item.blockTime ?? '0') * 1000).toISOString()}</TableCell>
                     <TableCell className="text-right">

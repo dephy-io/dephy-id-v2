@@ -302,6 +302,22 @@ export function useStakePool({ stakePoolAddress }: { stakePoolAddress?: Address 
   })
 }
 
+export function usePoolWallet({ stakePoolAddress }: { stakePoolAddress?: Address }) {
+  const { dephyIdStakePoolProgramId } = useProgramIds()
+
+  return useQuery({
+    queryKey: ['stake-pool', 'pool-wallet', { stakePoolAddress }],
+    queryFn: async () => {
+      const [address] = await dephyIdStakePool.findPoolWalletPda(
+        { stakePool: stakePoolAddress! },
+        { programAddress: dephyIdStakePoolProgramId }
+      )
+      return address
+    },
+    enabled: !!stakePoolAddress,
+  })
+}
+
 
 export function useStakeDephyId() {
   const client = useWalletUiGill()

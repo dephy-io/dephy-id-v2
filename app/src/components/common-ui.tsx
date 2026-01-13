@@ -2,6 +2,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
 import { Input } from "./ui/input"
 import { Label } from "./ui/label"
+import { Link, type LinkProps } from "react-router"
 
 export function CommonCard({ title, children }: { title: string, children: React.ReactNode }) {
   return (
@@ -23,5 +24,15 @@ export function InputWithLabel({ label, id, ...props }: React.ComponentProps<"in
       <Label htmlFor={id}>{label}</Label>
       <Input id={id} placeholder={label} {...props} />
     </>
+  )
+}
+
+
+export function StyledLink(props: LinkProps) {
+  return (
+    <Link
+      {...props}
+      className={`text-blue-600 hover:text-blue-800 transition-colors ${props.className || ''}`}
+    />
   )
 }

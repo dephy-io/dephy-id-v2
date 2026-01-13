@@ -27,8 +27,8 @@ export default function NftStakeDetail() {
 
       <ShowNftStake nftStake={nftStake.data} mint={mint.data!} />
       {account && <Deposit nftStake={nftStake.data} />}
-      {nftStake.data.data.active && account?.address === nftStake.data?.data.stakeAuthority && <UnstakeDephyId nftStake={nftStake.data} />}
-      {!nftStake.data.data.active && account?.address === nftStake.data?.data.stakeAuthority && nftStake.data.data.amount == 0n && <CloseNftStake nftStake={nftStake.data} />}
+      {account?.address === nftStake.data?.data.stakeAuthority && <UnstakeDephyId nftStake={nftStake.data} />}
+      {/* {account?.address === nftStake.data?.data.stakeAuthority && nftStake.data.data.amount == 0n && <CloseNftStake nftStake={nftStake.data} />} */}
       <ListUserStakes nftStakeAddress={params.address} mint={mint.data!} />
     </div>
   )

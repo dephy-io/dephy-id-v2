@@ -485,6 +485,35 @@ describe("dephy-id-stake-pool", () => {
     assert.equal(stakePoolAccount.data.totalAmount, depositAmount * 2n, 'totalAmount')
   })
 
+  it('withdraw all from shared nft stake', async () => {
+    await sendAndConfirmIxs([
+      await dephyIdStakePool.getWithdrawInstructionAsync({
+        stakePool: stakePoolAddress,
+        nftStake: nftStake.address,
+        user: tokenOwner1,
+        payer,
+        amount: depositAmount,
+        stakeTokenMint: stPhyMintAddress,
+        stakeTokenAccount: stakeTokenAddress,
+        userStakeTokenAccount: userTokenAddress1,
+        tokenProgram: splToken.TOKEN_2022_PROGRAM_ADDRESS,
+      })
+    ])
+
+    const userStakeAddress1 = (await dephyIdStakePool.findUserStakeAccountPda({
+      nftStake: nftStake.address,
+      user: tokenOwner1.address,
+    }))[0]
+    const userStakeAccount1 = await dephyIdStakePool.fetchMaybeUserStakeAccount(rpc, userStakeAddress1)
+    assert.equal(userStakeAccount1.exists, false, 'User 1 stake account should be closed')
+
+    const nftStakeAccount = await dephyIdStakePool.fetchNftStakeAccount(rpc, nftStake.address)
+    assert.equal(nftStakeAccount.data.amount, depositAmount, 'NFT stake amount should match remaining user 2 stake')
+
+    const stakePoolAccount = await dephyIdStakePool.fetchStakePoolAccount(rpc, stakePoolAddress)
+    assert.equal(stakePoolAccount.data.totalAmount, depositAmount, 'Pool total amount should match remaining user 2 stake')
+  })
+
 
   it('announce update config', async () => {
     await sendAndConfirmIxs([
